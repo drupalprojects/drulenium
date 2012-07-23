@@ -1,1 +1,10 @@
-name = Drulenium
+name = "Drulenium"
+description = "Provides environment to create selenium test cases"
+dependencies[] = "ctools"
+package = "Test"
+core =7.x
+
+configure = admin/structure/drulenium
+
+files[] = plugins/views/drulenium_handler_field.inc
+files[] = plugins/export_ui/drulenium_presets_ui.inc

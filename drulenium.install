@@ -1,0 +1,93 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the drulenium module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function drulenium_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function drulenium_uninstall() {
+
+  // delete system variables
+  variable_del('drulenium_appid');
+  variable_del('drulenium_secret');
+  variable_del('drulenium_locale');
+  variable_del('drulenium_urls_mode');
+  variable_del('drulenium_locale_auto');
+  $languages = language_list();
+  foreach ($languages as $language) {
+    variable_del('drulenium_language_' . $language->language);
+  }
+  
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+function drulenium_schema() {
+  $schema = array();
+
+  $schema['drulenium_preset'] = array(
+    'description' => 'Storage for user-defined drulenium plugins templates.',
+    'export' => array(
+      'key' => 'name',
+      'identifier' => 'drulenium_preset',
+      'default hook' => 'drulenium_default_presets', // Function hook name.
+      'api' => array(
+        'owner' => 'drulenium',
+        'api' => 'drulenium', // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+      'load callback' => 'drulenium_preset_load',
+    ),
+    'fields' => array(
+      'name' => array(
+        'description' => 'The primary identifier for a plugin preset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'Description for this plugin preset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'plugin_type' => array(
+        'description' => 'Type of this preset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'description' => 'Serialized storage of drupal related plugin settings.',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+      'drulenium_attrs' => array(
+        'description' => 'Serialized storage of drulenium related plugin settings',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('name'),
+    'indexes' => array(
+      'type' => array('plugin_type'),
+    ),
+  );
+
+  return $schema;
+
+}

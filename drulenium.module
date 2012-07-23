@@ -1,0 +1,860 @@
+<?php
+
+// facebook developers site
+//define('FB_REF_BASE_URL', 'http://developers.facebook.com/docs/reference/plugins/');
+
+
+
+/**
+ * Implements hook_menu().
+ */
+function drulenium_menu() {
+  $items = array();
+  
+  $items['drulenium/tests/list'] = array(
+    'title' => 'Tests',
+    'page callback' => 'drulenium_tests_table_list', 
+    'access callback' => 'user_access', 
+    'access arguments' => array(
+        'access content' 
+    ),
+  );
+  
+  $items['drulenium/tests/%'] = array(
+    'title' => '',
+    'page callback' => 'drulenium_tests_formatter',
+  	'page arguments' => array(2), 
+    'access callback' => 'user_access', 
+    'access arguments' => array(
+        'access content' 
+    ),
+  );
+  
+  $items['drulenium/tests/case/%'] = array(
+    'title' => '',
+    'page callback' => 'drulenium_tests_case_formatter',
+  	'page arguments' => array(3), 
+    'access callback' => 'user_access', 
+    'access arguments' => array(
+        'access content' 
+    ),
+  );
+  
+  $items['admin/structure/drulenium'] = array(
+      'title' => 'Drulenium', 
+      'description' => 'Settings for Drulenium plugins.', 
+      'page callback' => 'drupal_get_form', 
+      'page arguments' => array(
+          'drulenium_admin_settings_form' 
+      ), 
+      'file' => 'drulenium.admin.inc', 
+      'access callback' => 'user_access', 
+      'access arguments' => array(
+          'administer site configuration' 
+      ) 
+  );
+  
+  $items['admin/structure/drulenium/settings'] = array(
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'title' => 'Settings', 
+      'description' => 'Settings for Drulenium plugins.', 
+      'page callback' => 'drupal_get_form', 
+      'page arguments' => array(
+          'drulenium_admin_settings_form' 
+      ), 
+      'file' => 'drulenium.admin.inc', 
+      'access callback' => 'user_access', 
+      'access arguments' => array(
+          'administer site configuration' 
+      ) 
+  );
+  
+  return $items;
+}
+
+function drulenium_tests_formatter($test_name) {
+  $test_suite_html = '<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+  <script type="text/javascript" src="http://paneris.org/~peterk/sel-blocks.js"></script>
+  <title>Test Suite</title>
+</head>
+<body>
+<table id="suiteTable" cellpadding="1" cellspacing="1" border="1" class="selenium"><tbody>
+<tr><td><b>Test Suite</b></td></tr>
+<tr><td><a href="/drulenium/tests/case/'.$test_name.'">'.$test_name.'</a></td></tr>
+</tbody></table>
+</body>
+</html>
+  ';
+  print $test_suite_html;
+}
+
+function drulenium_tests_case_formatter($test_name) {
+  $preset = drulenium_get_presets($test_name);
+  //print_r($preset);
+  $plugin_type = $preset->plugin_type;
+  $options = $preset->drulenium_attrs;
+  $verify_text = $options['text'];
+  
+  $locator = $options['locator'];
+  $verify_width = $options['width'];
+  $verify_height = $options['height'];
+  $verify_posx = $options['posx'];
+  $verify_posy = $options['posy'];
+  
+  
+  $pages = $options['pages'];
+  $pages_array = explode("\n",$pages);
+  $test_case_items_html = "";
+  if (isset($_SERVER['HTTP_HOST'])) {
+    $site_name = "http://".$_SERVER['HTTP_HOST'];
+    $test_case_items_html = '<tr>
+	<td>open</td>
+	<td>'.$site_name.'</td>
+	<td></td>
+</tr>';
+  }
+if($plugin_type == "drulenium_facepile"){
+  foreach ($pages_array as $page) {
+      $test_case_items_html .= '<tr>
+	<td>open</td>
+	<td>/'.$page.'</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyTextPresent</td>
+	<td>'.$verify_text.'</td>
+	<td></td>
+</tr>';
+  }
+}elseif($plugin_type == "drulenium_livestream"){
+  foreach ($pages_array as $page) {
+      $test_case_items_html .= '<tr>
+	<td>open</td>
+	<td>/'.$page.'</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertElementPositionLeft</td>
+	<td>'.$locator.'</td>
+	<td>'.$verify_posx.'</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertElementHeight</td>
+	<td>'.$locator.'</td>
+	<td>'.$verify_height.'</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertElementWidth</td>
+	<td>'.$locator.'</td>
+	<td>'.$verify_width.'</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertElementPositionTop</td>
+	<td>'.$locator.'</td>
+	<td>'.$verify_posy.'</td>
+	<td></td>
+</tr>
+';
+  }
+}
+  //print $text;
+  $test_case_html = '<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="'.$site_name.'" />
+<title>'.$test_name.'</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">anonymousPermissionsLoopTestCase</td></tr>
+</thead><tbody>'.$test_case_items_html.'
+</tbody></table>
+</body>
+</html>
+  ';
+  print $test_case_html;
+}
+
+function drulenium_tests_table_list() {
+  $header = array(t('Name'), t('Description'), t('Test'));
+  $rows = array();
+  $presets = drulenium_preset_load();
+  foreach ($presets as $key =>$value) {
+    //chrome://selenium-ide/content/selenium-core/TestRunner.html?baseURL=http://www.drool4drupal.com&test=http://atrium.drool4drupal.com/tests/userTestSuite.html&auto=false
+      $site_name = "http://".$_SERVER['HTTP_HOST'];
+      $test_suite_url = '/drulenium/tests/'.$key;
+      $test_link = '<a href="chrome://selenium-ide/content/selenium-core/TestRunner.html?auto=true&save=true&close=true&test='.$site_name.$test_suite_url.'">Test</a>';
+      $rows[] = array(
+      $key,
+      $value->description,
+      $test_link,
+    );
+  }
+
+  $output = theme('table', array('header' => $header, 'rows' => $rows));
+  return $output;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function drulenium_block_info() {
+  $blocks = array();
+  
+  // load all presets
+  if ($presets = drulenium_get_presets()) {
+    foreach ( $presets as $preset ) {
+      if ($preset->settings['block']) {
+        $blocks[$preset->name] = array(
+            'info' => $preset->name . ' block' 
+        );
+      }
+    }
+  }
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function drulenium_block_view($delta) {
+  if ($preset = drulenium_get_presets($name = $delta)) {
+    $block['subject'] = t('');
+    $block['content'] = drulenium_preset_view($preset);
+    return $block;
+  }
+}
+
+/**
+ * Implementation of hook_theme
+ */
+function drulenium_theme($existing, $type, $theme, $path) {
+  $path1 = drupal_get_path('module', 'drulenium');
+  return array(
+      'drulenium_plugin' => array(
+          'template' => 'drulenium-plugin', 
+          'path' => "$path1/theme", 
+          'variables' => array(
+              'plugin_type' => NULL, 
+              'options' => array() 
+          ) 
+      ) 
+  );
+}
+
+/**
+ * Implements preprocess_hook
+ */
+function drulenium_preprocess_drulenium_plugin(&$variables) {
+  global $_fb_script_init;
+  $_fb_script_init = TRUE;
+  
+  $plugin = drulenium_test_plugin_load($variables['plugin_type']);
+  
+  // delegate to plugin's preprocess function
+  $function = ctools_plugin_get_function($plugin, 'hook_preprocess_drulenium_plugin');
+  if ($function) {
+    $function($variables);
+  }
+  
+  // are we rendering html5 or xfbml
+  $markup_type = variable_get('drulenium_markup_type', 'xfbml');
+  
+  $variables['tag_name'] = ($markup_type == "xfbml") ? "fb:" . $plugin['html tag name'] : "div";
+  
+  if ($markup_type == 'html5') {
+    foreach ( $variables['options'] as $key => $value ) {
+      $variables['options']["data-" . $key] = $value;
+      unset($variables['options'][$key]);
+    }
+    $variables['options'] = array(
+        'class' => "fb-" . $plugin['html tag name'] 
+    ) + $variables['options'];
+  }
+}
+
+/**
+ * Implements hook_content_extra_fields.
+ */
+function drulenium_field_extra_fields() {
+  $extras = array();
+  if ($presets = drulenium_get_presets()) {
+    
+    foreach ( $presets as $preset ) {
+      $plugin = drulenium_test_plugin_load($preset->plugin_type);
+      $function = ctools_plugin_get_function($plugin, 'hook_field_extra_fields');
+      if ($function) {
+        $function($extras, $preset);
+      }
+    }
+  }
+  return $extras;
+}
+
+/**
+ * Fake hook_link (as in D6); for easy maintanance only
+ */
+
+function drulenium_link($type, $object = NULL, $view_mode = 'full') {
+
+  $links = array();
+  if ($presets = drulenium_get_presets()) {
+    foreach ( $presets as $preset ) {
+      // let plugins say something
+      $plugin = drulenium_test_plugin_load($preset->plugin_type);
+      $function = ctools_plugin_get_function($plugin, 'hook_link');
+      if ($function) {
+        $links += $function($preset, $type, $object, $view_mode);
+      }
+    
+    }
+  }
+  if (isset($links)) {
+    return $links;
+  }
+}
+
+
+// ctools hooks / api
+  
+/**
+ * Implements hook_ctools_plugin_type() to inform the plugin system 
+ * owns 'test_plugin' plugin types.
+ *
+ * "process" tells ctools that by default each 
+ * plugin has some default functions named consistently 
+ * after the plugin name
+ * @see _drulenium_ctools_plugin_test_plugin_process()
+ */
+function drulenium_ctools_plugin_type() {
+  
+  return array(
+      'test_plugin' => array(
+          'process' => '_drulenium_ctools_plugin_test_plugin_process' 
+      ) 
+  );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
+function drulenium_ctools_plugin_api($module, $api) {
+  if ($module == 'drulenium' && $api == 'plugins') {
+    return array(
+        'version' => 1 
+    );
+  }
+  //boxes
+  if ($module == 'boxes' && $api == 'plugins') {
+    return array(
+        'version' => 1 
+    );
+  }
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function drulenium_ctools_plugin_directory($module, $type) {
+  
+  return 'plugins/' . $type;
+
+}
+
+/**
+ * Helper function for ctools plugin 'process' 
+ * @param $plugin
+ * @param $info
+ * @see drulenium_ctools_plugin_test_plugin()
+ */
+function _drulenium_ctools_plugin_test_plugin_process(&$plugin, $info) {
+ // print $plugin['name'];
+  //die;
+  $plugin['default values'] = $plugin['name'] . '_defaults';
+  $plugin['fb plugin form'] = $plugin['name'] . '_fb_settings';
+  $plugin['drupal settings form'] = $plugin['name'] . '_drupal_settings';
+}
+
+
+
+// ctools wrapper functions for 'test_plugin"
+
+
+/**
+ * load a specific test_plugin or all of them
+ */
+function drulenium_test_plugin_load($type = NULL) {
+  ctools_include('plugins');
+  $plugins = ctools_get_plugins('drulenium', 'test_plugin');
+  if (isset($type)) {
+    return $plugins[$type];
+  }
+  
+  return $plugins;
+}
+
+/**
+ * Return the default vaules of a certain plugin 
+ * type as defined by facebook
+ * @param $type the plugin type/name (i.e. like).
+ */
+function drulenium_test_plugin_defaults($type) {
+  $plugin = drulenium_test_plugin_load($type);
+  
+  $function = ctools_plugin_get_function($plugin, 'default values');
+  if ($function) {
+    return $function();
+  }
+  
+  return array();
+}
+
+/**
+ * Return the facebook plugin form for a given type
+ * @param $type the plugin type/name (i.e. like).
+ */
+function drulenium_test_plugin_fb_settings_form($type, $options) {
+  $form = array();
+  $plugin = drulenium_test_plugin_load($type);
+  
+  $url = FB_REF_BASE_URL . $plugin['html tag name'];
+  $l = l("facebook documentation page", $url, array(
+      'attributes' => array(
+          'target' => '_blank' 
+      ) 
+  ));
+  $desc = t("For more information about this plugin and its attributes please check out the !facebookdoc", array(
+      '!facebookdoc' => $l 
+  ));
+  
+  $form['help'] = array(
+      '#value' => "<div>" . $desc . "</div>" 
+  );
+  
+  $function = ctools_plugin_get_function($plugin, 'fb plugin form');
+  if ($function) {
+    $form += $function($options);
+  }
+  
+  return $form;
+}
+
+/**
+ * Return the drupal settings form for a given plugin type
+ * @param $type the plugin type/name (i.e. like).
+ */
+function drulenium_test_plugin_drupal_settings_form($type, $options) {
+  $form = array();
+  
+  $plugin = drulenium_test_plugin_load($type);
+  
+  $function = ctools_plugin_get_function($plugin, 'drupal settings form');
+  if ($function) {
+    $form = $function($options);
+  }
+  
+  return $form;
+}
+
+
+ // ctools wrapper functions for "fb social preset"
+
+
+/**
+ * load the preset
+ * @param $name
+ * the preset name
+ * @param $reset
+ */
+function drulenium_preset_load($name = NULL, $reset = FALSE) {
+  ctools_include('export');
+  if ($reset) {
+    ctools_export_load_object_reset('drulenium_preset');
+  }
+  $presets = ctools_export_load_object('drulenium_preset', 'all');
+  
+  if (isset($name)) {
+    return isset($presets[$name]) ? $presets[$name] : FALSE;
+  }
+  
+  return $presets;
+}
+
+/**
+ * Get all presets or a preset by name. By default
+ * it returns only enabled presets.
+ * 
+ * @param $name
+ *    the preset name
+ * @param $enabled
+ *    
+ * @param $reset
+ */
+function drulenium_get_presets($name = NULL, $enabled = TRUE, $reset = FALSE) {
+  
+  $presets = drulenium_preset_load($name, $reset);
+  
+  if (empty($presets)) {
+    return FALSE;
+  }
+  
+  if (is_object($presets)) {
+    $presets = array(
+        $presets->name => $presets 
+    );
+  }
+  
+  if ($enabled) {
+    $presets = array_filter($presets, '_drulenium_enabled_presets_filter');
+  }
+  
+  if (isset($name)) {
+    return isset($presets[$name]) ? $presets[$name] : FALSE;
+  }
+  
+  return $presets;
+}
+
+/**
+ * filter presets based on come conditions $args
+ * @see ctools_export_load_object()
+ */
+function _drulenium_enabled_presets_filter($preset) {
+  return (isset($preset->disabled) && ($preset->disabled)) ? FALSE : TRUE;
+}
+
+function drulenium_get_presets_by_type($type, $en = TRUE) {
+  $result = array();
+  $presets = drulenium_get_presets($name = NULL, $enabled = $en);
+  if (! empty($presets)) {
+    foreach ( $presets as $preset ) {
+      if ($preset->plugin_type == $type) {
+        $result[] = $preset;
+      }
+    }
+  }
+  
+  return $result;
+}
+
+
+  // boxes integration
+/**
+ * Implementation of hook_boxes_plugins().
+ */
+function drulenium_boxes_plugins() {
+  $info = array();
+  $path = drupal_get_path('module', 'drulenium') . '/plugins/boxes';
+  
+  $info['drulenium_default'] = array(
+    'handler' => array(
+      'class' => 'drulenium_default', 
+      'file' => 'drulenium_default.inc', 
+      'path' => $path, 
+      'parent' => 'box' 
+    ) 
+  );
+  
+  $info['drulenium_facepile'] = array(
+    'title' => 'Verify Text', 
+    'handler' => array(
+      'class' => 'drulenium_facepile', 
+      'file' => 'drulenium_facepile.inc', 
+      'path' => $path, 
+      'parent' => 'drulenium_default' 
+    ) 
+  );
+  
+  $info['drulenium_livestream'] = array(
+    'title' => 'Element Position', 
+    'handler' => array(
+      'class' => 'drulenium_livestream', 
+      'file' => 'drulenium_livestream.inc', 
+      'path' => $path, 
+      'parent' => 'drulenium_default' 
+    ) 
+  );
+  
+  return $info;
+}
+
+/**
+ * returns the fbml content of the plugin
+ */
+function drulenium_preset_view($preset) {
+  
+  $plugin_type = $preset->plugin_type;
+  $options = $preset->drulenium_attrs;
+  
+  $output = theme('drulenium_plugin',  array('plugin_type' => $plugin_type, 'options' => $options));
+  
+  // if this is a "comment" plugin, get comments from facebook and print them
+  // behind the iframe
+  if ($plugin_type == 'comments' && isset($preset->settings['plugin_comments_seo']) && $preset->settings['plugin_comments_seo']['seo']) {
+    $cache_length = $preset->settings['plugin_comments_seo']['cache_length'];
+    $nr_comments = $preset->settings['plugin_comments_seo']['nr_comments'];
+    $url = empty($options['href']) ? drulenium_url($_GET['q']) : $options['href'];
+    module_load_include('inc', 'drulenium', 'plugins/test_plugin/comments');
+    $output .= _drulenium_comments_seo($url, $nr_comments, $cache_length);
+  }
+  
+  return $output;
+}
+
+/**
+ * returns the fbml content of the plugin
+ */
+function drulenium_box_view($box) {
+  
+  $plugin_type = $box->test_plugin_name;
+  $options = $box->options;
+  
+  $output = theme('drulenium_plugin',  array('plugin_type' => $plugin_type, 'options' => $options));
+  
+  if ($plugin_type == 'comments') {
+    $cache_length = 720;
+    $nr_comments = 100;
+    $url = empty($options['href']) ? drulenium_url($_GET['q']) : $options['href'];
+    module_load_include('inc', 'drulenium', 'plugins/test_plugin/comments');
+    $output .= _drulenium_comments_seo($url, $nr_comments, $cache_length);
+  }
+  
+  return $output;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function drulenium_page_alter1(&$page) {
+  global $language, $_fb_script_init, $base_url;
+  
+  // If their is no fb plugin enabled on this page, do not load fb script then
+  if (! $_fb_script_init) {
+    return;
+  }
+  
+  $languages = _map_active_languages1();
+  
+  if (drulenium_auto_language()) {
+    if (array_key_exists($language->language, $languages)) {
+      $fb_locale = $languages[$language->language];
+    }
+    else {
+      drupal_set_message(t("There is no mapping for the current language. Using the default locale."));
+    }
+  }
+  else {
+    $fb_locale = variable_get('drulenium_locale', 'en_US');
+  }
+  
+  $appid = variable_get('drulenium_appid', '');
+  $channel_url = $base_url . "/drulenium/channel";
+  
+  $output = '<div id="fb-root"></div>';
+  $output .= "<script type=\"text/javascript\">
+     window.fbAsyncInit = function() {
+       FB.init({
+         appId: " . drupal_json_encode($appid) . ",
+         status: true,
+         cookie: true,
+         xfbml: true,
+         oauth : true,
+         channelUrl: " . drupal_json_encode($channel_url) . "
+         });
+
+         ";
+  // let each module subscribe to different events
+  $output .= implode("\n", module_invoke_all('drulenium_event_subscribe'));
+  $output .= "
+     };
+     (function() {
+       var e = document.createElement('script');
+       e.async = true;
+       e.src = document.location.protocol + '//connect.facebook.net/" . $fb_locale . "/all.js';
+       document.getElementById('fb-root').appendChild(e);
+     }());
+  </script>";
+  
+  $page['page_bottom']['drulenium'] = array(
+    '#markup' => $output 
+  );
+  
+  if (variable_get('drulenium_opengraph', 1)) {
+    $content = drupal_get_title();
+    $content = $content ? strip_tags($content) : variable_get('site_name', 'Drupal');
+    //add fbml header meta information 
+    $element = array(
+      '#tag' => 'meta', 
+      '#attributes' => array(
+        'property' => 'og:title', 
+        'content' => $content 
+      ) 
+    );
+    
+    drupal_add_html_head($element, 'drulenium_open_graph_title');
+    
+    $element = array(
+      '#tag' => 'meta', 
+      '#attributes' => array(
+        'property' => 'og:site_name', 
+        'content' => variable_get('site_name', 'Drupal') 
+      ) 
+    );
+  
+    drupal_add_html_head($element, 'drulenium_open_graph_sitename');
+  }
+  
+  /**
+   * from facebook ..
+   * If your site has many comments boxes, we strongly recommend you specify a Facebook app id 
+   * as the administrator (all administrators of the app will be able to moderate comments). 
+   * Doing this enables a moderator interface on Facebook where comments from all plugins 
+   * administered by your app id can be easily moderated together.
+   */
+  $element = array(
+    '#tag' => 'meta', 
+    '#attributes' => array(
+      'property' => 'fb:app_id', 
+      'content' => check_plain(variable_get('drulenium_appid', '')) 
+    ) 
+  );
+  drupal_add_html_head($element, 'drulenium_fbadmin');
+}
+
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
+function drulenium_auto_language() {
+  return variable_get('drulenium_locale_auto', 0);
+}
+
+function _map_active_languages1() {
+  $languages = language_list();
+  $mapped = array();
+  foreach ( $languages as $key => $language ) {
+    $mapped[$language->language] = variable_get('drulenium_language_' . $language->language, '');
+  }
+  return $mapped;
+}
+
+/**
+ * The Custom Channel URL that FB.init has as an option
+ */
+function drulenium_custom_channel_url() {
+  header("Cache-Control: public, s-maxage=31536000, max-age=31536000");
+  header("Expires: Sun, 1 Oct 2079 00:00:00 GMT");
+  
+  global $language;
+  $languages = _map_active_languages1();
+  $fb_locale = "en_US";
+
+  if (drulenium_auto_language()) {
+    if (array_key_exists($language->language, $languages)) {
+      $fb_locale = $languages[$language->language];
+    }
+  }
+  else {
+    $fb_locale = variable_get('drulenium_locale', 'en_US');
+  }
+  print '<script src="http://connect.facebook.net/' . $fb_locale . '/all.js"></script>';
+  exit;
+}
+
+  // API functions
+
+
+/**
+ * Implementation of hook_drulenium_event_subscribe
+ */
+function drulenium_drulenium_event_subscribe() {
+  // integration with google analytics
+  if (module_exists('googleanalytics')) {
+    global $user;
+    $id = variable_get('googleanalytics_account', '');
+    if (! empty($id) && _googleanalytics_visibility_pages() && _googleanalytics_visibility_user($user)) {
+      return array(
+        'FB.Event.subscribe("edge.create", function(href, widget) {', 
+        '_gaq.push(["_trackEvent", "Facebook like", "Drupal", href]);', 
+        '});' 
+      );
+    }
+  }
+}
+
+
+/**
+ *  Based on the user settings return the aliased / unaliased version
+ *  of a given $url
+ *
+ *  If option is selected, the base URL is rewritten to the specified value.
+ *  If option is selected, the language tag is stripped from the URL.
+ */
+function drulenium_url($url = NULL) {
+  $aliased = variable_get('drulenium_urls_mode', 0);
+  $base_url = variable_get('drulenium_base_url', '');
+  $strip_lang = variable_get('drulenium_url_strip_lang', 0);
+  
+  $url = url($url, array_filter(array(
+    'absolute' => TRUE, 
+    'alias' => $aliased, 
+    'base_url' => $base_url  //url checks if this is set.  not what its value is.
+  )));
+  
+  if ($strip_lang) {
+    // i.e.  'http://www.mysite.nl/nl/node/xx' becomes 'http://www.mysite.nl/node/xx'
+    global $language;
+    $lang_tag = "/\/" . $language->language . "/";
+    $url = preg_replace($lang_tag, '', $url, 1);
+  }
+
+  return $url;
+}
+
+// helper functions 
+
+
+/**
+ * Does $preset should be shown on node of type $type
+ */
+function drulenium_preset_node_types($preset, $node_type) {
+
+  $types = ($preset->settings['node_types']['types']);
+  if (! is_array($types)) {
+    return FALSE;
+  }
+  return (!empty($types[$node_type]));
+}
+
+/**
+* get nodes view modes
+*/
+function _drulenium_get_node_view_modes(){
+    //get view modes
+    $view_modes = array();
+    $info = entity_get_info('node');
+    foreach ($info['view modes'] as $k=>$v){
+        $view_modes[$k] = $v['label'];
+    }
+    return $view_modes;
+}
+
+
+/**
+ * Implements hook_views_api().
+ */
+function drulenium_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
