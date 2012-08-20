@@ -58,13 +58,13 @@ function drulenium_livestream_fb_settings($options) {
       '#title' => t('Top Position'), 
       '#description' => t('The Top Position of the element you want to Verify.') 
   );  
-   
+   /*
   $form['pages'] = array(
       '#type' => 'textarea', 
       '#title' => t('Pages'), 
       '#description' => t('The pages you want to Test') 
   );
-  
+  */
   $defaults = drulenium_livestream_defaults();
   
   foreach ( $form as $id => $f ) {

@@ -1,10 +1,16 @@
 name = "Drulenium"
 description = "Provides environment to create selenium test cases"
 dependencies[] = "ctools"
-package = "Test"
+package = "Testing"
 core =7.x
 
 configure = admin/structure/drulenium
 
 files[] = plugins/views/drulenium_handler_field.inc
 files[] = plugins/export_ui/drulenium_presets_ui.inc
+; Information added by drupal.org packaging script on 2012-07-24
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "drulenium"
+datestamp = "1343095332"
+

@@ -70,7 +70,7 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       '#title' => t('type'), 
       '#type' => 'radios', 
       '#options' => $options, 
-      '#default_value' => ! empty($export->plugin_type) ? $export->plugin_type : 'like', 
+      '#default_value' => !empty($export->plugin_type) ? $export->plugin_type : 'drulenium_facepile', 
       '#description' => t('Description for this preset.') 
   );
   
@@ -112,11 +112,11 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
     );
     
     $form['drulenium_settings_' . $type]['drulenium_attrs_' . $type] += drulenium_test_plugin_fb_settings_form($type, $export->drulenium_attrs);
- /*   
+    
     // drupal settings
     $form['drulenium_settings_' . $type]['settings_' . $type] = array(
         '#type' => 'fieldset', 
-        '#title' => 'Drupal settings', 
+        '#title' => 'Test settings', 
         '#collapsible' => TRUE 
     );
     
@@ -130,18 +130,95 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
     }
     
     $form['drulenium_settings_' . $type]['settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
- */ 
+ //dsm($export);
   }
 }
 
 function _drulenium_presets_ui_create_block_form($export) {
   $form = array();
-  $form['block'] = array(
+ /* $form['block'] = array(
       '#type' => 'checkbox', 
       '#title' => t('Create a block'), 
       '#description' => t('Create a drupal block that contains this plugin.  You have to enable the block manually to show up.'), 
       
       '#default_value' => isset($export->settings['block']) ? $export->settings['block'] : 0 
+  );*/
+      $form['pages'] = array(
+    '#type' => 'vertical_tabs',
+    '#attached' => array(
+      'js' => array(drupal_get_path('module', 'block') . '/block.js'),
+    ),
+  );
+
+  // Per-path pages.
+  $form['pages']['path'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Pages'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'pages',
+    '#weight' => 0,
+  );
+    $form['pages']['path']['custom'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Test on specific pages'),
+      '#description' => "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog.",
+      '#default_value' => isset($export->settings['pages']['path']['custom']) ? $export->settings['pages']['path']['custom'] : '',
+    );
+    
+    // Per-node-type testing.
+  $form['pages']['node'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Content Types'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'pages',
+    '#weight' => 20,
+  );
+  $node_types = array();
+  $result = db_query(
+      'SELECT type, name FROM {node_type}');
+  foreach ($result as $row) {
+    $node_types[$row->type] = $row->name;
+  }
+  $form['pages']['node']['custom'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Test for specific content types'),
+    '#options' => $node_types,
+    '#description' => t('Test on pages that display content of the given type(s).'),
+    '#default_value' => isset($export->settings['pages']['node']['custom']) ? $export->settings['pages']['node']['custom'] : '',
+  );
+ 
+      // Per-term-type testing.
+  $form['pages']['term'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Taxonomy'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'pages',
+    '#weight' => 20,
+  );
+  $node_types = array();
+  $result = db_query(
+      'SELECT vid, name FROM {taxonomy_vocabulary}');
+  foreach ($result as $row) {
+    $node_types[$row->vid] = $row->name;
+  }
+  $form['pages']['term']['custom'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Test for specific Taxonomy Vocabularies'),
+    '#options' => $node_types,
+    '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
+    '#default_value' => isset($export->settings['pages']['term']['custom']) ? $export->settings['pages']['term']['custom'] : '',
+  );
+  
+  $user_types = user_roles(FALSE);
+  $form['test_as_roles'] = array(
+    '#type' => 'radios',
+    '#title' => t('Test as specific user roles'),
+    '#options' => $user_types,
+    '#description' => t('Test as users that belong to the above user role.'),
+    '#default_value' => isset($export->settings['test_as_roles']) ? $export->settings['test_as_roles'] : '',
   );
   return $form;
 }
