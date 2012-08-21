@@ -43,11 +43,11 @@ function drulenium_selenium_fb_settings($options) {
   );
   $form['selenium_file']['#upload_validators']['file_validate_extensions'][0] = null;
   //$defaults = drulenium_selenium_defaults();
-  
+ /* 
   foreach ( $form as $id => $f ) {
     $form[$id]['#default_value'] = isset($options[$id]) ? $options[$id] : $defaults[$id];
   }
-  
+  */
   return $form;
 
 }

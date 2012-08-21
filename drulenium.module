@@ -37,12 +37,32 @@ function drulenium_default_drulenium_preset() {
   $drulenium_preset->name = 'anonymous_permissions_test_case';
   $drulenium_preset->description = 'anonymous_permissions_test_case';
   $drulenium_preset->plugin_type = 'drulenium_facepile';
-  $drulenium_preset->settings = 'anonymous_permissions_test_case';
+  $drulenium_preset->settings = array(
+    'pages' => array(
+      'path' => array(
+        'custom' => 'admin/*',
+      ),
+      'node' => array(
+        'custom' => array(
+          'article' => 0,
+          'drulenium' => 0,
+          'page' => 0,
+        ),
+      ),
+      'term' => array(
+        'custom' => array(
+          1 => 0,
+        ),
+      ),
+      'drulenium_settings_drulenium_facepile__settings_drulenium_facepile__pages__active_tab' => 'edit-drulenium-settings-drulenium-facepile-settings-drulenium-facepile-pages-node',
+    ),
+    'test_as_roles' => '1',
+  );
   $drulenium_preset->drulenium_attrs = array(
     'text' => 'denied',
-    'pages' => 'admin/*',
   );
 
+  
   $export['anonymous_permissions_test_case'] = $drulenium_preset;
 
   return $export;
@@ -68,7 +88,7 @@ function drulenium_menu() {
     'page callback' => 'drulenium_tests_catch_output', 
     'access callback' => 'user_access', 
     'access arguments' => array(
-        'run_test_cases' 
+        'access content' 
     ),
   );
   
@@ -150,14 +170,7 @@ function drulenium_tests_case_formatter($test_name) {
   $plugin_type = $preset->plugin_type;
   $options = $preset->drulenium_attrs;
   $settings = $preset->settings;
-  $verify_text = $options['text'];
-  
-  $locator = $options['locator'];
-  $verify_width = $options['width'];
-  $verify_height = $options['height'];
-  $verify_posx = $options['posx'];
-  $verify_posy = $options['posy'];
-  
+ 
   $debug_log = "";
   
   $pages_array = array();
@@ -165,6 +178,8 @@ function drulenium_tests_case_formatter($test_name) {
   $specific_pages = $settings['pages']['path']['custom'];
   $specific_node_types = $settings['pages']['node']['custom'];
   $specific_term_types = $settings['pages']['term']['custom'];
+  
+ // $debug_log .= "%$specific_pages#";
   
   $test_as_user_role_id = $settings['test_as_roles'];
  // $debug_log .= "%$test_as_user_role_id#";
@@ -239,14 +254,14 @@ function drulenium_tests_case_formatter($test_name) {
   
   
   $specific_pages_array = explode("\n",$specific_pages);
-  $new_specific_pages_array = array();
+ // $debug_log .= print_r($specific_pages_array, TRUE)."<br/>";
  // $pages = $options['pages'];
  // $pages_array = explode("\n",$pages);
   foreach ($specific_pages_array as $key => $page) {
     $page = trim($page);
-   // $debug_log .= $page."<br/>";
+//    $debug_log .= $page."<br/>";
     if(_drulenium_endsWith($page, "*")){
-     // $debug_log .= $page."<br/>";
+   //   $debug_log .= $page."<br/>";
       //unset($specific_pages_array[$key]);
       $pattern = substr($page, 0, strlen($page)-1);
      // $debug_log .= substr($page, 0, strlen($page)-1);
@@ -254,16 +269,16 @@ function drulenium_tests_case_formatter($test_name) {
       'SELECT link_path FROM {menu_links} m WHERE link_path like :pattern', 
       array(':pattern' => db_like($pattern).'%')
       );
-     // $debug_log .= print_r($result, TRUE)."<br/>";
+  //    $debug_log .= print_r($result, TRUE)."<br/>";
       foreach ($result as $row) {
-        //$debug_log .= print_r($row, TRUE)."<br/>";
+     //   $debug_log .= print_r($row, TRUE)."<br/>";
         //break;
         $link_path = $row->link_path;
         if(_drulenium_contains("%", $link_path)){
           continue;
         }
         //$link_path = str_replace("%","1",$link_path);
-        $new_specific_pages_array[]=$link_path;
+        $pages_array[]=$link_path;
       }
       
       $result = db_query(
@@ -294,6 +309,7 @@ function drulenium_tests_case_formatter($test_name) {
 </tr>';
   }
 if($plugin_type == "drulenium_facepile"){
+  $verify_text = $options['text'];
   foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
 	<td>open</td>
@@ -307,6 +323,11 @@ if($plugin_type == "drulenium_facepile"){
 </tr>';
   }
 }elseif($plugin_type == "drulenium_livestream"){
+    $locator = $options['locator'];
+  $verify_width = $options['width'];
+  $verify_height = $options['height'];
+  $verify_posx = $options['posx'];
+  $verify_posy = $options['posy'];
   foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
 	<td>open</td>
@@ -431,6 +452,7 @@ function drulenium_tests_table_list() {
 /**
  * Implements hook_block_info().
  */
+/*
 function drulenium_block_info() {
   $blocks = array();
   
@@ -446,10 +468,11 @@ function drulenium_block_info() {
   }
   return $blocks;
 }
-
+*/
 /**
  * Implements hook_block_view().
  */
+/*
 function drulenium_block_view($delta) {
   if ($preset = drulenium_get_presets($name = $delta)) {
     $block['subject'] = t('');
@@ -457,7 +480,7 @@ function drulenium_block_view($delta) {
     return $block;
   }
 }
-
+*/
 /**
  * Implementation of hook_theme
  */
@@ -649,7 +672,7 @@ function drulenium_test_plugin_defaults($type) {
 function drulenium_test_plugin_fb_settings_form($type, $options) {
   $form = array();
   $plugin = drulenium_test_plugin_load($type);
-  
+  /*
   $url = FB_REF_BASE_URL . $plugin['html tag name'];
   $l = l("facebook documentation page", $url, array(
       'attributes' => array(
@@ -663,7 +686,7 @@ function drulenium_test_plugin_fb_settings_form($type, $options) {
   $form['help'] = array(
       '#value' => "<div>" . $desc . "</div>" 
   );
-  
+  */
   $function = ctools_plugin_get_function($plugin, 'fb plugin form');
   if ($function) {
     $form += $function($options);

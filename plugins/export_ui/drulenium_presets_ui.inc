@@ -163,7 +163,7 @@ function _drulenium_presets_ui_create_block_form($export) {
       '#type' => 'textarea',
       '#title' => t('Test on specific pages'),
       '#description' => "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog.",
-      '#default_value' => isset($export->settings['pages']['path']['custom']) ? $export->settings['pages']['path']['custom'] : '',
+      '#default_value' => isset($export->settings['pages']['path']['custom']) ? $export->settings['pages']['path']['custom'] : '', 
     );
     
     // Per-node-type testing.
@@ -186,7 +186,7 @@ function _drulenium_presets_ui_create_block_form($export) {
     '#title' => t('Test for specific content types'),
     '#options' => $node_types,
     '#description' => t('Test on pages that display content of the given type(s).'),
-    '#default_value' => isset($export->settings['pages']['node']['custom']) ? $export->settings['pages']['node']['custom'] : '',
+    '#default_value' => isset($export->settings['pages']['node']['custom']) ? $export->settings['pages']['node']['custom'] : array(),  
   );
  
       // Per-term-type testing.
@@ -209,7 +209,7 @@ function _drulenium_presets_ui_create_block_form($export) {
     '#title' => t('Test for specific Taxonomy Vocabularies'),
     '#options' => $node_types,
     '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
-    '#default_value' => isset($export->settings['pages']['term']['custom']) ? $export->settings['pages']['term']['custom'] : '',
+    '#default_value' => isset($export->settings['pages']['term']['custom']) ? $export->settings['pages']['term']['custom'] : array(),  
   );
   
   $user_types = user_roles(FALSE);
@@ -218,7 +218,7 @@ function _drulenium_presets_ui_create_block_form($export) {
     '#title' => t('Test as specific user roles'),
     '#options' => $user_types,
     '#description' => t('Test as users that belong to the above user role.'),
-    '#default_value' => isset($export->settings['test_as_roles']) ? $export->settings['test_as_roles'] : '',
+    '#default_value' => isset($export->settings['test_as_roles']) ? $export->settings['test_as_roles'] : 1,
   );
   return $form;
 }

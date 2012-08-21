@@ -43,7 +43,7 @@ function drulenium_admin_settings_form($form, &$form_state) {
        '#title' => t($role_name),
        '#options' => $users,
        '#default_value' => variable_get('drulenium_role_'.$rid, ''),
-       '#description' => print_r($value, TRUE),
+      /* '#description' => print_r($value, TRUE), */
    );
   }
 
