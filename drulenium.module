@@ -476,7 +476,7 @@ function drulenium_tests_catch_output() {
 }
 
 function drulenium_tests_table_list() {
-  $header = array(t('Name'), t('Description'), t('Test'));
+  $header = array(t('Name'), t('Description'), t('Download'), t('Test'));
   $rows = array();
   $presets = drulenium_preset_load();
   foreach ($presets as $key =>$value) {
@@ -488,6 +488,7 @@ function drulenium_tests_table_list() {
       $rows[] = array(
       $key,
       $value->description,
+      '<a href="'.$site_name.'/drulenium/tests/case/'.$key.'">Download</a>',
       $test_link,
     );
   }
