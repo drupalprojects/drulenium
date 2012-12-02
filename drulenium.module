@@ -64,6 +64,39 @@ function drulenium_default_drulenium_preset() {
 
   
   $export['anonymous_permissions_test_case'] = $drulenium_preset;
+  
+  $drulenium_preset = new stdClass();
+$drulenium_preset->disabled = FALSE; /* Edit this to true to make a default drulenium_preset disabled initially */
+$drulenium_preset->api_version = 1;
+$drulenium_preset->name = 'drulenium_cache_crawler';
+$drulenium_preset->description = 'drulenium_cache_crawler';
+$drulenium_preset->plugin_type = 'drulenium_verifytextnotpresent';
+$drulenium_preset->settings = array(
+  'pages' => array(
+    'path' => array(
+      'custom' => '',
+    ),
+    'node' => array(
+      'custom' => array(
+        'page' => 'page',
+        'article' => 0,
+        'drulenium' => 0,
+      ),
+    ),
+    'term' => array(
+      'custom' => array(
+        1 => 0,
+      ),
+    ),
+    'drulenium_settings_drulenium_verifytextnotpresent__settings_drulenium_verifytextnotpresent__pages__active_tab' => 'edit-drulenium-settings-drulenium-verifytextnotpresent-settings-drulenium-verifytextnotpresent-pages-node',
+  ),
+  'test_as_roles' => '1',
+);
+$drulenium_preset->drulenium_attrs = array(
+  'text' => 'dummy_text_that_will_never_verify',
+);
+
+$export['drulenium_cache_crawler'] = $drulenium_preset;
 
   return $export;
 }
@@ -318,6 +351,20 @@ if($plugin_type == "drulenium_facepile"){
 </tr>
 <tr>
 	<td>verifyTextPresent</td>
+	<td>'.$verify_text.'</td>
+	<td></td>
+</tr>';
+  }
+}elseif($plugin_type == "drulenium_verifytextnotpresent"){
+  $verify_text = $options['text'];
+  foreach ($pages_array as $page) {
+      $test_case_items_html .= '<tr>
+	<td>open</td>
+	<td>/'.$page.'</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyTextNotPresent</td>
 	<td>'.$verify_text.'</td>
 	<td></td>
 </tr>';
@@ -816,6 +863,16 @@ function drulenium_boxes_plugins() {
     'handler' => array(
       'class' => 'drulenium_facepile', 
       'file' => 'drulenium_facepile.inc', 
+      'path' => $path, 
+      'parent' => 'drulenium_default' 
+    ) 
+  );
+  
+  $info['drulenium_verifytextnotpresent'] = array(
+    'title' => 'Verify Text Not Present', 
+    'handler' => array(
+      'class' => 'drulenium_verifytextnotpresent', 
+      'file' => 'drulenium_verifytextnotpresent.inc', 
       'path' => $path, 
       'parent' => 'drulenium_default' 
     ) 
