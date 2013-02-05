@@ -27,12 +27,13 @@ function drulenium_selenium_defaults() {
 function drulenium_selenium_fb_settings($options) {
   
   $form = array();
+  /*
     $form['text'] = array(
       '#type' => 'textfield', 
       '#title' => t('Text'), 
       '#description' => t('The Text you want to Verify.') 
   );
-  
+  */ 
   // Use the #managed_file FAPI element to upload an image file.
   $form['selenium_file'] = array(
     '#title' => t('Selenium Test Case'),

@@ -4,8 +4,8 @@
  * @file
  * Default rule configurations for Drulenium.
  */
-function commerce_stock_default_rules_configuration() {
-  $rules_decrement_stock_completing_order = '{ "rules_notify_on_drulenium_test_failure" : {
+function drulenium_default_rules_configuration() {
+  $drulenium_rules_notify_on_drulenium_test_failure = '{ "rules_notify_on_drulenium_test_failure" : {
     "LABEL" : "Email notification on Drulenium test failure",
     "PLUGIN" : "reaction rule",
     "REQUIRES" : [ "rules" ],
@@ -35,7 +35,7 @@ function commerce_stock_default_rules_configuration() {
     ]
   }
 }';
-  $configs['rules_decrement_stock_completing_order'] = rules_import($rules_decrement_stock_completing_order);
+  $configs['rules_decrement_stock_completing_order'] = rules_import($drulenium_rules_notify_on_drulenium_test_failure);
 
   return $configs;
 }
