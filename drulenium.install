@@ -8,17 +8,17 @@
  * Implements hook_install().
  */
 function drulenium_install() {
-// use get_t() to get the name of our localization function for translation
+  // use get_t() to get the name of our localization function for translation
   // during install, when t() is not available.
   $t = get_t();
 
   // Define the node type.
   $drulenium = array(
-    'type' => 'drulenium',
-    'name' => $t('Drulenium Output'),
-    'base' => 'node_content',
-    'description' => $t('A Drulenium node that contains output of the Test.'),
-    'body_label' => $t('Log')
+      'type' => 'drulenium',
+      'name' => $t('Drulenium Output'),
+      'base' => 'node_content',
+      'description' => $t('A Drulenium node that contains output of the Test.'),
+      'body_label' => $t('Log')
   );
 
   // Complete the node type definition by setting any defaults not explicitly
@@ -63,64 +63,64 @@ function drulenium_install() {
 function _drulenium_installed_fields() {
   $t = get_t();
   return array(
-    'drulenium_version' => array(
-      'field_name' => 'drulenium_version',
-      'cardinality' => 1,
-      'type'        => 'text',
-      'settings'    => array(
-        'max_length' => 60,
+      'drulenium_version' => array(
+          'field_name' => 'drulenium_version',
+          'cardinality' => 1,
+          'type'        => 'text',
+          'settings'    => array(
+              'max_length' => 60,
+          ),
       ),
-    ),
-    'drulenium_revision' => array(
-      'field_name'  => 'drulenium_revision',
-      'cardinality' => 1,
-      'type'        => 'text',
-    ),
-	    'drulenium_result' => array(
-      'field_name'  => 'drulenium_result',
-      'cardinality' => 1,
-      'type'        => 'text',
-    ),
-	    'drulenium_total_time' => array(
-      'field_name'  => 'drulenium_total_time',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-		    'drulenium_num_test_passes' => array(
-      'field_name'  => 'drulenium_num_test_passes',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-		    'drulenium_num_test_failures' => array(
-      'field_name'  => 'drulenium_num_test_failures',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-		    'drulenium_num_command_passes' => array(
-      'field_name'  => 'drulenium_num_command_passes',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-    		    'drulenium_num_command_failures' => array(
-      'field_name'  => 'drulenium_num_command_failures',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-    		    'drulenium_num_command_errors' => array(
-      'field_name'  => 'drulenium_num_command_errors',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-		    'drulenium_num_test_total' => array(
-      'field_name'  => 'drulenium_num_test_total',
-      'cardinality' => 1,
-      'type'        => 'number_integer',
-    ),
-    		    'drulenium_suite' => array(
-      'field_name'  => 'drulenium_suite',
-      'cardinality' => 1,
-      'type'        => 'text',
-    ),
+      'drulenium_revision' => array(
+          'field_name'  => 'drulenium_revision',
+          'cardinality' => 1,
+          'type'        => 'text',
+      ),
+      'drulenium_result' => array(
+          'field_name'  => 'drulenium_result',
+          'cardinality' => 1,
+          'type'        => 'text',
+      ),
+      'drulenium_total_time' => array(
+          'field_name'  => 'drulenium_total_time',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_num_test_passes' => array(
+          'field_name'  => 'drulenium_num_test_passes',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_num_test_failures' => array(
+          'field_name'  => 'drulenium_num_test_failures',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_num_command_passes' => array(
+          'field_name'  => 'drulenium_num_command_passes',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_num_command_failures' => array(
+          'field_name'  => 'drulenium_num_command_failures',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_num_command_errors' => array(
+          'field_name'  => 'drulenium_num_command_errors',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_num_test_total' => array(
+          'field_name'  => 'drulenium_num_test_total',
+          'cardinality' => 1,
+          'type'        => 'number_integer',
+      ),
+      'drulenium_suite' => array(
+          'field_name'  => 'drulenium_suite',
+          'cardinality' => 1,
+          'type'        => 'text',
+      ),
   );
 }
 
@@ -139,94 +139,94 @@ function _drulenium_installed_fields() {
 function _drulenium_installed_instances() {
   $t = get_t();
   return array(
-    'drulenium_version' => array(
-      'field_name' => 'drulenium_version',
-      'label'       => $t('drulenium_version'),
-      'widget'      => array(
-        'type'    => 'text_textfield',
+      'drulenium_version' => array(
+          'field_name' => 'drulenium_version',
+          'label'       => $t('drulenium_version'),
+          'widget'      => array(
+              'type'    => 'text_textfield',
+          ),
       ),
-    ),
-    'drulenium_revision' => array(
-      'field_name'  => 'drulenium_revision',
-      'label' => $t('drulenium_revision'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'text_textfield',
+      'drulenium_revision' => array(
+          'field_name'  => 'drulenium_revision',
+          'label' => $t('drulenium_revision'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'text_textfield',
+          ),
       ),
-    ),
-	    'drulenium_result' => array(
-      'field_name'  => 'drulenium_result',
-      'label' => $t('result'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'text_textfield',
+      'drulenium_result' => array(
+          'field_name'  => 'drulenium_result',
+          'label' => $t('result'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'text_textfield',
+          ),
       ),
-    ),
-	    'drulenium_total_time' => array(
-      'field_name'  => 'drulenium_total_time',
-      'label' => $t('total_time'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+      'drulenium_total_time' => array(
+          'field_name'  => 'drulenium_total_time',
+          'label' => $t('total_time'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-	    'drulenium_num_test_passes' => array(
-      'field_name'  => 'drulenium_num_test_passes',
-      'label' => $t('num_test_passes'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+      'drulenium_num_test_passes' => array(
+          'field_name'  => 'drulenium_num_test_passes',
+          'label' => $t('num_test_passes'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-		    'drulenium_num_test_failures' => array(
-      'field_name'  => 'drulenium_num_test_failures',
-      'label' => $t('num_test_failures'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+      'drulenium_num_test_failures' => array(
+          'field_name'  => 'drulenium_num_test_failures',
+          'label' => $t('num_test_failures'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-		    'drulenium_num_command_passes' => array(
-      'field_name'  => 'drulenium_num_command_passes',
-      'label' => $t('num_command_passes'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+      'drulenium_num_command_passes' => array(
+          'field_name'  => 'drulenium_num_command_passes',
+          'label' => $t('num_command_passes'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-    		    'drulenium_num_command_failures' => array(
-      'field_name'  => 'drulenium_num_command_failures',
-      'label' => $t('num_command_failures'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+      'drulenium_num_command_failures' => array(
+          'field_name'  => 'drulenium_num_command_failures',
+          'label' => $t('num_command_failures'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-    
-		    'drulenium_num_command_errors' => array(
-      'field_name'  => 'drulenium_num_command_errors',
-      'label' => $t('num_command_errors'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+
+      'drulenium_num_command_errors' => array(
+          'field_name'  => 'drulenium_num_command_errors',
+          'label' => $t('num_command_errors'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-		    'drulenium_num_test_total' => array(
-      'field_name'  => 'drulenium_num_test_total',
-      'label' => $t('num_test_total'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'number',
+      'drulenium_num_test_total' => array(
+          'field_name'  => 'drulenium_num_test_total',
+          'label' => $t('num_test_total'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'number',
+          ),
       ),
-    ),
-    		    'drulenium_suite' => array(
-      'field_name'  => 'drulenium_suite',
-      'label' => $t('suite'),
-      'type'        => 'text',
-      'widget'      => array(
-        'type'    => 'text_textfield',
+      'drulenium_suite' => array(
+          'field_name'  => 'drulenium_suite',
+          'label' => $t('suite'),
+          'type'        => 'text',
+          'widget'      => array(
+              'type'    => 'text_textfield',
+          ),
       ),
-    ),
   );
 }
 
@@ -245,7 +245,7 @@ function drulenium_uninstall() {
   foreach ($languages as $language) {
     variable_del('drulenium_language_' . $language->language);
   }
-  
+
   // Gather all the example content that might have been created while this
   // module was enabled.  Simple selects still use db_query().
   // http://api.drupal.org/api/function/db_query/7
@@ -292,68 +292,75 @@ function drulenium_schema() {
   $schema = array();
 
   $schema['drulenium_preset'] = array(
-    'description' => 'Storage for user-defined drulenium plugins templates.',
-    'export' => array(
-      'key' => 'name',
-  	  'key name' => 'Name',
-      'primary key' => 'oid',
-      'identifier' => 'drulenium_preset',
-      'default hook' => 'default_drulenium_preset', // Function hook name.
-      'api' => array(
-        'owner' => 'drulenium',
-        'api' => 'drulenium', // Base name for api include files.
-        'minimum_version' => 1,
-        'current_version' => 1,
+      'description' => 'Storage for user-defined drulenium plugins templates.',
+      'export' => array(
+          'key' => 'name',
+          'key name' => 'Name',
+          'primary key' => 'oid',
+          'identifier' => 'drulenium_preset',
+          'default hook' => 'default_drulenium_preset', // Function hook name.
+          'api' => array(
+              'owner' => 'drulenium',
+              'api' => 'drulenium', // Base name for api include files.
+              'minimum_version' => 1,
+              'current_version' => 1,
+          ),
+          'load callback' => 'drulenium_preset_load',
       ),
-      'load callback' => 'drulenium_preset_load',
-    ),
-    'fields' => array(
-      'oid' => array(
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
-        'no export' => TRUE, // Do not export database-only keys.
+      'fields' => array(
+          'oid' => array(
+              'type' => 'serial',
+              'unsigned' => TRUE,
+              'not null' => TRUE,
+              'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
+              'no export' => TRUE, // Do not export database-only keys.
+          ),
+          'name' => array(
+              'description' => 'The primary identifier for a plugin preset.',
+              'type' => 'varchar',
+              'length' => 255,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'description' => array(
+              'description' => 'Description for this plugin preset.',
+              'type' => 'varchar',
+              'length' => 255,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'category' => array(
+              'description' => 'Category for this plugin preset.',
+              'type' => 'varchar',
+              'length' => 255,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'plugin_type' => array(
+              'description' => 'Type of this preset.',
+              'type' => 'varchar',
+              'length' => 255,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'settings' => array(
+              'description' => 'Serialized storage of drupal related plugin settings.',
+              'type' => 'text',
+              'serialize' => TRUE,
+          ),
+          'drulenium_attrs' => array(
+              'description' => 'Serialized storage of drulenium related plugin settings',
+              'type' => 'text',
+              'serialize' => TRUE,
+          ),
       ),
-      'name' => array(
-        'description' => 'The primary identifier for a plugin preset.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
+      'primary key' => array('oid'),
+      'unique keys' => array(
+          'name' => array('name'),
       ),
-      'description' => array(
-        'description' => 'Description for this plugin preset.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
+      'indexes' => array(
+          'type' => array('plugin_type'),
       ),
-      'plugin_type' => array(
-        'description' => 'Type of this preset.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'settings' => array(
-        'description' => 'Serialized storage of drupal related plugin settings.',
-        'type' => 'text',
-        'serialize' => TRUE,
-      ),
-      'drulenium_attrs' => array(
-        'description' => 'Serialized storage of drulenium related plugin settings',
-        'type' => 'text',
-        'serialize' => TRUE,
-      ),
-    ),
-    'primary key' => array('oid'),
-    'unique keys' => array(
-      'name' => array('name'),
-    ),
-    'indexes' => array(
-      'type' => array('plugin_type'),
-    ),
   );
 
   return $schema;

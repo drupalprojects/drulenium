@@ -21,13 +21,18 @@ function drulenium_verifytextnotpresent_defaults() {
     'numrows' => 1, 
     'width' => 200, 
     'colorscheme' => 'light' ,
+      'locator' => '',
   );
 }
 
 function drulenium_verifytextnotpresent_fb_settings($options) {
   
   $form = array();
-  
+  $form['locator'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Element Locator'),
+      '#description' => t('The Locator of the element you want to Verify.')
+  );
   $form['text'] = array(
       '#type' => 'textfield', 
       '#title' => t('Text'), 
