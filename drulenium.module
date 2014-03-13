@@ -205,6 +205,7 @@ function drulenium_menu() {
 }
 
 function drulenium_tests_formatter($test_name) {
+  global $base_url;
   $test_suite_html = '<?xml version="1.0" encoding="UTF-8"?>
       <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
       <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -216,7 +217,7 @@ function drulenium_tests_formatter($test_name) {
       <body>
       <table id="suiteTable" cellpadding="1" cellspacing="1" border="1" class="selenium"><tbody>
       <tr><td><b>Test Suite</b></td></tr>
-      <tr><td><a href="/drulenium/tests/case/'.$test_name.'">'.$test_name.'</a></td></tr>
+      <tr><td><a href="'.$base_url.'/drulenium/tests/case/'.$test_name.'">'.$test_name.'</a></td></tr>
           </tbody></table>
           </body>
           </html>
@@ -392,14 +393,12 @@ function drulenium_tests_case_formatter($test_name) {
   // $debug_log .= print_r($pages_array, TRUE)."<br/>";
 
   $test_case_items_html = "";
-  if (isset($_SERVER['HTTP_HOST'])) {
-    $site_name = "http://".$_SERVER['HTTP_HOST'];
-    $test_case_items_html = '<tr>
+  global $base_url;
+  $test_case_items_html = '<tr>
         <td>open</td>
-        <td>'.$site_name.'</td>
+        <td>'.$base_url.'</td>
             <td></td>
             </tr>';
-  }
   if($plugin_type == "drulenium_facepile"){
     $locator = $options['locator'];
     $command = "verifyTextPresent";
@@ -410,7 +409,7 @@ function drulenium_tests_case_formatter($test_name) {
     foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
           <td>open</td>
-          <td>/'.$page.'</td>
+          <td>'.$base_url.'/'.$page.'</td>
               <td></td>
               </tr>
               <tr>
@@ -426,7 +425,7 @@ function drulenium_tests_case_formatter($test_name) {
     foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
           <td>open</td>
-          <td>/'.$page.'</td>
+          <td>'.$base_url.'/'.$page.'</td>
               <td></td>
               </tr>
               <tr>
@@ -442,7 +441,7 @@ function drulenium_tests_case_formatter($test_name) {
     foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
           <td>open</td>
-          <td>/'.$page.'</td>
+          <td>'.$base_url.'/'.$page.'</td>
               <td></td>
               </tr>
               <tr>
@@ -462,7 +461,7 @@ function drulenium_tests_case_formatter($test_name) {
     foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
           <td>open</td>
-          <td>/'.$page.'</td>
+          <td>'.$base_url.'/'.$page.'</td>
               <td></td>
               </tr>';
       if(!empty($verify_posx)){
@@ -510,7 +509,7 @@ function drulenium_tests_case_formatter($test_name) {
     foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
           <td>open</td>
-          <td>/'.$page.'</td>
+          <td>'.$base_url.'/'.$page.'</td>
               <td></td>
               </tr>
               '.$body;
@@ -526,7 +525,7 @@ function drulenium_tests_case_formatter($test_name) {
     foreach ($pages_array as $page) {
       $test_case_items_html .= '<tr>
           <td>open</td>
-          <td>/'.$page.'</td>
+          <td>'.$base_url.'/'.$page.'</td>
               <td></td>
               </tr>
               '.$body;
@@ -538,7 +537,7 @@ function drulenium_tests_case_formatter($test_name) {
       <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
       <head profile="http://selenium-ide.openqa.org/profiles/test-case">
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-      <link rel="selenium.base" href="'.$site_name.'" />
+      <link rel="selenium.base" href="'.$base_url.'" />
           <title>'.$test_name.'</title>
               </head>
               <body>
@@ -596,10 +595,10 @@ function drulenium_tests_table_list() {
   }
   //dsm($category_presets);
   foreach ($category_presets as $category_key => $preset_value) {
-    $site_name = "http://".$_SERVER['HTTP_HOST'];
+    global $base_url;
 
     $category_test_url = '/drulenium/tests/category/'.$category_key;
-    $category_test_link = '<a href="chrome://selenium-ide/content/selenium-core/TestRunner.html?&resultsUrl='.$site_name.'/drulenium/tests/output&auto=true&test='.$site_name.$category_test_url.'">Run all in '.$category_key.' Category</a>';
+    $category_test_link = '<a href="chrome://selenium-ide/content/selenium-core/TestRunner.html?&resultsUrl='.$base_url.'/drulenium/tests/output&auto=true&test='.$base_url.$category_test_url.'">Run all in '.$category_key.' Category</a>';
     $output .= '<h2>'.$category_key.'</h2> '.$category_test_link;
     $rows = array();
     foreach ($preset_value as $key =>$value) {
@@ -608,11 +607,11 @@ function drulenium_tests_table_list() {
       $test_suite_url = '/drulenium/tests/'.$key;
 
       //$test_link = '<a href="chrome://selenium-ide/content/selenium-core/TestRunner.html?auto=true&save=true&close=true&test='.$site_name.$test_suite_url.'">Test</a>';
-      $test_link = '<a href="chrome://selenium-ide/content/selenium-core/TestRunner.html?&resultsUrl='.$site_name.'/drulenium/tests/output&auto=true&test='.$site_name.$test_suite_url.'">Test</a>';
+      $test_link = '<a href="chrome://selenium-ide/content/selenium-core/TestRunner.html?&resultsUrl='.$base_url.'/drulenium/tests/output&auto=true&test='.$base_url.$test_suite_url.'">Test</a>';
       $rows[] = array(
           $key,
           $value->description,
-          '<a href="'.$site_name.'/drulenium/tests/case/'.$key.'">Download</a>',
+          '<a href="'.$base_url.'/drulenium/tests/case/'.$key.'">Download</a>',
           $test_link,
       );
 
