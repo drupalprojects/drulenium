@@ -1,0 +1,128 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the drulenium visual regression module.
+ */
+
+/**
+ * Implements hook_schema()
+ */
+function drulenium_visual_regression_schema() {
+  $schema['drulenium_vr_releases'] = array(
+      'description' => 'Drulenium VR table to record releases.',
+      'fields' => array(
+          'rid' => array(
+              'type' => 'serial',
+              'description' => 'A database primary key to ensure uniqueness',
+              'not null' => TRUE,
+          ),
+          'name' => array(
+              'description' => 'Release name.',
+              'type' => 'varchar',
+              'length' => 255,
+              'default' => '',
+              'not null' => TRUE,
+          ),
+          'secure_id' => array(
+              'description' => 'Secure ID.',
+              'type' => 'varchar',
+              'length' => 255,
+              'default' => '',
+              'not null' => TRUE,
+          ),
+          'created' => array(
+              'description' => 'The Unix timestamp when the release was created.',
+              'type' => 'int',
+              'not null' => TRUE,
+              'default' => 0,
+          ),
+      ),
+      'primary key' => array('rid'),
+  );
+  $schema['drulenium_vr_runs'] = array(
+      'description' => 'Drulenium VR table to record runs.',
+      'fields' => array(
+          'rid' => array(
+              'type' => 'serial',
+              'description' => 'A database primary key to ensure uniqueness',
+              'not null' => TRUE,
+          ),
+          're_id' => array(
+          	  'description' => 'Release id',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ),
+          'url' => array(
+              'description' => 'URL.',
+              'type' => 'text',
+              'not null' => TRUE,
+          ),
+          'snapshot' => array(
+              'description' => 'file path to snapshot image.',
+              'type' => 'varchar',
+              'length' => 555,
+              'default' => '',
+              'not null' => TRUE,
+          ),
+      ),
+      'primary key' => array('rid'),
+  );
+  $schema['drulenium_vr_results'] = array(
+      'description' => 'Drulenium VR table to record results.',
+      'fields' => array(
+          'rid' => array(
+              'type' => 'serial',
+              'description' => 'A database primary key to ensure uniqueness',
+              'not null' => TRUE,
+          ),
+          'run_base_id' => array(
+              'description' => 'id for base run',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ),
+          'run_cmp_id' => array(
+              'description' => 'id for run to be compared',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ),
+          'diff_percent' => array(
+              'description' => 'difference in percentage.',
+              'type' => 'float',
+          ),
+          'diff_gif' => array(
+              'description' => 'file path to diff gif image.',
+              'type' => 'varchar',
+              'length' => 555,
+              'default' => '',
+              'not null' => TRUE,
+          ),
+      ),
+      'primary key' => array('rid'),
+  );  
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function drulenium_visual_regression_install() {
+  
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function drulenium_visual_regression_uninstall() {
+  global $conf;
+  foreach ($conf as $key => $value) {
+    if (strpos($key, "drulenium_vr_") === 0) {
+      variable_del($key);
+    }
+  }
+}
