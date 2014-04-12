@@ -118,10 +118,13 @@ function drulenium_visual_regression_release_status($secureid) {
 
 function drulenium_visual_regression_release_detail($re_id) {
   $query = db_select('drulenium_vr_releases', 'vr_re');
-  $secure_id = $query
-  ->fields('vr_re', array('secure_id'))
+  $result = $query
+  ->fields('vr_re', array('secure_id','name'))
   ->condition('vr_re.rid', $re_id)
-  ->execute()->fetchfield();
+  ->execute();
+  $release = $result->fetchAssoc();
+  $secure_id = $release['secure_id'];
+  drupal_set_title("Release: ".$release['name']);
 
   $last = variable_get("drulenium_vr_last_check".$re_id);
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
@@ -160,16 +163,24 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   }
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
-  $base_release_secure_id = $query
-  ->fields('vr_re', array('secure_id'))
+  $result = $query
+  ->fields('vr_re', array('secure_id', 'name'))
   ->condition('vr_re.rid', $old_re_id)
-  ->execute()->fetchfield();
+  ->execute();
+  $release = $result->fetchAssoc();
+  $base_release_secure_id = $release['secure_id'];
+  $base_release_name = $release['name'];
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
-  $cmp_release_secure_id = $query
-  ->fields('vr_re', array('secure_id'))
+  $result = $query
+  ->fields('vr_re', array('secure_id', 'name'))
   ->condition('vr_re.rid', $new_re_id)
-  ->execute()->fetchfield();
+  ->execute();
+  $release = $result->fetchAssoc();
+  $cmp_release_secure_id = $release['secure_id'];
+  $cmp_release_name = $release['name'];
+  
+  drupal_set_title("Compare: ".$base_release_name." & ".$cmp_release_name);
 
   $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
@@ -463,17 +474,20 @@ function drulenium_visual_regression_compare_releases_form($form, $form_state) {
   $result = db_select('drulenium_vr_releases', 're')
   ->fields('re', array('name', 'rid'))
   ->execute();
-
+  $release_ids = array();
   while($release = $result->fetchAssoc()) {
     $release_ids[$release['rid']] = '';
     $form['info'][$release['rid']] = array(
         '#markup' => l($release['name'],"admin/structure/drulenium/vr/release/".$release['rid']),
     );
     $operations = array(
-          '#markup' => l(t('Delete'), "node/revisions/".$release['rid']."/delete"),
+          '#markup' => l(t('Delete'), ""),
     );
     $form['operations'][$release['rid']][0] = $operations;
 
+  }
+  if(empty($release_ids)){
+    return '';
   }
   $new_vid = key($release_ids);
   next($release_ids);
@@ -510,6 +524,9 @@ function drulenium_visual_regression_compare_releases_form_submit($form, &$form_
  */
 function theme_drulenium_visual_regression_compare_releases_form($vars) {
   $form = $vars['form'];
+  if(!isset($form['diff'])){
+    return '';
+  }
   $output = '';
 
   // Overview table:
