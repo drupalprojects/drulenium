@@ -1,6 +1,18 @@
 <?php
 
 /**
+ * Implementation of hook_perm().
+ */
+function drulenium_visual_regression_permission() {
+  return array(
+    'run_visual_tests' => array(
+      'title' => t('Run Tests'),
+      'description' => t('Configure, Run & Compare tests.'),
+  ),
+  );
+}
+
+/**
  * Implements hook_menu().
  */
 function drulenium_visual_regression_menu() {
@@ -10,40 +22,38 @@ function drulenium_visual_regression_menu() {
     'description' => 'Configuration for Visual Regression Testing.',
     'page callback' => 'drulenium_visual_regression_releases',
     'access callback' => 'user_access',
-    'access arguments' => array(
-    	'create_test_cases'
-    	)
-    	);
-    	$items['admin/structure/drulenium/vr/release/%'] = array(
+    'access arguments' => array('run_visual_tests')
+  );
+  $items['admin/structure/drulenium/vr/release/%'] = array(
       'title' => 'Release',
       'page callback' => 'drulenium_visual_regression_release_detail',
   	  'page arguments' => array(5),
-      'access arguments' => array('create_test_cases'),
+      'access arguments' => array('run_visual_tests'),
       'type' => MENU_CALLBACK,
-    	);
-    	$items['admin/structure/drulenium/vr/release/status/%'] = array(
+  );
+  $items['admin/structure/drulenium/vr/release/status/%'] = array(
       'title' => 'Manual Release Status check',
       'page callback' => 'drulenium_visual_regression_release_status',
   	  'page arguments' => array(6),
-      'access arguments' => array('create_test_cases'),
+      'access arguments' => array('run_visual_tests'),
       'type' => MENU_CALLBACK,
-    	);
-    	$items['admin/structure/drulenium/vr/compare/%/%'] = array(
+  );
+  $items['admin/structure/drulenium/vr/compare/%/%'] = array(
       'title' => 'Compare',
       'page callback' => 'drulenium_visual_regression_releases_compare',
   	  'page arguments' => array(5,6),
-      'access arguments' => array('create_test_cases'),
+      'access arguments' => array('run_visual_tests'),
       'type' => MENU_CALLBACK,
-    	);
-    	$items['admin/structure/drulenium/vr/compare/status/%/%'] = array(
+  );
+  $items['admin/structure/drulenium/vr/compare/status/%/%'] = array(
       'title' => 'Manual Release Status check',
       'page callback' => 'drulenium_visual_regression_compare_status',
   	  'page arguments' => array(6,7),
-      'access arguments' => array('create_test_cases'),
+      'access arguments' => array('run_visual_tests'),
       'type' => MENU_CALLBACK,
-    	);
+  );
 
-    	return $items;
+  return $items;
 }
 
 /**
@@ -179,7 +189,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   $release = $result->fetchAssoc();
   $cmp_release_secure_id = $release['secure_id'];
   $cmp_release_name = $release['name'];
-  
+
   drupal_set_title("Compare: ".$base_release_name." & ".$cmp_release_name);
 
   $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
