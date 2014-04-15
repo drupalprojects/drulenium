@@ -75,7 +75,7 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   //dsm($result);
   foreach ($result as $cmp_res){
     $diff_percent = $cmp_res['diff_percent'];
-    if(!empty($diff_percent)){
+    if($diff_percent != "isNULL"){
       //$relative_url = substr($cmp_res['url'], strpos($cmp_res['url'], "?q=")+3);
       $gif_link = "";
       if(!empty($cmp_res['diff_gif'])){
@@ -101,8 +101,6 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   ->execute()->fetchfield();
   variable_set("drulenium_vr_last_check_{$base_release_id}_{$cmp_release_id}", time());
   drupal_goto("admin/structure/drulenium/vr/compare/$base_release_id/$cmp_release_id");
-
-  return "test";
 }
 
 function drulenium_visual_regression_release_status($secureid) {
@@ -140,7 +138,7 @@ function drulenium_visual_regression_release_detail($re_id) {
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';
   $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
-  $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/release/status/'.$secure_id, array('query' => drupal_get_destination())) . ')</span>';
+  $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/release/status/'.$secure_id) . ')</span>';
   $output .= "</div>\n";
   $header = array(t('Id'), t('URL'), t('Snapshot'));
   $rows = array();
@@ -196,7 +194,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';
   $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
-  $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id, array('query' => drupal_get_destination())) . ')</span>';
+  $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   $output .= "</div>\n";
   $header = array(t('Id'), t('URL'), t('Percentage Difference'), t('GIF'));
   $rows = array();
@@ -359,6 +357,7 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
 }
 
 function drulenium_visual_regression_create_release_form_validate($form, &$form_state) {
+  //$pages_array shouldn't be empty.
 }
 
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
