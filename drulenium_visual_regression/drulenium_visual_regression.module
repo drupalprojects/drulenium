@@ -83,9 +83,10 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
       }
       $result = db_query("Update drulenium_vr_results res
     LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
+    LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
     SET  diff_percent = :diff_percent, diff_gif = :diff_gif
-    where run.url = :url", 
-      array(':url' => $cmp_res['url'], ':diff_percent' => $diff_percent, ':diff_gif' => $gif_link));
+    where run.url = :url AND rel.secure_id = :base_rel_secure_id", 
+      array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':diff_percent' => $diff_percent, ':diff_gif' => $gif_link));
     }
   }
   $query = db_select('drulenium_vr_releases', 'vr_re');
@@ -127,11 +128,12 @@ function drulenium_visual_regression_release_status($secureid) {
 function drulenium_visual_regression_release_detail($re_id) {
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-  ->fields('vr_re', array('secure_id','name'))
+  ->fields('vr_re', array('secure_id','name', 'base_url'))
   ->condition('vr_re.rid', $re_id)
   ->execute();
   $release = $result->fetchAssoc();
   $secure_id = $release['secure_id'];
+  $test_base_url = $release['base_url'];
   drupal_set_title("Release: ".$release['name']);
 
   $last = variable_get("drulenium_vr_last_check".$re_id);
@@ -154,7 +156,7 @@ function drulenium_visual_regression_release_detail($re_id) {
     }
     $rows[] = array(
     $release['rid'],
-    l($release['url'], $release['url']),
+    l($release['url'], $test_base_url."/".$release['url']),
     $snapshot,
     );
   }
@@ -172,11 +174,12 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-  ->fields('vr_re', array('secure_id', 'name'))
+  ->fields('vr_re', array('secure_id', 'name', 'base_url'))
   ->condition('vr_re.rid', $old_re_id)
   ->execute();
   $release = $result->fetchAssoc();
   $base_release_secure_id = $release['secure_id'];
+  $test_base_url = $release['base_url'];
   $base_release_name = $release['name'];
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
@@ -215,7 +218,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     }
     $rows[] = array(
     $cmp_result['rid'],
-    l($cmp_result['url'], $cmp_result['url']),
+    l($cmp_result['url'], $test_base_url . "/". $cmp_result['url']),
     $cmp_result['diff_percent'],
     $gif_link,
     );
@@ -376,6 +379,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   $fields = array(
       'name' => $form_state['values']['drulenium_vr_release_name'],
       'secure_id' => $secureid,
+  	  'base_url' => $vr_base_url,
       'created' => REQUEST_TIME,
   );
   $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();
@@ -486,7 +490,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
       'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url),
   ));
-  //dsm($result);
+  drupal_set_message($result);
   drupal_goto("admin/structure/drulenium/vr/release/".$release_id);
 }
 

@@ -30,6 +30,13 @@ function drulenium_visual_regression_schema() {
               'default' => '',
               'not null' => TRUE,
           ),
+          'base_url' => array(
+              'description' => 'Base URL.',
+              'type' => 'varchar',
+              'length' => 200,
+              'default' => '',
+              'not null' => TRUE,
+          ),
           'created' => array(
               'description' => 'The Unix timestamp when the release was created.',
               'type' => 'int',
@@ -125,4 +132,18 @@ function drulenium_visual_regression_uninstall() {
       variable_del($key);
     }
   }
+}
+
+/**
+ * Add newcol base_url to {drulenium_vr_releases} table.
+ */
+
+function drulenium_visual_regression_update_7000() {
+  db_add_field('drulenium_vr_releases', 'base_url', array(
+			  'description' => 'Base URL.',
+              'type' => 'varchar',
+              'length' => 200,
+              'default' => '',
+              'not null' => TRUE,
+  ));
 }
