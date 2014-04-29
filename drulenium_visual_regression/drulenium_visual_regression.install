@@ -102,6 +102,13 @@ function drulenium_visual_regression_schema() {
               'description' => 'difference in percentage.',
               'type' => 'float',
           ),
+          'diff_highlight' => array(
+              'description' => 'file path to highlighted diff image.',
+              'type' => 'varchar',
+              'length' => 555,
+              'default' => '',
+              'not null' => TRUE,
+          ),
           'diff_gif' => array(
               'description' => 'file path to diff gif image.',
               'type' => 'varchar',
@@ -143,6 +150,20 @@ function drulenium_visual_regression_update_7000() {
 			  'description' => 'Base URL.',
               'type' => 'varchar',
               'length' => 200,
+              'default' => '',
+              'not null' => TRUE,
+  ));
+}
+
+/**
+ * Add newcol diff_highlight to {drulenium_vr_results} table.
+ */
+
+function drulenium_visual_regression_update_7001() {
+  db_add_field('drulenium_vr_results', 'diff_highlight', array(
+			  'description' => 'file path to highlighted diff image.',
+              'type' => 'varchar',
+              'length' => 555,
               'default' => '',
               'not null' => TRUE,
   ));

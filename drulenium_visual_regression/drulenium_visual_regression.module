@@ -81,12 +81,16 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
       if(!empty($cmp_res['diff_gif'])){
         $gif_link = "http://drulenium.technikh.com/".$cmp_res['diff_gif'];
       }
+      $highlighted_link = "";
+      if(!empty($cmp_res['diff_highlight'])){
+        $highlighted_link = "http://drulenium.technikh.com/".$cmp_res['diff_highlight'];
+      }
       $result = db_query("Update drulenium_vr_results res
     LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
     LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
-    SET  diff_percent = :diff_percent, diff_gif = :diff_gif
+    SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
     where run.url = :url AND rel.secure_id = :base_rel_secure_id", 
-      array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':diff_percent' => $diff_percent, ':diff_gif' => $gif_link));
+      array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
     }
   }
   $query = db_select('drulenium_vr_releases', 'vr_re');
@@ -199,7 +203,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
   $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   $output .= "</div>\n";
-  $header = array(t('Id'), t('URL'), t('Percentage Difference'), t('GIF'));
+  $header = array(t('Id'), t('URL'), t('Percentage Difference'), t('Diff Highlighted'), t('Animated GIF'));
   $rows = array();
   $query = db_select('drulenium_vr_results', 're');
   $query->join('drulenium_vr_runs', 'b_ru', 're.run_base_id = b_ru.rid');
@@ -216,10 +220,15 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     if(!empty($cmp_result['diff_gif'])){
       $gif_link = l("GIF", $cmp_result['diff_gif']);
     }
+    $highlighted_link = "";
+    if(!empty($cmp_result['diff_highlight'])){
+      $highlighted_link = l("Diff", $cmp_result['diff_highlight']);
+    }
     $rows[] = array(
     $cmp_result['rid'],
     l($cmp_result['url'], $test_base_url . "/". $cmp_result['url']),
     $cmp_result['diff_percent'],
+    $highlighted_link,
     $gif_link,
     );
   }
@@ -344,6 +353,25 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
       '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
       '#default_value' => variable_get('drulenium_vr_term_custom', array()),
   );
+  $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User Configuration'),
+    '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
+    '#title' => t('User name'), 
+    '#type' => 'textfield', 
+    '#description' => t('User name of the user to test as.'), 
+    '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
+    '#title' => t('Password'), 
+    '#type' => 'password', 
+    '#description' => t('Password of the user to test as.'), 
+    '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
+  );
   $site_email = variable_get('site_mail', '');
   $form['drulenium_vr_config']['drulenium_vr_release_notify_email'] = array(
     '#title' => t('Email'), 
@@ -368,6 +396,9 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   variable_set('drulenium_vr_path_custom', $form_state['values']['drulenium_vr_path_custom']);
   variable_set('drulenium_vr_node_custom', $form_state['values']['drulenium_vr_node_custom']);
   variable_set('drulenium_vr_term_custom', $form_state['values']['drulenium_vr_term_custom']);
+  variable_set('drulenium_vr_release_user_name', $form_state['values']['drulenium_vr_release_user_name']);
+  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
+  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
   $vr_base_url = rtrim($vr_base_url, '/');
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
@@ -488,9 +519,9 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   //RPC call to add job in remote queue.
   global $base_url;
   $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
-      'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url),
+      'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url, $test_user_name, $test_user_pass),
   ));
-  drupal_set_message($result);
+  drupal_set_message($result); 
   drupal_goto("admin/structure/drulenium/vr/release/".$release_id);
 }
 
