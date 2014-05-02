@@ -75,7 +75,9 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   //dsm($result);
   foreach ($result as $cmp_res){
     $diff_percent = $cmp_res['diff_percent'];
-    if($diff_percent != "isNULL"){
+    if($diff_percent == "isNULL"){
+      $diff_percent = NULL;
+    }
       //$relative_url = substr($cmp_res['url'], strpos($cmp_res['url'], "?q=")+3);
       $gif_link = "";
       if(!empty($cmp_res['diff_gif'])){
@@ -91,7 +93,6 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
     SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
     where run.url = :url AND rel.secure_id = :base_rel_secure_id", 
       array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
-    }
   }
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $base_release_id = $query
@@ -254,6 +255,7 @@ where q.re_id = :base_release_id or q.re_id = :cmp_release_id group by url) q1",
 }
 
 function drulenium_visual_regression_releases() {
+  drupal_set_title("Drulenium: Automated frontend testing");
   $build_form = drupal_get_form('drulenium_visual_regression_create_release_form');
   $output = drupal_render($build_form);
   $compare_form = drupal_get_form('drulenium_visual_regression_compare_releases_form');
@@ -469,7 +471,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   foreach ($specific_pages_array as $key => $page) {
     $page = trim($page);
     //    $debug_log .= $page."<br/>";
-    if(_drulenium_endsWith($page, "*")){
+    if(_drulenium_vr_endsWith($page, "*")){
       //   $debug_log .= $page."<br/>";
       //unset($specific_pages_array[$key]);
       $pattern = substr($page, 0, strlen($page)-1);
@@ -483,7 +485,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
         //   $debug_log .= print_r($row, TRUE)."<br/>";
         //break;
         $link_path = $row->link_path;
-        if(_drulenium_contains("%", $link_path)){
+        if(_drulenium_vr_contains("%", $link_path)){
           continue;
         }
         //$link_path = str_replace("%","1",$link_path);
@@ -625,3 +627,26 @@ function theme_drulenium_visual_regression_compare_releases_form($vars) {
   return $output;
 }
 
+function _drulenium_vr_endsWith($haystack, $needle)
+{
+  $length = strlen($needle);
+  if ($length == 0) {
+    return true;
+  }
+
+  return (substr($haystack, -$length) === $needle);
+}
+
+function _drulenium_vr_contains($substring, $string) {
+  $pos = strpos($string, $substring);
+
+  if($pos === false) {
+    // string needle NOT found in haystack
+    return false;
+  }
+  else {
+    // string needle found in haystack
+    return true;
+  }
+
+}
