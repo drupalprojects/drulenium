@@ -84,6 +84,20 @@ function drulenium_visual_regression_schema() {
               'description' => 'A database primary key to ensure uniqueness',
               'not null' => TRUE,
           ),
+          'release_base_id' => array(
+              'description' => 'id for base release',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ),
+          'release_cmp_id' => array(
+              'description' => 'id for release to be compared',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ),
           'run_base_id' => array(
               'description' => 'id for base run',
               'type' => 'int',
@@ -167,4 +181,25 @@ function drulenium_visual_regression_update_7001() {
               'default' => '',
               'not null' => TRUE,
   ));
+}
+
+/**
+ * Add newcolumns release_base_id, release_cmp_id to {drulenium_vr_results} table.
+ */
+
+function drulenium_visual_regression_update_7002() {
+  db_add_field('drulenium_vr_results', 'release_base_id', array(
+              'description' => 'id for base release',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ));
+  db_add_field('drulenium_vr_results', 'release_cmp_id', array(
+              'description' => 'id for release to be compared',
+              'type' => 'int',
+              'unsigned' => TRUE,
+        	  'not null' => TRUE,
+              'default' => 0,
+          ));
 }
