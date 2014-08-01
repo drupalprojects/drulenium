@@ -371,6 +371,8 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $progress = $progress + $limit;
     // update message during each run so you know where you are in the process
     $context['message'] = 'Now processing ' . $progress . ' - URL: '.$url;
+  }elseif($progress == 0){
+    drupal_set_message('Didn\'t find the required selenium_webdriver library. Follow the installation instructions at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a> ');
   }
 }
 
