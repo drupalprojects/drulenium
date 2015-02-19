@@ -520,6 +520,14 @@ function drulenium_visual_regression_release_detail($re_id) {
   return $output;
 }
 
+function drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id) {
+  $result = db_query("Insert into drulenium_vr_results (run_base_id, run_cmp_id, release_base_id, release_cmp_id)
+select substring_index(qids, ',', 1) as base_qid, substring_index(qids, ',', -1) as cmp_qid, :release_base_id, :release_cmp_id
+from (select GROUP_CONCAT(q.rid) AS qids from drulenium_vr_runs q 
+where q.re_id = :base_release_id or q.re_id = :cmp_release_id group by url) q1", 
+    array(':base_release_id' => $old_re_id, ':cmp_release_id' => $new_re_id, ':release_base_id' => $old_re_id, ':release_cmp_id' => $new_re_id));
+}
+
 function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   // if new id is less than old id, swap for comparison.
   if($new_re_id < $old_re_id){
@@ -594,11 +602,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   }
 
   if(!count($rows)){
-    $result = db_query("Insert into drulenium_vr_results (run_base_id, run_cmp_id, release_base_id, release_cmp_id)
-select substring_index(qids, ',', 1) as base_qid, substring_index(qids, ',', -1) as cmp_qid, :release_base_id, :release_cmp_id
-from (select GROUP_CONCAT(q.rid) AS qids from drulenium_vr_runs q 
-where q.re_id = :base_release_id or q.re_id = :cmp_release_id group by url) q1", 
-    array(':base_release_id' => $old_re_id, ':cmp_release_id' => $new_re_id, ':release_base_id' => $old_re_id, ':release_cmp_id' => $new_re_id));
+    drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
     if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
@@ -835,35 +839,11 @@ function drulenium_visual_regression_create_release_form_validate($form, &$form_
   }
 }
 
-function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
-  //dsm($form_state);
-  variable_set('drulenium_vr_path_custom', $form_state['values']['drulenium_vr_path_custom']);
-  variable_set('drulenium_vr_node_custom', $form_state['values']['drulenium_vr_node_custom']);
-  variable_set('drulenium_vr_term_custom', $form_state['values']['drulenium_vr_term_custom']);
-  
-  variable_set('drulenium_vr_config_server_opt', $form_state['values']['drulenium_vr_config_server_opt']);
-  variable_set('drulenium_vr_release_selenium_host', $form_state['values']['drulenium_vr_release_selenium_host']);
-  variable_set('drulenium_vr_release_selenium_browser', $form_state['values']['drulenium_vr_release_selenium_browser']);
-  variable_set('drulenium_vr_release_imagemagick_path', $form_state['values']['drulenium_vr_release_imagemagick_path']);
-  
-  variable_set('drulenium_vr_release_user_name', $form_state['values']['drulenium_vr_release_user_name']);
-  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
-  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
-  $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
-  variable_set('drulenium_vr_release_base_url', $vr_base_url);
-  $notify_email = $form_state['values']['drulenium_vr_release_notify_email'];
-  variable_set('drulenium_vr_release_notify_email', $notify_email);
-
-  $secureid = drupal_hash_base64(drupal_random_bytes(55));
-
-
-
-  $pages_array = array();
-
-  $specific_pages = $form_state['values']['drulenium_vr_path_custom'];
-  $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
-  $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
-
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
+  if(empty($vr_base_url)){
+    global $base_url;
+    $vr_base_url = $base_url."/?q=";
+  }
   $selected_node_types_array = array();
   $specific_node_types_pages_array = array();
   foreach ($specific_node_types as $node_type) {
@@ -953,7 +933,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     return "";
   }
   $fields = array(
-      'name' => $form_state['values']['drulenium_vr_release_name'],
+      'name' => $release_name,
       'secure_id' => $secureid,
   	  'base_url' => $vr_base_url,
       'created' => REQUEST_TIME,
@@ -975,6 +955,41 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
       $result = db_insert('drulenium_vr_runs')->fields($fields)->execute();
     }
   }
+  
+  return $release_id;
+}
+
+function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
+  //dsm($form_state);
+  variable_set('drulenium_vr_path_custom', $form_state['values']['drulenium_vr_path_custom']);
+  variable_set('drulenium_vr_node_custom', $form_state['values']['drulenium_vr_node_custom']);
+  variable_set('drulenium_vr_term_custom', $form_state['values']['drulenium_vr_term_custom']);
+  
+  variable_set('drulenium_vr_config_server_opt', $form_state['values']['drulenium_vr_config_server_opt']);
+  variable_set('drulenium_vr_release_selenium_host', $form_state['values']['drulenium_vr_release_selenium_host']);
+  variable_set('drulenium_vr_release_selenium_browser', $form_state['values']['drulenium_vr_release_selenium_browser']);
+  variable_set('drulenium_vr_release_imagemagick_path', $form_state['values']['drulenium_vr_release_imagemagick_path']);
+  
+  variable_set('drulenium_vr_release_user_name', $form_state['values']['drulenium_vr_release_user_name']);
+  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
+  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
+  $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
+  variable_set('drulenium_vr_release_base_url', $vr_base_url);
+  $notify_email = $form_state['values']['drulenium_vr_release_notify_email'];
+  variable_set('drulenium_vr_release_notify_email', $notify_email);
+
+  $secureid = drupal_hash_base64(drupal_random_bytes(55));
+  $release_name = $form_state['values']['drulenium_vr_release_name'];
+
+
+
+  $pages_array = array();
+
+  $specific_pages = $form_state['values']['drulenium_vr_path_custom'];
+  $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
+  $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
+
+  $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $specific_node_types, $specific_term_types, $specific_pages);
 
   if($form_state['values']['drulenium_vr_config_server_opt'] == "drulenium"){
     //RPC call to add job in remote queue.
