@@ -3,6 +3,7 @@ description = "Provides environment to create selenium test cases"
 dependencies[] = "ctools"
 dependencies[] = "number"
 dependencies[] = "taxonomy"
+dependencies[] = "diff"
 package = "Testing"
 core =7.x
 
