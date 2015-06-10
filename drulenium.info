@@ -2,6 +2,7 @@ name = "Drulenium"
 description = "Provides environment to create selenium test cases"
 dependencies[] = "ctools"
 dependencies[] = "number"
+dependencies[] = "taxonomy"
 package = "Testing"
 core =7.x
 
