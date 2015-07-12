@@ -37,6 +37,20 @@ function drulenium_visual_regression_schema() {
               'default' => '',
               'not null' => TRUE,
           ),
+          'user_name' => array(
+              'description' => 'User name.',
+              'type' => 'varchar',
+              'length' => 20,
+              'default' => '',
+              'not null' => TRUE,
+          ),
+          'user_pass' => array(
+              'description' => 'User pass.',
+              'type' => 'varchar',
+              'length' => 20,
+              'default' => '',
+              'not null' => TRUE,
+          ),
           'created' => array(
               'description' => 'The Unix timestamp when the release was created.',
               'type' => 'int',
@@ -201,5 +215,26 @@ function drulenium_visual_regression_update_7002() {
               'unsigned' => TRUE,
         	  'not null' => TRUE,
               'default' => 0,
+          ));
+}
+
+/**
+ * Add newcolumns user_name, user_pass to {drulenium_vr_releases} table.
+ */
+
+function drulenium_visual_regression_update_7003() {
+  db_add_field('drulenium_vr_releases', 'user_name', array(
+              'description' => 'User name.',
+              'type' => 'varchar',
+              'length' => 20,
+              'default' => '',
+              'not null' => TRUE,
+          ));
+  db_add_field('drulenium_vr_releases', 'user_pass', array(
+              'description' => 'User pass.',
+              'type' => 'varchar',
+              'length' => 20,
+              'default' => '',
+              'not null' => TRUE,
           ));
 }

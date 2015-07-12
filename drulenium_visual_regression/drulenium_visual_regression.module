@@ -347,6 +347,13 @@ function drulenium_visual_regression_release_batch_finished($success, $results, 
 // progress and limit and is updated during each run
 function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
   if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
+    //getting username, password & base url from release
+    $release_result = db_select('drulenium_vr_releases', 're')
+      ->fields('re')
+      ->condition('rid', $re_id,'=')
+      ->execute()
+      ->fetchAssoc();
+
     $result = db_select('drulenium_vr_runs', 'ru')
       ->fields('ru')
       ->condition('re_id', $re_id,'=')
@@ -359,6 +366,19 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $capabilities = DesiredCapabilities::$browser();
     $driver = RemoteWebDriver::create($host, $capabilities, 5000);
     $driver->manage()->window()->maximize();
+
+    //Logging in as specified user
+    $test_user_name = $release_result['user_name'];
+    $test_user_pass = $release_result['user_pass'];
+    if(!empty($test_user_name) && !empty($test_user_pass)){
+      $driver->get($release_result['base_url']."user/login");
+      $userNameElement = $driver->findElement(WebDriverBy::id('edit-name'));
+      $userNameElement->value($test_user_name);
+      $userPassElement = $driver->findElement(WebDriverBy::id('edit-pass'));
+      $userPassElement->value($test_user_pass);
+      $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
+      $userSubmitElement->click();
+    }
     while($run = $result->fetchAssoc()) {
       $url = $test_base_url.$run['url'];
       $driver->get($url);
@@ -858,7 +878,7 @@ function drulenium_visual_regression_create_release_form_validate($form, &$form_
   }
 }
 
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
   if(empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url."/?q=";
@@ -958,6 +978,8 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       'name' => $release_name,
       'secure_id' => $secureid,
   	  'base_url' => $vr_base_url,
+      'user_name' => $vr_user_name,
+  	  'user_pass' => $vr_user_pass,
       'created' => REQUEST_TIME,
   );
   $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();
@@ -993,9 +1015,10 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   variable_set('drulenium_vr_release_selenium_browser', $form_state['values']['drulenium_vr_release_selenium_browser']);
   variable_set('drulenium_vr_release_imagemagick_path', $form_state['values']['drulenium_vr_release_imagemagick_path']);
   
-  variable_set('drulenium_vr_release_user_name', $form_state['values']['drulenium_vr_release_user_name']);
   $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
   $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
+  variable_set('drulenium_vr_release_user_name', $test_user_name);
+  variable_set('drulenium_vr_release_user_pass', $test_user_pass);
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
   $notify_email = $form_state['values']['drulenium_vr_release_notify_email'];
@@ -1012,7 +1035,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
   $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
 
-  $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $specific_node_types, $specific_term_types, $specific_pages);
+  $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
 
   if ($form_state['values']['drulenium_vr_config_server_opt'] == "drulenium") {
     // RPC call to add job in remote queue.
