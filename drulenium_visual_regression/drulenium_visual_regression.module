@@ -372,10 +372,8 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $test_user_pass = $release_result['user_pass'];
     if(!empty($test_user_name) && !empty($test_user_pass)){
       $driver->get($release_result['base_url']."user/login");
-      $userNameElement = $driver->findElement(WebDriverBy::id('edit-name'));
-      $userNameElement->value($test_user_name);
-      $userPassElement = $driver->findElement(WebDriverBy::id('edit-pass'));
-      $userPassElement->value($test_user_pass);
+      $driver->findElement(WebDriverBy::id("edit-name"))->sendKeys($test_user_name);
+      $driver->findElement(WebDriverBy::id("edit-pass"))->sendKeys($test_user_pass);
       $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
       $userSubmitElement->click();
     }
