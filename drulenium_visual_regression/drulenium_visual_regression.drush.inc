@@ -14,6 +14,7 @@ function drulenium_visual_regression_drush_command() {
     'description' => 'Create release and generate snapshots.',
     'drupal dependencies' => array('drulenium_visual_regression'),
     'arguments' => array(
+      'base_url' => 'Base URL of the site to test.',
       'release_name' => 'Name of the release to create.',
     ),
     'options' => array(
@@ -36,7 +37,7 @@ function drulenium_visual_regression_drush_command() {
 /**
  * Command callback. Create a release & generate snapshots.
  */
-function drush_drulenium_visual_regression_create($release_name = "") {
+function drush_drulenium_visual_regression_create($vr_base_url = "", $release_name = "") {
   $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
   $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass");
   $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name");
@@ -47,8 +48,10 @@ function drush_drulenium_visual_regression_create($release_name = "") {
     $release_name = format_date(REQUEST_TIME);
   }
   $pages_array = array();
-  global $base_url;
-  $vr_base_url = $base_url."/?q=";
+  if(empty($vr_base_url)){
+    global $base_url;
+    $vr_base_url = $base_url."/?q=";
+  }
   $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
   // Process the queue using Batch API.
