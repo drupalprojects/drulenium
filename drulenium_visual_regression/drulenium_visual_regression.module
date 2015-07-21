@@ -181,6 +181,11 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     //dsm( "$image1 $image2");
     //$output = exec("$image_magick_path/compare -metric AE -fuzz '2%' $image1 $image2 -null: 2>&1");
     $diff = _drulenium_vr_image_compare($image1,$image2,5,5,5,1,5);
+    if($diff == "Width does not match." || $diff == "Height does not match."){
+      //forcing highlighted diff & gif to be generated.
+      $diff_percent = 2.99999;
+      watchdog("drulenium", $diff." -> $image1 : $image2");
+    }
       // print_r($return_var);
     if(!isset($diff['PercentDifference'])){
       $diff_percent = 0;
@@ -195,7 +200,12 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       $gif_path = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
       $gif_link = file_create_url(file_default_scheme() . '://').$unique_id;
       //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
-      exec("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
+      $command = "$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path 2>&1";
+      $exec_error = exec($command);
+      if(!empty($exec_error)){
+        $gif_link = "";
+        watchdog("drulenium", $exec_error." -> $command");
+      }
     }
     //$diff_percent = sprintf("%.3f",($output/(400*300))*100);
     $highlighted_link = '';
@@ -205,7 +215,12 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       $highlighted_path = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
       $highlighted_link = file_create_url(file_default_scheme() . '://').$unique_id;
       //dsm("$image_magick_path/compare $image1 $image2 -compose src $highlighted_path");
-      exec("$image_magick_path/compare $image1 $image2 $highlighted_path");
+      $command = "$image_magick_path/compare $image1 $image2 $highlighted_path 2>&1";
+      $exec_error = exec($command);
+      if(!empty($exec_error)){
+        $highlighted_link = "";
+        watchdog("drulenium", $exec_error." -> $command");
+      }
     }
 
     db_query("Update drulenium_vr_results res
@@ -597,15 +612,14 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   $rows = array();
   $query = db_select('drulenium_vr_results', 're');
   $query->join('drulenium_vr_runs', 'b_ru', 're.run_base_id = b_ru.rid');
-  $query->join('drulenium_vr_runs', 'c_ru', 're.run_cmp_id = c_ru.rid');
   $query->fields('re');
   $query->fields('b_ru');
-  $query->condition('b_ru.re_id', $old_re_id);
-  $query->condition('c_ru.re_id', $new_re_id);
+  $query->addField('re', 'rid', 'result_id');
+  $query->condition('re.release_base_id', $old_re_id);
+  $query->condition('re.release_cmp_id', $new_re_id);
   $result = $query->execute();
 
   while($cmp_result = $result->fetchAssoc()) {
-    // dsm($cmp_result);
     $gif_link = "";
     $url_text = $cmp_result['url'];
     if(empty($cmp_result['url'])){
@@ -619,7 +633,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       $highlighted_link = l("Diff", $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank')));
     }
     $rows[] = array(
-    $cmp_result['rid'],
+    $cmp_result['result_id'],
     l($url_text, $test_base_url . $cmp_result['url']),
     $cmp_result['diff_percent'],
     $highlighted_link,
@@ -1196,12 +1210,10 @@ function _drulenium_vr_image_compare($image1, $image2, $RTolerance=0, $GToleranc
   $height2 = imagesy($im2);
   //print $width2;
   //print ";".$height2;
-  /*
   if (imagesx($im)!=imagesx($im2))
-  die("Width does not match.");
+    return("Width does not match.");
   if (imagesy($im)!=imagesy($im2))
-  die("Height does not match.");
-  */
+    return("Height does not match.");
 
   //By columns
   for ($width=0;$width<=imagesx($im)-1;$width++)
