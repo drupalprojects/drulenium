@@ -2,11 +2,11 @@
 
 /**
  * @file
- *  Generate & compare snapshots via drush framework.
+ * Generate & compare snapshots via drush framework.
  */
 
 /**
- * Implementation of hook_drush_command().
+ * Implements hook_drush_command().
  */
 function drulenium_visual_regression_drush_command() {
   $items['vr-create'] = array(
@@ -27,8 +27,7 @@ function drulenium_visual_regression_drush_command() {
     'description' => 'Generate comparision report for 2 releases.',
     'drupal dependencies' => array('drulenium_visual_regression'),
     'arguments' => array(),
-    'options' => array(
-    ),
+    'options' => array(),
     'aliases' => array('vrd'),
   );
   return $items;
@@ -44,11 +43,11 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
   //$drulenium_vr_path_custom = str_replace("&gt;",">",$drulenium_vr_path_custom);
   $secureid = drupal_hash_base64(drupal_random_bytes(55));
-  if(empty($release_name)){
+  if (empty($release_name)) {
     $release_name = format_date(REQUEST_TIME);
   }
   $pages_array = array();
-  if(empty($vr_base_url)){
+  if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url."/?q=";
   }
@@ -56,14 +55,14 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   // Process the queue using Batch API.
   $batch = array(
-    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module', 
-    'operations' => array(), 
-    'finished' => 'drulenium_visual_regression_release_batch_finished', 
+    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module',
+    'operations' => array(),
+    'finished' => 'drulenium_visual_regression_release_batch_finished',
     'title' => t('Performing %operation on the selected items...', array('%operation' => "snapshot generation")),
   );
   $progress = 0; // where to start
   $limit = 3; // how many to process for each run
-  
+ 
   $query = db_select('drulenium_vr_runs', 'ru')
     ->fields('ru')
     ->condition('re_id', $re_id,'=')
@@ -73,7 +72,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   $run = $result->fetchAssoc();
   $max = $run['run_count'];
 
-  while($progress <= $max) {
+  while ($progress <= $max) {
     $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($vr_base_url, $re_id, $progress, $limit));
     $progress = $progress + $limit;
   }
@@ -97,25 +96,25 @@ function drush_drulenium_visual_regression_diff() {
   $new_re_id = $row1['rid'];
   $row2 = $result->fetchAssoc();
   $old_re_id = $row2['rid'];
-  if($new_re_id < $old_re_id){
+  if ($new_re_id < $old_re_id) {
     $tmp = $new_re_id;
     $new_re_id = $old_re_id;
     $old_re_id = $tmp;
   }
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
-  
+ 
   // Process the queue using Batch API.
   $batch = array(
-    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module', 
-    'operations' => array(), 
-    'finished' => 'drulenium_visual_regression_compare_batch_finished', 
+    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module',
+    'operations' => array(),
+    'finished' => 'drulenium_visual_regression_compare_batch_finished',
     'title' => t('Performing %operation on the selected items...', array('%operation' => "snapshot comparision")),
   );
   $progress = 0; // where to start
   $limit = 1; // how many to process for each run
   
-  //get unprocessed runs of specified compare
-  //where snapshot is empty
+  // Get unprocessed runs of specified compare
+  // where snapshot is empty.
   $query = db_select('drulenium_vr_results', 'vr_re');
   $query
     ->fields('vr_re')
@@ -127,7 +126,7 @@ function drush_drulenium_visual_regression_diff() {
   $row = $result->fetchAssoc();
   $max = $row['run_count'];
 
-  while($progress <= $max) {
+  while ($progress <= $max) {
     $batch['operations'][] = array('drulenium_visual_regression_compare_batch_op', array($old_re_id, $new_re_id, $progress, $limit));
     $progress = $progress + $limit;
   }
