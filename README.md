@@ -3,7 +3,8 @@ Installation instructions for https://www.drupal.org/project/drulenium
 
 Setting up a local selenium server:
 * Download Selenium Server from http://docs.seleniumhq.org/download/ (Version 2.42.2: http://selenium-release.storage.googleapis.com/2.42/selenium-server-stan...)
-* Download dependencies, openjdk xvfb imagemagick php5-curl and firefox.
+* Download dependencies, java xvfb imagemagick php5-curl and firefox.
+** Debian: ```apt-get install default-jre xvfb imagemagick php5-curl iceweasel```
 * Run Selenium Server `nohup java -jar selenium-server-standalone-2.42.2.jar &`
 ** On a server: `nohup xvfb-run java -jar selenium-server-standalone-2.46.0.jar -log selenium.log &`
 * Download & install Drupal Libraries API if you don't already have it. https://www.drupal.org/project/libraries
