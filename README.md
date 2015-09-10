@@ -4,8 +4,8 @@ Installation instructions for https://www.drupal.org/project/drulenium
 Setting up a local selenium server:
 * Download Selenium Server from http://docs.seleniumhq.org/download/
 ** Tested with version 2.47.1
-* Download dependencies, java xvfb imagemagick php5-curl and firefox.
-** Debian: ```apt-get install default-jre xvfb imagemagick php5-curl iceweasel```
+* Download dependencies, java xvfb xauth imagemagick php5-curl and firefox.
+** Debian: ```apt-get install default-jre xvfb xauth imagemagick php5-curl iceweasel```
 * Run Selenium Server
 ** Local: `java -jar selenium-server-standalone-<version>.jar`
 ** On a server: `nohup xvfb-run java -jar selenium-server-standalone-<version>.jar -log selenium.log &`
