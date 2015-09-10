@@ -79,7 +79,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   batch_set($batch);
   drush_backend_batch_process();
   
-  drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => $drulenium_vr_path_custom)), 'success');
+  drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => count($drulenium_vr_path_custom))), 'success');
 }
 
 /**
