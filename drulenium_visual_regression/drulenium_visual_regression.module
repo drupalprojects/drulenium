@@ -1,14 +1,19 @@
-ta<?php
+<?php
 
 /**
- * Implementation of hook_perm().
+ * @file
+ * Module code for Drulenium Visual Regression.
+ */
+
+/**
+ * Implements hook_perm().
  */
 function drulenium_visual_regression_permission() {
   return array(
     'run_visual_tests' => array(
       'title' => t('Run Tests'),
       'description' => t('Configure, Run & Compare tests.'),
-  ),
+    ),
   );
 }
 
@@ -47,55 +52,55 @@ function drulenium_visual_regression_menu() {
     'description' => 'Configuration for Visual Regression Testing.',
     'page callback' => 'drulenium_visual_regression_releases',
     'access callback' => 'user_access',
-    'access arguments' => array('run_visual_tests')
+    'access arguments' => array('run_visual_tests'),
   );
   $items['admin/structure/drulenium/vr/release/%'] = array(
-      'title' => 'Release',
-      'page callback' => 'drulenium_visual_regression_release_detail',
-  	  'page arguments' => array(5),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'title' => 'Release',
+    'page callback' => 'drulenium_visual_regression_release_detail',
+    'page arguments' => array(5),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/drulenium/vr/delete-release/%'] = array(
-      'page callback' => 'drupal_get_form',
-  	  'page arguments' => array('drulenium_visual_regression_release_delete_form', 5),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drulenium_visual_regression_release_delete_form', 5),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/drulenium/vr/release/status/%'] = array(
-      'title' => 'Manual Release Status check',
-      'page callback' => 'drulenium_visual_regression_release_status',
-  	  'page arguments' => array(6),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'title' => 'Manual Release Status check',
+    'page callback' => 'drulenium_visual_regression_release_status',
+    'page arguments' => array(6),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/drulenium/vr/release/process-local/%'] = array(
-      'title' => 'Process Release Locally',
-      'page callback' => 'drulenium_visual_regression_release_process_local',
-  	  'page arguments' => array(6),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'title' => 'Process Release Locally',
+    'page callback' => 'drulenium_visual_regression_release_process_local',
+    'page arguments' => array(6),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/drulenium/vr/compare/%/%'] = array(
-      'title' => 'Compare',
-      'page callback' => 'drulenium_visual_regression_releases_compare',
-  	  'page arguments' => array(5,6),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'title' => 'Compare',
+    'page callback' => 'drulenium_visual_regression_releases_compare',
+    'page arguments' => array(5,6),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/drulenium/vr/compare/status/%/%'] = array(
-      'title' => 'Manual Compare Status check',
-      'page callback' => 'drulenium_visual_regression_compare_status',
-  	  'page arguments' => array(6,7),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'title' => 'Manual Compare Status check',
+    'page callback' => 'drulenium_visual_regression_compare_status',
+    'page arguments' => array(6,7),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/drulenium/vr/compare/process-local/%/%'] = array(
-      'title' => 'Process Comparision Locally',
-      'page callback' => 'drulenium_visual_regression_compare_process_local',
-  	  'page arguments' => array(6,7),
-      'access arguments' => array('run_visual_tests'),
-      'type' => MENU_CALLBACK,
+    'title' => 'Process Comparision Locally',
+    'page callback' => 'drulenium_visual_regression_compare_process_local',
+    'page arguments' => array(6,7),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['drulenium_vr/vote/js'] = array(
 	'page callback' => 'drulenium_visual_regression_vote_ahah',
@@ -222,12 +227,12 @@ function drulenium_visual_regression_theme() {
   return array(
     'drulenium_visual_regression_compare_releases_form' => array(
       'render element' => 'form',
-  ),
+    ),
   );
 }
 
 function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_id) {
-  if($new_re_id < $old_re_id){
+  if ($new_re_id < $old_re_id) {
     $tmp = $new_re_id;
     $new_re_id = $old_re_id;
     $old_re_id = $tmp;
@@ -247,14 +252,14 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
   $limit = 1; // how many to process for each run
   $max = 1000; // how many records to process until stop - can do query here to get max times to run
 
-  //get unprocessed runs of specified compare
-  //where snapshot is empty
+  // Get unprocessed runs of specified compare
+  // where snapshot is empty
   $query = db_select('drulenium_vr_results', 'vr_re');
   $query
-  ->fields('vr_re')
-  ->condition('vr_re.release_base_id', $old_re_id)
-  ->condition('vr_re.release_cmp_id', $new_re_id)
-  ->isNull('vr_re.diff_percent');
+    ->fields('vr_re')
+    ->condition('vr_re.release_base_id', $old_re_id)
+    ->condition('vr_re.release_cmp_id', $new_re_id)
+    ->isNull('vr_re.diff_percent');
   $query->addExpression('COUNT(rid)', 'run_count');
   $result = $query->execute();
   $row = $result->fetchAssoc();
@@ -266,7 +271,9 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
   }
 
   batch_set($batch);
-  batch_process("admin/structure/drulenium/vr/compare/$old_re_id/$new_re_id"); // page to return to after complete
+
+  // Pass in page to return to after complete.
+  batch_process("admin/structure/drulenium/vr/compare/$old_re_id/$new_re_id");
 }
 
 // this is what runs multiple times per batch
@@ -286,6 +293,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
   $image_magick_path = variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin");
   exec("$image_magick_path/convert -version", $out, $image_magick_code); //Try to get ImageMagick "convert" program version number.
   //$image_magick_code = 0 if OK, nonzero if error.
+
   while($res = $result->fetchAssoc()) {
     //have to use proc_open http://cgit.drupalcode.org/imagemagick/tree/imagemagick.module#n478
     $image1 = $res['snapshot'];
@@ -301,14 +309,15 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       watchdog("drulenium", $diff." -> $image1 : $image2");
     }
       // print_r($return_var);
-    if(!isset($diff['PercentDifference'])){
+    if (!isset($diff['PercentDifference'])) {
       $diff_percent = 0;
-    }else{
+    }
+    else {
       $diff_percent = $diff['PercentDifference'];
     }
     
     $gif_link = "";
-    if($diff_percent > 0 && $image_magick_code == 0){
+    if ($diff_percent > 0 && $image_magick_code == 0) {
       //generate GIF
       $unique_id = "drulenium/gif_". time() . ".gif";
       $gif_path = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
@@ -323,7 +332,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     }
     //$diff_percent = sprintf("%.3f",($output/(400*300))*100);
     $highlighted_link = '';
-    if($diff_percent > 0 && $image_magick_code == 0){
+    if ($diff_percent > 0 && $image_magick_code == 0) {
       // generate highlighted image
       $unique_id = "drulenium/highlight_". time() . ".png";
       $highlighted_path = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
@@ -338,11 +347,11 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     }
 
     db_query("Update drulenium_vr_results res
-    LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
-    LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
-    SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
-    where res.rid = :res_id", 
-    array(':res_id' => $res['rid'], ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
+      LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
+      LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
+      SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
+      WHERE res.rid = :res_id",
+      array(':res_id' => $res['rid'], ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
     
     
   }
@@ -398,15 +407,15 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   }
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $base_release_id = $query
-  ->fields('vr_re', array('rid'))
-  ->condition('vr_re.secure_id', $base_release_secure_id)
-  ->execute()->fetchfield();
+    ->fields('vr_re', array('rid'))
+    ->condition('vr_re.secure_id', $base_release_secure_id)
+    ->execute()->fetchfield();
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $cmp_release_id = $query
-  ->fields('vr_re', array('rid'))
-  ->condition('vr_re.secure_id', $cmp_release_secure_id)
-  ->execute()->fetchfield();
+    ->fields('vr_re', array('rid'))
+    ->condition('vr_re.secure_id', $cmp_release_secure_id)
+    ->execute()->fetchfield();
   variable_set("drulenium_vr_last_check_{$base_release_id}_{$cmp_release_id}", time());
   drupal_goto("admin/structure/drulenium/vr/compare/$base_release_id/$cmp_release_id");
 }
@@ -430,17 +439,17 @@ function drulenium_visual_regression_release_process_local($re_id) {
   //where snapshot is empty
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-  ->fields('vr_re', array('secure_id','name', 'base_url'))
-  ->condition('vr_re.rid', $re_id)
-  ->execute();
+    ->fields('vr_re', array('secure_id','name', 'base_url'))
+    ->condition('vr_re.rid', $re_id)
+    ->execute();
   $release = $result->fetchAssoc();
   $secure_id = $release['secure_id'];
   $test_base_url = $release['base_url'];
 
   $query = db_select('drulenium_vr_runs', 'ru')
-  ->fields('ru')
-  ->condition('re_id', $re_id,'=')
-  ->condition('snapshot', '','=');
+    ->fields('ru')
+    ->condition('re_id', $re_id,'=')
+    ->condition('snapshot', '','=');
   $query->addExpression('COUNT(rid)', 'run_count');
   $result = $query->execute();
   $run = $result->fetchAssoc();
@@ -476,7 +485,7 @@ function drulenium_visual_regression_release_batch_finished($success, $results, 
 // progress and limit and is updated during each run
 function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
   if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
-    //getting username, password & base url from release
+    // Getting username, password & base url from release.
     $release_result = db_select('drulenium_vr_releases', 're')
       ->fields('re')
       ->condition('rid', $re_id,'=')
@@ -489,14 +498,15 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       ->condition('snapshot', '','=')
       ->range(0,$limit)
       ->execute();
-    // start Firefox with 5 second timeout
+
+    // Start Firefox with 5 second timeout.
     $host = variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"); // this is the default
     $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
     $capabilities = DesiredCapabilities::$browser();
     $driver = RemoteWebDriver::create($host, $capabilities, 5000);
     $driver->manage()->window()->maximize();
 
-    //Logging in as specified user
+    // Logging in as specified user
     $test_user_name = $release_result['user_name'];
     $test_user_pass = $release_result['user_pass'];
     if(!empty($test_user_name) && !empty($test_user_pass)){
@@ -506,12 +516,13 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
       $userSubmitElement->click();
     }
+
     while($run = $result->fetchAssoc()) {
-      $url = $test_base_url.$run['url'];
+      $url = $test_base_url . $run['url'];
       $driver->get($url);
       $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver);
 
-      //Update database
+      // Update database.
       db_update('drulenium_vr_runs')
       ->fields(array(
         'snapshot' => $full_screenshot,
@@ -520,25 +531,26 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       ->condition('url', $run['url'])
       ->execute();
     }
-    // close the Firefox
+    // Close the Firefox.
     $driver->quit();
     // update progress for message
     $progress = $progress + $limit;
     // update message during each run so you know where you are in the process
-    $context['message'] = 'Now processing ' . $progress . ' - URL: '.$url;
-  }elseif($progress == 0){
+    $context['message'] = 'Now processing ' . $progress . ' - URL: '. $url;
+  } elseif ($progress == 0) {
     drupal_set_message('Didn\'t find the required selenium_webdriver library. Follow the installation instructions at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a> ');
   }
 }
 
-function _drulenium_visual_regression_TakeScreenshot($driver, $element=null){
+function _drulenium_visual_regression_TakeScreenshot($driver, $element = null) {
 
-  // Change the Path to your own settings
-  $mydir = file_default_scheme().'://drulenium'; 
+  // Change the Path to your own settings.
+  $mydir = file_default_scheme() . '://drulenium';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
   $unique_id = "drulenium/" . time() . ".png";
   $screenshot = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
   $relative_file_path = file_create_url(file_default_scheme() . '://').$unique_id;
+
   // Change the driver instance
   $driver->takeScreenshot($screenshot);
   if(!file_exists($screenshot)){
@@ -610,31 +622,34 @@ function drulenium_visual_regression_release_delete_form($form, &$form_state, $r
 function drulenium_visual_regression_release_delete_form_submit($form, &$form_state) {
   //dsm($form);
   $re_id = $form['re_id']['#value'];
+
   //delete entry in drulenium_vr_releases
   db_delete('drulenium_vr_releases')
-  ->condition('rid', $re_id)
-  ->execute();
-  //delete entries in drulenium_vr_results
+    ->condition('rid', $re_id)
+    ->execute();
+
+  // Delete entries in drulenium_vr_results.
   db_query("DELETE res FROM drulenium_vr_results res left join drulenium_vr_runs run on res.run_base_id = run.rid WHERE run.re_id = :re_id", array(':re_id' => $re_id));
   db_query("DELETE res FROM drulenium_vr_results res left join drulenium_vr_runs run on res.run_cmp_id = run.rid WHERE run.re_id = :re_id", array(':re_id' => $re_id));
-  //delete entries in drulenium_vr_runs
+
+  // Delete entries in drulenium_vr_runs.
   db_delete('drulenium_vr_runs')
-  ->condition('re_id', $re_id)
-  ->execute();
+    ->condition('re_id', $re_id)
+    ->execute();
   //Delete snapshots and other image files related to this release
   drupal_set_message("Deleted the release with id:$re_id");
   drupal_goto('admin/structure/drulenium/vr');
 }
 
 function drulenium_visual_regression_release_detail($re_id) {
-  //If Local, check if there is anything pending
+  // If Local, check if there is anything pending.
   variable_get('drulenium_vr_config_server_opt', 'drulenium');
   
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-  ->fields('vr_re', array('secure_id','name', 'base_url'))
-  ->condition('vr_re.rid', $re_id)
-  ->execute();
+    ->fields('vr_re', array('secure_id','name', 'base_url'))
+    ->condition('vr_re.rid', $re_id)
+    ->execute();
   $release = $result->fetchAssoc();
   $secure_id = $release['secure_id'];
   $test_base_url = $release['base_url'];
@@ -644,18 +659,19 @@ function drulenium_visual_regression_release_detail($re_id) {
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';  
   if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
-    $output .= ' <span class="process-locally">(' . l(t('Process locally'), 'admin/structure/drulenium/vr/release/process-local/'.$re_id) . ')</span>';
-  }else{
+    $output .= ' <span class="process-locally">(' . l(t('Process locally'), 'admin/structure/drulenium/vr/release/process-local/' . $re_id) . ')</span>';
+  }
+  else {
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
-    $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/release/status/'.$secure_id) . ')</span>';
+    $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/release/status/' . $secure_id) . ')</span>';
   }
   $output .= "</div>\n";
   $header = array(t('Id'), t('URL'), t('Snapshot'));
   $rows = array();
   $result = db_select('drulenium_vr_runs', 'ru')
-  ->fields('ru')
-  ->condition('re_id', $re_id,'=')
-  ->execute();
+    ->fields('ru')
+    ->condition('re_id', $re_id,'=')
+    ->execute();
 
   while($release = $result->fetchAssoc()) {
     $snapshot = "";
@@ -694,9 +710,9 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-  ->fields('vr_re', array('secure_id', 'name', 'base_url'))
-  ->condition('vr_re.rid', $old_re_id)
-  ->execute();
+    ->fields('vr_re', array('secure_id', 'name', 'base_url'))
+    ->condition('vr_re.rid', $old_re_id)
+    ->execute();
   $release = $result->fetchAssoc();
   $base_release_secure_id = $release['secure_id'];
   $test_base_url = $release['base_url'];
@@ -704,9 +720,9 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-  ->fields('vr_re', array('secure_id', 'name'))
-  ->condition('vr_re.rid', $new_re_id)
-  ->execute();
+    ->fields('vr_re', array('secure_id', 'name'))
+    ->condition('vr_re.rid', $new_re_id)
+    ->execute();
   $release = $result->fetchAssoc();
   $cmp_release_secure_id = $release['secure_id'];
   $cmp_release_name = $release['name'];
@@ -718,7 +734,8 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   $output .= '<div class="update checked">';
   if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
-  }else{
+  }
+  else {
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
@@ -756,13 +773,14 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     );
   }
 
-  if(!count($rows)){
+  if (!count($rows)) {
     drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
-    if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
+    if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local') {
       drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id");
-    }else{
+    }
+    else {
       //If local table is empty, make a rpc call to create entries
       $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
         'drulenium.api_create_compare_request' => array($base_release_secure_id, $cmp_release_secure_id),
@@ -843,8 +861,7 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
       '#weight' => 20,
   );
   $node_types = array();
-  $result = db_query(
-      'SELECT type, name FROM {node_type}');
+  $result = db_query('SELECT type, name FROM {node_type}');
   foreach ($result as $row) {
     $node_types[$row->type] = $row->name;
   }
@@ -866,8 +883,7 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
       '#weight' => 20,
   );
   $vocabs = array();
-  $result = db_query(
-      'SELECT vid, name FROM {taxonomy_vocabulary}');
+  $result = db_query('SELECT vid, name FROM {taxonomy_vocabulary}');
   foreach ($result as $row) {
     $vocabs[$row->vid] = $row->name;
   }
@@ -948,7 +964,7 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
      '#type' => 'select',
      '#title' => t('Browser'),
      '#options' => array(
-        'firefox' => t('firefox'),
+       'firefox' => t('firefox'),
        'chrome' => t('chrome'),
      ),
      '#default_value' => variable_get('drulenium_vr_release_selenium_browser', 'firefox'),
@@ -1039,7 +1055,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       //  $debug_log .= $term_type."<br/>";
     }
   }
-  if(!empty($selected_term_types_array)){
+  if (!empty($selected_term_types_array)) {
     // Select an example term of each vocabulary.
     $result = db_query(
         'SELECT vid, tid FROM {taxonomy_term_data} ttd WHERE vid IN (:types)',
@@ -1097,7 +1113,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       }
     }
   }
-  if(empty($pages_array)){
+  if (empty($pages_array)) {
     drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
     return "";
   }
