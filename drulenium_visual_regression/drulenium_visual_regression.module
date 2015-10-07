@@ -1,4 +1,4 @@
-<?php
+ta<?php
 
 /**
  * Implementation of hook_perm().
@@ -97,8 +97,122 @@ function drulenium_visual_regression_menu() {
       'access arguments' => array('run_visual_tests'),
       'type' => MENU_CALLBACK,
   );
+  $items['drulenium_vr/vote/js'] = array(
+	'page callback' => 'drulenium_visual_regression_vote_ahah',
+	'access arguments' => array('run_visual_tests'),
+	'type' => MENU_CALLBACK
+  );
+  $items['vr/twenty-twenty/%/%'] = array(
+	'page callback' => 'drulenium_visual_regression_compare_snapshots_twenty_twenty',
+	'page arguments' => array(2,3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
+}
+
+function drulenium_visual_regression_compare_snapshots_twenty_twenty($base_run_id, $cmp_run_id) {
+  drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/jquery.twentytwenty.js');
+  drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/vr_twenty.js');
+  drupal_add_css(drupal_get_path('module', 'drulenium_visual_regression') . '/css/twentytwenty.css');
+  $output = '<div id="container1">
+  <img src="http://dev.proxy.drulenium.com/sites/dev.proxy.drulenium.com/files/drulenium/1438957920.png">
+  <img src="http://dev.proxy.drulenium.com/sites/dev.proxy.drulenium.com/files/drulenium/1438952614.png">
+</div>';
+  return $output;
+}
+
+/**
+ * AHAH callback for the vote buttons.
+ */
+function drulenium_visual_regression_vote_ahah() {
+  $unique_content_id = filter_var(trim(filter_xss($_POST["unique_id"])),FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH);
+  //Convert content ID to MD5 hash (optional)
+  //$unique_content_id = hash('md5', $unique_content_id);
+  $user_vote_type = trim(filter_xss($_POST['vote']));
+
+  switch ($user_vote_type)
+  {
+
+    ##### User liked the content #########
+    case 'up':
+
+      //check if user has already voted, determined by unique content cookie
+      if (isset($_COOKIE["voted_".$unique_content_id]))
+      {
+        header('HTTP/1.1 500 Already Voted'); //cookie found, user has already voted
+        exit(); //exit script
+      }
+
+      //get vote_up value from db using unique_content_id
+      $criteria = array(
+        'content_type' => 'drulenium_vr',
+        'value_type' => 'points',
+        'content_id' => $unique_content_id,
+        'tag' => 'change_up',
+      );
+      $ret = votingapi_select_results($criteria, 1);
+      $get_vote_up = 0;
+      if(!empty($ret)){
+        $get_vote_up = $ret[0]['value'];
+      }
+
+      $vote = array(
+        'content_type' => 'drulenium_vr',
+        'value_type' => 'points',
+        'content_id' => $unique_content_id,
+        'value' => $get_vote_up + 1,
+        'tag' => 'change_up',
+      );
+      $votes = array($vote);
+      votingapi_set_votes($votes);
+
+      setcookie("voted_".$unique_content_id, 1, time()+7200); // set cookie that expires in 2 hour "time()+7200".
+      echo ($get_vote_up+1); //display total liked votes
+      break;
+
+      ##### User disliked the content #########
+    case 'down':
+
+      //check if user has already voted, determined by unique content cookie
+      if (isset($_COOKIE["voted_".$unique_content_id]))
+      {
+        header('HTTP/1.1 500 Already Voted this Content!'); //cookie found, user has already voted
+        exit(); //exit script
+      }
+
+      //get vote_up value from db using unique_content_id
+      //$result = mysqli_query($sql_con,"SELECT vote_down FROM voting_count WHERE unique_content_id='$unique_content_id' LIMIT 1");
+      $criteria = array(
+        'content_type' => 'drulenium_vr',
+        'value_type' => 'points',
+        'content_id' => $unique_content_id,
+        'tag' => 'change_down',
+      );
+      $ret = votingapi_select_results($criteria, 1);
+      $get_vote_down = 0;
+      if(!empty($ret)){
+        $get_vote_down = $ret[0]['value'];
+      }
+
+      $vote = array(
+        'content_type' => 'drulenium_vr',
+        'value_type' => 'points',
+        'content_id' => $unique_content_id,
+        'value' => $get_vote_down + 1,
+        'tag' => 'change_down',
+      );
+      $votes = array($vote);
+      votingapi_set_votes($votes);
+
+      setcookie("voted_".$unique_content_id, 1, time()+7200);  // set cookie that expires in 2 hour "time()+7200".
+      echo ($get_vote_down+1);//display total disliked votes
+      break;
+
+  }
+
+  module_invoke_all('exit') & exit;
 }
 
 /**
@@ -507,6 +621,7 @@ function drulenium_visual_regression_release_delete_form_submit($form, &$form_st
   db_delete('drulenium_vr_runs')
   ->condition('re_id', $re_id)
   ->execute();
+  //Delete snapshots and other image files related to this release
   drupal_set_message("Deleted the release with id:$re_id");
   drupal_goto('admin/structure/drulenium/vr');
 }
