@@ -559,19 +559,19 @@ function drulenium_tests_catch_output() {
   $suite_name = strip_tags($_POST['suite']);;
 
   $newnode->title = $suite_name;
-  $newnode->body['und'][0]['value'] = $_POST['log'];
+  $newnode->body[LANGUAGE_NONE][0]['value'] = $_POST['log'];
 
-  $newnode->drulenium_version['und'][0]['value'] = $_POST['selenium_version'];
-  $newnode->drulenium_revision['und'][0]['value'] = $_POST['selenium_revision'];
-  $newnode->drulenium_result['und'][0]['value'] = $_POST['result'];
-  $newnode->drulenium_total_time['und'][0]['value'] = $_POST['totalTime'];
-  $newnode->drulenium_num_test_passes['und'][0]['value'] = $_POST['numTestPasses'];
-  $newnode->drulenium_num_test_failures['und'][0]['value'] = $_POST['numTestFailures'];
-  $newnode->drulenium_num_command_passes['und'][0]['value'] = $_POST['numCommandPasses'];
-  $newnode->drulenium_num_command_failures['und'][0]['value'] = $_POST['numCommandFailures'];
-  $newnode->drulenium_num_command_errors['und'][0]['value'] = $_POST['numCommandErrors'];
-  $newnode->drulenium_num_test_total['und'][0]['value'] = $_POST['numTestTotal'];
-  $newnode->drulenium_suite['und'][0]['value'] = $suite_name;
+  $newnode->drulenium_version[LANGUAGE_NONE][0]['value'] = $_POST['selenium_version'];
+  $newnode->drulenium_revision[LANGUAGE_NONE][0]['value'] = $_POST['selenium_revision'];
+  $newnode->drulenium_result[LANGUAGE_NONE][0]['value'] = $_POST['result'];
+  $newnode->drulenium_total_time[LANGUAGE_NONE][0]['value'] = $_POST['totalTime'];
+  $newnode->drulenium_num_test_passes[LANGUAGE_NONE][0]['value'] = $_POST['numTestPasses'];
+  $newnode->drulenium_num_test_failures[LANGUAGE_NONE][0]['value'] = $_POST['numTestFailures'];
+  $newnode->drulenium_num_command_passes[LANGUAGE_NONE][0]['value'] = $_POST['numCommandPasses'];
+  $newnode->drulenium_num_command_failures[LANGUAGE_NONE][0]['value'] = $_POST['numCommandFailures'];
+  $newnode->drulenium_num_command_errors[LANGUAGE_NONE][0]['value'] = $_POST['numCommandErrors'];
+  $newnode->drulenium_num_test_total[LANGUAGE_NONE][0]['value'] = $_POST['numTestTotal'];
+  $newnode->drulenium_suite[LANGUAGE_NONE][0]['value'] = $suite_name;
 
   $newnode->status = 1;
   $newnode->type = 'drulenium';
