@@ -26,7 +26,11 @@ function drulenium_visual_regression_drush_command() {
     'callback' => 'drush_drulenium_visual_regression_diff',
     'description' => 'Generate comparision report for 2 releases.',
     'drupal dependencies' => array('drulenium_visual_regression'),
-    'arguments' => array(),
+    'arguments' => array(
+      'from' => 'Release ID of the first set of screenshots.',
+      'to' => 'Release ID of the second set of screenshots.',
+    ),
+
     'options' => array(),
     'aliases' => array('vrd'),
   );
@@ -89,21 +93,23 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
  * Command callback. Generate comparision report for 2 releases.
  */
 function drush_drulenium_visual_regression_diff() {
-  // Get the last two releases.
-  $result = db_select('drulenium_vr_releases', 'vr_re')
-    ->fields('vr_re', array('rid'))
-    ->orderBy('rid', 'DESC')
-    ->range(0,2)
-    ->execute();
-  $row1 = $result->fetchAssoc();
-  $new_re_id = $row1['rid'];
-  $row2 = $result->fetchAssoc();
-  $old_re_id = $row2['rid'];
-  if ($new_re_id < $old_re_id) {
-    $tmp = $new_re_id;
-    $new_re_id = $old_re_id;
-    $old_re_id = $tmp;
+  if ($old_re_id == null || $new_re_id == null) {
+    // Get the last two releases.
+    $result = db_select('drulenium_vr_releases', 'vr_re')
+      ->fields('vr_re', array('rid'))
+      ->orderBy('rid', 'DESC')
+      ->range(0,2)
+      ->execute();
   }
+  if ($new_re_id == null) {
+    $row1 = $result->fetchAssoc();
+    $new_re_id = $row1['rid'];
+  }
+  if ($old_re_id == null) {
+    $row2 = $result->fetchAssoc();
+    $old_re_id = $row2['rid'];
+  }
+
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
  
   // Process the queue using Batch API.
