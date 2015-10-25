@@ -47,10 +47,13 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
     $release_name = format_date(REQUEST_TIME);
   }
   $pages_array = array();
+
+  // Default to the current site if no $vr_base_url is provided.
   if (empty($vr_base_url)) {
     global $base_url;
-    $vr_base_url = $base_url."/?q=";
+    $vr_base_url = $base_url . "/?q=";
   }
+
   $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
   // Process the queue using Batch API.
@@ -86,7 +89,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
  * Command callback. Generate comparision report for 2 releases.
  */
 function drush_drulenium_visual_regression_diff() {
-  //Get the last two releases
+  // Get the last two releases.
   $result = db_select('drulenium_vr_releases', 'vr_re')
     ->fields('vr_re', array('rid'))
     ->orderBy('rid', 'DESC')

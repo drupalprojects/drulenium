@@ -237,9 +237,7 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
     $new_re_id = $old_re_id;
     $old_re_id = $tmp;
   }
-  //if Image magick is installed
-    //_drulenium_visual_regression_webdriver_navigate("http://docs.seleniumhq.org/");
-  //return "test";
+
   $batch = array(
     'operations' => array(),
     'finished' => 'drulenium_visual_regression_compare_batch_finished', // runs after batch is finished
@@ -298,15 +296,15 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     //have to use proc_open http://cgit.drupalcode.org/imagemagick/tree/imagemagick.module#n478
     $image1 = $res['snapshot'];
     $image2 = $res['r_c_snapshot'];
-    $image1 = str_replace(file_create_url(file_default_scheme() . '://'),drupal_realpath(file_default_scheme() . '://')."/",$image1);
-    $image2 = str_replace(file_create_url(file_default_scheme() . '://'),drupal_realpath(file_default_scheme() . '://')."/",$image2);
+    $image1 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image1);
+    $image2 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image2);
     //dsm( "$image1 $image2");
     //$output = exec("$image_magick_path/compare -metric AE -fuzz '2%' $image1 $image2 -null: 2>&1");
-    $diff = _drulenium_vr_image_compare($image1,$image2,5,5,5,1,5);
+    $diff = _drulenium_vr_image_compare($image1, $image2, 5, 5, 5, 1, 5);
     if($diff == "Width does not match." || $diff == "Height does not match."){
       //forcing highlighted diff & gif to be generated.
       $diff_percent = 2.99999;
-      watchdog("drulenium", $diff." -> $image1 : $image2");
+      watchdog("drulenium", $diff . " -> $image1 : $image2");
     }
       // print_r($return_var);
     if (!isset($diff['PercentDifference'])) {
@@ -318,31 +316,31 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     
     $gif_link = "";
     if ($diff_percent > 0 && $image_magick_code == 0) {
-      //generate GIF
-      $unique_id = "drulenium/gif_". microtime(TRUE) . ".gif";
-      $gif_path = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
-      $gif_link = file_create_url(file_default_scheme() . '://').$unique_id;
+      // Generate animated GIF
+      $unique_id = "drulenium/gif_" . microtime(TRUE) . ".gif";
+      $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
+      $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
       //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
       $command = "$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path 2>&1";
       $exec_error = exec($command);
       if(!empty($exec_error)){
         $gif_link = "";
-        watchdog("drulenium", $exec_error." -> $command");
+        watchdog("drulenium", $exec_error . " -> $command");
       }
     }
     //$diff_percent = sprintf("%.3f",($output/(400*300))*100);
     $highlighted_link = '';
     if ($diff_percent > 0 && $image_magick_code == 0) {
-      // generate highlighted image
-      $unique_id = "drulenium/highlight_". microtime(TRUE) . ".png";
-      $highlighted_path = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
-      $highlighted_link = file_create_url(file_default_scheme() . '://').$unique_id;
+      // Generate highlighted image.
+      $unique_id = "drulenium/highlight_" . microtime(TRUE) . ".png";
+      $highlighted_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
+      $highlighted_link = file_create_url(file_default_scheme() . '://') . $unique_id;
       //dsm("$image_magick_path/compare $image1 $image2 -compose src $highlighted_path");
       $command = "$image_magick_path/compare $image1 $image2 $highlighted_path 2>&1";
       $exec_error = exec($command);
-      if(!empty($exec_error)){
+      if(!empty($exec_error)) {
         $highlighted_link = "";
-        watchdog("drulenium", $exec_error." -> $command");
+        watchdog("drulenium", $exec_error . " -> $command");
       }
     }
 
@@ -465,7 +463,8 @@ function drulenium_visual_regression_release_process_local($re_id) {
   }
 
   batch_set($batch);
-  batch_process("admin/structure/drulenium/vr/release/".$re_id); // page to return to after complete
+  // Start processing, pass the page to return to after completing.
+  batch_process("admin/structure/drulenium/vr/release/" . $re_id);
 }
 
 /**
@@ -498,9 +497,9 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
 
     $result = db_select('drulenium_vr_runs', 'ru')
       ->fields('ru')
-      ->condition('re_id', $re_id,'=')
-      ->condition('snapshot', '','=')
-      ->range(0,$limit)
+      ->condition('re_id', $re_id, '=')
+      ->condition('snapshot', '', '=')
+      ->range(0, $limit)
       ->execute();
 
     // Start Firefox with 5 second timeout.
@@ -514,7 +513,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $test_user_name = $release_result['user_name'];
     $test_user_pass = $release_result['user_pass'];
     if(!empty($test_user_name) && !empty($test_user_pass)){
-      $driver->get($release_result['base_url']."user/login");
+      $driver->get($release_result['base_url'] . "user/login");
       $driver->findElement(WebDriverBy::id("edit-name"))->sendKeys($test_user_name);
       $driver->findElement(WebDriverBy::id("edit-pass"))->sendKeys($test_user_pass);
       $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
@@ -552,7 +551,7 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element = null) {
   $mydir = file_default_scheme() . '://drulenium';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
   $unique_id = "drulenium/" . microtime(TRUE) . ".png";
-  $screenshot = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
+  $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
   $relative_file_path = file_create_url(file_default_scheme() . '://').$unique_id;
 
   // Change the driver instance
@@ -565,8 +564,9 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element = null) {
     return $relative_file_path;
   }
 
+  // Continue to crop out a specific element.
 
-  $screenshot = drupal_realpath(file_default_scheme() . '://').$unique_id; // Change the path here as well
+  $screenshot = drupal_realpath(file_default_scheme() . '://') . $unique_id; // Change the path here as well
 
   //dsm($relative_file_path);
   $element_width = $element->getSize()->getWidth();
@@ -627,7 +627,7 @@ function drulenium_visual_regression_release_delete_form_submit($form, &$form_st
   //dsm($form);
   $re_id = $form['re_id']['#value'];
 
-  //delete entry in drulenium_vr_releases
+  // Delete entry in drulenium_vr_releases.
   db_delete('drulenium_vr_releases')
     ->condition('rid', $re_id)
     ->execute();
@@ -640,7 +640,10 @@ function drulenium_visual_regression_release_delete_form_submit($form, &$form_st
   db_delete('drulenium_vr_runs')
     ->condition('re_id', $re_id)
     ->execute();
-  //Delete snapshots and other image files related to this release
+
+  // Delete snapshots and other image files related to this release.
+  // TODO delete the image files.
+
   drupal_set_message("Deleted the release with id:$re_id");
   drupal_goto('admin/structure/drulenium/vr');
 }
@@ -1131,6 +1134,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   );
   $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();
 
+  // Create db records for the individual pages.
   foreach ($pages_array as $key => $page) {
     if(empty($page)) {
       unset($pages_array[$key]);
