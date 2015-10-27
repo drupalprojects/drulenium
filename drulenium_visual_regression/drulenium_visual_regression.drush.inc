@@ -142,4 +142,7 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
   
   batch_set($batch);
   drush_backend_batch_process();
+  global $base_url;
+
+  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
 }
