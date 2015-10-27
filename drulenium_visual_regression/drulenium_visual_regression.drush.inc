@@ -92,7 +92,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 /**
  * Command callback. Generate comparision report for 2 releases.
  */
-function drush_drulenium_visual_regression_diff() {
+function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null) {
   if ($old_re_id == null || $new_re_id == null) {
     // Get the last two releases.
     $result = db_select('drulenium_vr_releases', 'vr_re')
