@@ -708,7 +708,7 @@ where q.re_id = :base_release_id or q.re_id = :cmp_release_id group by url) q1",
 }
 
 function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
-  // if new id is less than old id, swap for comparison.
+  // If new id is less than old id, swap for comparison.
   if($new_re_id < $old_re_id){
     $tmp = $new_re_id;
     $new_re_id = $old_re_id;
@@ -734,7 +734,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   $cmp_release_secure_id = $release['secure_id'];
   $cmp_release_name = $release['name'];
 
-  drupal_set_title("Compare: ".$base_release_name." & ".$cmp_release_name);
+  drupal_set_title("Compare: " . $base_release_name . " & " . $cmp_release_name);
 
   $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
@@ -747,8 +747,10 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
   $output .= "</div>\n";
+
   $header = array(t('Id'), t('URL'), t('Percentage Difference'), t('Diff Highlighted'), t('Animated GIF'));
   $rows = array();
+
   $query = db_select('drulenium_vr_results', 're');
   $query->join('drulenium_vr_runs', 'b_ru', 're.run_base_id = b_ru.rid');
   $query->fields('re');
@@ -768,15 +770,15 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       $gif_link = l("GIF", $cmp_result['diff_gif'], array('attributes' => array('target' => '_blank')));
     }
     $highlighted_link = "";
-    if(!empty($cmp_result['diff_highlight'])){
+    if(!empty($cmp_result['diff_highlight'])) {
       $highlighted_link = l("Diff", $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank')));
     }
     $rows[] = array(
-    $cmp_result['result_id'],
-    l($url_text, $test_base_url . $cmp_result['url']),
-    $cmp_result['diff_percent'],
-    $highlighted_link,
-    $gif_link,
+      $cmp_result['result_id'],
+      l($url_text, $test_base_url . $cmp_result['url']),
+      $cmp_result['diff_percent'],
+      $highlighted_link,
+      $gif_link,
     );
   }
 
