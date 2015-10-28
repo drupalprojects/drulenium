@@ -767,11 +767,14 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       $url_text = "Home Page";
     }
     if(!empty($cmp_result['diff_gif'])){
-      $gif_link = l("GIF", $cmp_result['diff_gif'], array('attributes' => array('target' => '_blank')));
+      $title = "<img src='" . $cmp_result['diff_gif'] . "' width=200 height=200 />";
+
+      $gif_link = l($title, $cmp_result['diff_gif'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
     $highlighted_link = "";
     if(!empty($cmp_result['diff_highlight'])) {
-      $highlighted_link = l("Diff", $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank')));
+      $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 height=200 />";
+      $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
     $rows[] = array(
       $cmp_result['result_id'],
