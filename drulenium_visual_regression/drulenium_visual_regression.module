@@ -385,6 +385,10 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   ));
   //dsm($result);
   foreach ($result as $cmp_res){
+    // To support certain encoded characters like french, spanish...
+    //TODO: There are some known issues with arabic characters
+    $cmp_res['url'] = utf8_encode($cmp_res['url']);
+
     $diff_percent = $cmp_res['diff_percent'];
     if($diff_percent == "isNULL"){
       $diff_percent = NULL;
