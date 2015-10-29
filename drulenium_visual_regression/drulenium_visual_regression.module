@@ -81,6 +81,13 @@ function drulenium_visual_regression_menu() {
     'access arguments' => array('run_visual_tests'),
     'type' => MENU_CALLBACK,
   );
+  $items['admin/structure/drulenium/vr/release/process-saucelabs/%'] = array(
+    'title' => 'Process Release using Sauce Labs',
+    'page callback' => 'drulenium_visual_regression_release_process_saucelabs',
+    'page arguments' => array(6),
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
+  );
   $items['admin/structure/drulenium/vr/compare/%/%'] = array(
     'title' => 'Compare',
     'page callback' => 'drulenium_visual_regression_releases_compare',
@@ -420,6 +427,14 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   drupal_goto("admin/structure/drulenium/vr/compare/$base_release_id/$cmp_release_id");
 }
 
+function drulenium_visual_regression_release_process_saucelabs($re_id) {
+  //URL as third parameter $param[2]
+  $command = "cd /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/modules/drulenium/drulenium_visual_regression/includes/sausage.inc http://saucelabs.com/test/guinea-pig 2>&1";
+  $exec_error = exec($command);
+  dsm($exec_error);
+  return 'Sauce Labs';
+}
+
 function drulenium_visual_regression_release_process_local($re_id) {
   //_drulenium_visual_regression_webdriver_navigate("http://docs.seleniumhq.org/");
   //return "test";
@@ -660,6 +675,8 @@ function drulenium_visual_regression_release_detail($re_id) {
   $output .= '<div class="update checked">';  
   if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), 'admin/structure/drulenium/vr/release/process-local/' . $re_id) . ')</span>';
+  }elseif(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'saucelabs'){
+    $output .= ' <span class="process-locally">(' . l(t('Process using Sauce Labs'), 'admin/structure/drulenium/vr/release/process-saucelabs/' . $re_id) . ')</span>';
   }
   else {
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
@@ -922,7 +939,8 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
   # the options to display in our form radio buttons
   $options = array(
     'local' => t('Local server'),
-    'drulenium' => t('Remote Drulenium server'), 
+    'drulenium' => t('Remote Drulenium server'),
+    'saucelabs' => t('Sauce labs server'),
   );
   
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_config_server_opt'] = array(
@@ -994,6 +1012,36 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
     '#type' => 'textfield', 
     '#description' => t('Email to Notify on completion.'), 
     '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
+  );
+
+  /*
+   * Sauce Labs
+   */
+  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Sauce Labs'),
+    '#description' => t('Configuration for taking screenshots using Sauce Labs.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="drulenium_vr_config_server_opt"]' => array('value' => 'saucelabs'),
+      ),
+    ),
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['saucelabs_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SauceLabs Username'),
+    '#description' => t('Your Saucelabs account username.'),
+    '#default_value' => variable_get('drulenium_vr_saucelabs_username', ''),
+    '#required' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['saucelabs_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SauceLabs Access Key'),
+    '#description' => t('Your Saucelabs account access key.'),
+    '#default_value' => variable_get('drulenium_vr_saucelabs_api', ''),
+    '#required' => FALSE,
   );
 
   $form['submit_button'] = array(
@@ -1188,6 +1236,8 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     ));
     drupal_set_message($result);
     drupal_goto("admin/structure/drulenium/vr/release/".$release_id);
+  }elseif ($form_state['values']['drulenium_vr_config_server_opt'] == "saucelabs") {
+    drupal_goto("admin/structure/drulenium/vr/release/process-saucelabs/".$release_id);
   }else{
     drupal_set_message("Your request is being processed locally, in a batch.");
     drupal_goto("admin/structure/drulenium/vr/release/process-local/".$release_id);
