@@ -302,7 +302,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     //$output = exec("$image_magick_path/compare -metric AE -fuzz '2%' $image1 $image2 -null: 2>&1");
     $diff = _drulenium_vr_image_compare($image1, $image2, 5, 5, 5, 1, 5);
     if($diff == "Width does not match." || $diff == "Height does not match."){
-      //forcing highlighted diff & gif to be generated.
+      // Forcing highlighted diff & gif to be generated.
       $diff_percent = 2.99999;
       watchdog("drulenium", $diff . " -> $image1 : $image2");
     }
@@ -1335,34 +1335,38 @@ function _drulenium_vr_contains($substring, $string) {
 
 function _drulenium_vr_image_compare($image1, $image2, $RTolerance=0, $GTolerance=0, $BTolerance=0, $WarningTolerance=1, $ErrorTolerance=5)
 {
-  if (is_resource($image1))
-  $im = $image1;
-  else
-  if (!$im = imagecreatefrompng($image1))
-    trigger_error("Image 1:$image1 could not be opened",E_USER_ERROR);
+  if (is_resource($image1)) {
+    $im = $image1;
+  }
+  elseif (!$im = imagecreatefrompng($image1)) {
+    trigger_error("Image 1:$image1 could not be opened", E_USER_ERROR);
+    return;
+  }
    
-  if (is_resource($image2))
-  $im2 = $image2;
-  else
-  if (!$im2 = imagecreatefrompng($image2))
-    trigger_error("Image 2:$image2 could not be opened",E_USER_ERROR);
-
+  if (is_resource($image2)) {
+    $im2 = $image2;
+  }
+  elseif (!$im2 = imagecreatefrompng($image2)) {
+    trigger_error("Image 2:$image2 could not be opened", E_USER_ERROR);
+    return;
+  }
 
 
   $OutOfSpec = 0;
   $width2 = imagesx($im2);
   $height2 = imagesy($im2);
-  //print $width2;
-  //print ";".$height2;
-  if (imagesx($im)!=imagesx($im2))
-    return("Width does not match.");
-  if (imagesy($im)!=imagesy($im2))
-    return("Height does not match.");
 
-  //By columns
-  for ($width=0;$width<=imagesx($im)-1;$width++)
+  if (imagesx($im) != imagesx($im2)) {
+    return "Width does not match.";
+  }
+  if (imagesy($im) != imagesy($im2)) {
+    return "Height does not match.";
+  }
+
+  // By columns.
+  for ($width = 0; $width <= imagesx($im) - 1; $width++)
   {
-    for ($height=0;$height<=imagesy($im)-1;$height++)
+    for ($height = 0; $height <= imagesy($im) - 1; $height++)
     {
       $rgb = imagecolorat($im, $width, $height);
       $r1 = ($rgb >> 16) & 0xFF;
@@ -1376,32 +1380,33 @@ function _drulenium_vr_image_compare($image1, $image2, $RTolerance=0, $GToleranc
         $b2 = $rgb & 0xFF;
          
         if (!($r1>=$r2-$RTolerance && $r1<=$r2+$RTolerance))
-        $OutOfSpec++;
+          $OutOfSpec++;
 
         if (!($g1>=$g2-$GTolerance && $g1<=$g2+$GTolerance))
-        $OutOfSpec++;
+          $OutOfSpec++;
 
         if (!($b1>=$b2-$BTolerance && $b1<=$b2+$BTolerance))
-        $OutOfSpec++;
-      }else{
-        $OutOfSpec = $OutOfSpec+3;
+          $OutOfSpec++;
+      }
+      else {
+        $OutOfSpec = $OutOfSpec + 3;
       }
     }
   }
-  $TotalPixelsWithColors = (imagesx($im)*imagesy($im))*3;
+  $TotalPixelsWithColors = (imagesx($im) * imagesy($im)) * 3;
 
   $RET['PixelsByColors'] = $TotalPixelsWithColors;
   $RET['PixelsOutOfSpec'] = $OutOfSpec;
 
   if ($OutOfSpec!=0 && $TotalPixelsWithColors!=0)
   {
-    $PercentOut = ($OutOfSpec/$TotalPixelsWithColors)*100;
-    $RET['PercentDifference']=$PercentOut;
-    if ($PercentOut>=$WarningTolerance) //difference triggers WARNINGTOLERANCE%
-    $RET['WarningLevel']=TRUE;
-    if ($PercentOut>=$ErrorTolerance) //difference triggers ERRORTOLERANCE%
-    $RET['ErrorLevel']=TRUE;
+    $PercentOut = ($OutOfSpec / $TotalPixelsWithColors) * 100;
+    $RET['PercentDifference'] = $PercentOut;
+    if ($PercentOut >= $WarningTolerance) //difference triggers WARNINGTOLERANCE%
+      $RET['WarningLevel'] = TRUE;
+    if ($PercentOut >= $ErrorTolerance) //difference triggers ERRORTOLERANCE%
+      $RET['ErrorLevel'] = TRUE;
   }
 
-  RETURN $RET;
+  return $RET;
 }
