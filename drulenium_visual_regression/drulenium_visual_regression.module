@@ -450,8 +450,8 @@ function drulenium_visual_regression_release_process_local($re_id) {
 
   $query = db_select('drulenium_vr_runs', 'ru')
     ->fields('ru')
-    ->condition('re_id', $re_id,'=')
-    ->condition('snapshot', '','=');
+    ->condition('re_id', $re_id, '=')
+    ->condition('snapshot', '', '=');
   $query->addExpression('COUNT(rid)', 'run_count');
   $result = $query->execute();
   $run = $result->fetchAssoc();
@@ -491,7 +491,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     // Getting username, password & base url from release.
     $release_result = db_select('drulenium_vr_releases', 're')
       ->fields('re')
-      ->condition('rid', $re_id,'=')
+      ->condition('rid', $re_id, '=')
       ->execute()
       ->fetchAssoc();
 
@@ -766,13 +766,13 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     if(empty($cmp_result['url'])){
       $url_text = "Home Page";
     }
-    if(!empty($cmp_result['diff_gif'])){
+    if (!empty($cmp_result['diff_gif'])) {
       $title = "<img src='" . $cmp_result['diff_gif'] . "' width=200 height=200 />";
 
       $gif_link = l($title, $cmp_result['diff_gif'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
     $highlighted_link = "";
-    if(!empty($cmp_result['diff_highlight'])) {
+    if (!empty($cmp_result['diff_highlight'])) {
       $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 height=200 />";
       $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
@@ -1064,7 +1064,6 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   foreach ($specific_term_types as $term_type) {
     if(!empty($term_type)) {
       $selected_term_types_array[] = $term_type;
-      //  $debug_log .= $term_type."<br/>";
     }
   }
   if (!empty($selected_term_types_array)) {
@@ -1075,7 +1074,6 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
     );
     foreach ($result as $row) {
       $tid = $row->tid;
-      // $debug_log .= $tid."<br/>";
       $link_path = "taxonomy/term/$tid";
       $pages_array[] = $link_path;
     }
@@ -1084,30 +1082,21 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   $specific_pages = trim($specific_pages);
   if(!empty($specific_pages)) {
     $specific_pages_array = explode("\n", $specific_pages);
-    // $debug_log .= print_r($specific_pages_array, TRUE)."<br/>";
-    // $pages = $options['pages'];
-    // $pages_array = explode("\n",$pages);
     foreach ($specific_pages_array as $key => $page) {
       $page = trim($page);
-      //    $debug_log .= $page."<br/>";
+
+      // Expand wildcards in $specific_pages based uyppon menu links in the database.
       if(_drulenium_vr_endsWith($page, "*")) {
-        //   $debug_log .= $page."<br/>";
-        //unset($specific_pages_array[$key]);
         $pattern = substr($page, 0, strlen($page) - 1);
-        // $debug_log .= substr($page, 0, strlen($page)-1);
         $result = db_query(
           'SELECT link_path FROM {menu_links} m WHERE link_path like :pattern',
           array(':pattern' => db_like($pattern) . '%')
         );
-        //    $debug_log .= print_r($result, TRUE)."<br/>";
         foreach ($result as $row) {
-          //   $debug_log .= print_r($row, TRUE)."<br/>";
-          //break;
           $link_path = $row->link_path;
           if(_drulenium_vr_contains("%", $link_path)){
             continue;
           }
-          //$link_path = str_replace("%","1",$link_path);
           $pages_array[] = $link_path;
         }
 
