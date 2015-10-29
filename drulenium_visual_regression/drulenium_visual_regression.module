@@ -402,8 +402,8 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
     LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
     LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
     SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
-    where run.url = :url AND rel.secure_id = :base_rel_secure_id", 
-    array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
+    where run.url = :url AND (rel.secure_id = :base_rel_secure_id OR rel.secure_id = :cmp_release_secure_id)", 
+    array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':cmp_release_secure_id' => $cmp_release_secure_id, ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
   }
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $base_release_id = $query
