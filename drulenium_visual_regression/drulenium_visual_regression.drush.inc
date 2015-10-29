@@ -60,30 +60,8 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
-  // Process the queue using Batch API.
-  $batch = array(
-    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module',
-    'operations' => array(),
-    'finished' => 'drulenium_visual_regression_release_batch_finished',
-    'title' => t('Performing %operation on the selected items...', array('%operation' => "snapshot generation")),
-  );
-  $progress = 0; // where to start
-  $limit = 3; // how many to process for each run
- 
-  $query = db_select('drulenium_vr_runs', 'ru')
-    ->fields('ru')
-    ->condition('re_id', $re_id,'=')
-    ->condition('snapshot', '','=');
-  $query->addExpression('COUNT(rid)', 'run_count');
-  $result = $query->execute();
-  $run = $result->fetchAssoc();
-  $max = $run['run_count'];
+  drulenium_visual_regression_release_setup_batch($re_id);
 
-  while ($progress <= $max) {
-    $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($vr_base_url, $re_id, $progress, $limit));
-    $progress = $progress + $limit;
-  }
-  batch_set($batch);
   drush_backend_batch_process();
   
   drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => count($drulenium_vr_path_custom))), 'success');

@@ -422,6 +422,17 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
 }
 
 function drulenium_visual_regression_release_process_local($re_id) {
+
+  drulenium_visual_regression_release_setup_batch($re_id);
+
+  // Start processing, pass the page to return to after completing.
+  batch_process("admin/structure/drulenium/vr/release/" . $re_id);
+}
+
+/**
+ * Setup the Batch API for a release.
+ */
+function drulenium_visual_regression_release_setup_batch($re_id) {
   //_drulenium_visual_regression_webdriver_navigate("http://docs.seleniumhq.org/");
   //return "test";
   $batch = array(
@@ -462,8 +473,6 @@ function drulenium_visual_regression_release_process_local($re_id) {
   }
 
   batch_set($batch);
-  // Start processing, pass the page to return to after completing.
-  batch_process("admin/structure/drulenium/vr/release/" . $re_id);
 }
 
 /**
