@@ -22,6 +22,15 @@ function drulenium_visual_regression_drush_command() {
     ),
     'aliases' => array('vrc'),
   );
+  $items['vr-update'] = array(
+    'callback' => 'drush_drulenium_visual_regression_update',
+    'description' => 'Generate new snapshots for a release.',
+    'drupal dependencies' => array('drulenium_visual_regression'),
+    'arguments' => array(
+      'release_name' => 'Name of the release to update.',
+    ),
+    'aliases' => array('vru'),
+  );
   $items['vr-diff'] = array(
     'callback' => 'drush_drulenium_visual_regression_diff',
     'description' => 'Generate comparision report for 2 releases.',
@@ -65,6 +74,32 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   drush_backend_batch_process();
   
   drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => count($drulenium_vr_path_custom))), 'success');
+}
+
+/**
+ * Command callback. Update a release & generate snapshots.
+ */
+function drush_drulenium_visual_regression_update($release_name = "") {
+
+  drush_log("Updating Drulenium release: $release_name", 'ok');
+  $release_id = db_select('drulenium_vr_releases', 're')
+    ->fields('re')
+    ->condition('name', $release_name, '=')
+    ->execute()
+    ->fetchField();
+
+  // Wipe the current snapshot's to trigger a refresh.
+  $num_pages = db_update('drulenium_vr_runs')
+    ->fields(array('snapshot' => ''))
+    ->condition('re_id', $release_id, '=')
+    ->execute();
+
+  drulenium_visual_regression_release_setup_batch($release_id);
+
+  drush_backend_batch_process();
+
+  drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => $num_pages)), 'success');
+
 }
 
 /**
