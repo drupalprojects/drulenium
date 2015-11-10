@@ -708,11 +708,26 @@ function drulenium_visual_regression_release_detail($re_id) {
 }
 
 function drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id) {
-  $result = db_query("Insert into drulenium_vr_results (run_base_id, run_cmp_id, release_base_id, release_cmp_id)
-select substring_index(qids, ',', 1) as base_qid, substring_index(qids, ',', -1) as cmp_qid, :release_base_id, :release_cmp_id
-from (select GROUP_CONCAT(q.rid) AS qids from drulenium_vr_runs q 
-where q.re_id = :base_release_id or q.re_id = :cmp_release_id group by url) q1", 
-    array(':base_release_id' => $old_re_id, ':cmp_release_id' => $new_re_id, ':release_base_id' => $old_re_id, ':release_cmp_id' => $new_re_id));
+  $result = db_query("INSERT INTO drulenium_vr_results
+    (run_base_id, run_cmp_id, release_base_id, release_cmp_id)
+    SELECT substring_index(qids, ',', 1) AS base_qid,
+      substring_index(qids, ',', -1) AS cmp_qid,
+      :release_base_id,
+      :release_cmp_id
+    FROM (
+        SELECT GROUP_CONCAT(q.rid) AS qids
+          FROM drulenium_vr_runs q
+          WHERE q.re_id = :base_release_id
+            OR q.re_id = :cmp_release_id
+          GROUP BY url
+          ) q1",
+  array(
+    ':base_release_id' => $old_re_id,
+    ':cmp_release_id' => $new_re_id,
+    ':release_base_id' => $old_re_id,
+    ':release_cmp_id' => $new_re_id
+    )
+  );
 }
 
 function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
