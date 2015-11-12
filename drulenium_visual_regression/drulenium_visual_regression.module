@@ -1206,7 +1206,6 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
   $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
-  $notify_email = $form_state['values']['drulenium_vr_release_notify_email'];
 
   // Store some values globally as default for the next time.
   variable_set('drulenium_vr_path_custom', $specific_pages);
@@ -1216,18 +1215,26 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   variable_set('drulenium_vr_release_user_name', $test_user_name);
   variable_set('drulenium_vr_release_user_pass', $test_user_pass);
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
-  variable_set('drulenium_vr_release_notify_email', $notify_email);
 
 
   $secureid = drupal_hash_base64(drupal_random_bytes(55));
   $release_name = $form_state['values']['drulenium_vr_release_name'];
 
 
-  $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
+  if (empty($release_id)) {
+    // new
+    $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
+  }
+  else {
+    // Update
+    // TODO
+  }
 
   if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
     // RPC call to add job in remote queue.
     global $base_url;
+    $site_email = variable_get('site_mail', '');
+    $notify_email = variable_get('drulenium_vr_release_notify_email', $site_email);
     $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
         'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url, $test_user_name, $test_user_pass),
     ));
