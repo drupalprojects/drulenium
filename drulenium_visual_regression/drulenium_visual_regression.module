@@ -668,9 +668,9 @@ function drulenium_visual_regression_release_detail($re_id) {
   $release = $result->fetchAssoc();
   $secure_id = $release['secure_id'];
   $test_base_url = $release['base_url'];
-  drupal_set_title("Release: ".$release['name']);
+  drupal_set_title("Release: " . $release['name']);
 
-  $last = variable_get("drulenium_vr_last_check".$re_id);
+  $last = variable_get("drulenium_vr_last_check" . $re_id);
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';  
   if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
@@ -698,9 +698,9 @@ function drulenium_visual_regression_release_detail($re_id) {
       $snapshot = l("Snapshot", $run['snapshot']);
     }
     $rows[] = array(
-    $run['rid'],
-    l($url_text, $test_base_url.$run['url']),
-    $snapshot,
+      $run['rid'],
+      l($url_text, $test_base_url . $run['url']),
+      $snapshot,
     );
   }
   $output .= theme('table', array('header' => $header, 'rows' => $rows));
@@ -1083,7 +1083,7 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
 function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
   if(empty($vr_base_url)) {
     global $base_url;
-    $vr_base_url = $base_url."/?q=";
+    $vr_base_url = $base_url . "/?q=";
   }
   $selected_node_types_array = array();
   $specific_node_types_pages_array = array();
@@ -1177,7 +1177,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
 
   // Create db records for the individual pages.
   foreach ($pages_array as $key => $page) {
-    if(empty($page)) {
+    if (empty($page)) {
       unset($pages_array[$key]);
     }
     else {
