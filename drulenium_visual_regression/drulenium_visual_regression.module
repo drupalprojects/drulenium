@@ -688,18 +688,18 @@ function drulenium_visual_regression_release_detail($re_id) {
     ->condition('re_id', $re_id,'=')
     ->execute();
 
-  while($release = $result->fetchAssoc()) {
+  while($run = $result->fetchAssoc()) {
     $snapshot = "";
-    $url_text = $release['url'];
-    if(empty($release['url'])){
+    $url_text = $run['url'];
+    if(empty($run['url'])){
       $url_text = "Home Page";
     }
-    if(!empty($release['snapshot'])){
-      $snapshot = l("Snapshot", $release['snapshot']);
+    if(!empty($run['snapshot'])){
+      $snapshot = l("Snapshot", $run['snapshot']);
     }
     $rows[] = array(
-    $release['rid'],
-    l($url_text, $test_base_url.$release['url']),
+    $run['rid'],
+    l($url_text, $test_base_url.$run['url']),
     $snapshot,
     );
   }
