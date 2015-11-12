@@ -105,7 +105,7 @@ function drush_drulenium_visual_regression_update($release_name = "") {
 /**
  * Command callback. Generate comparision report for 2 releases.
  */
-function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null) {
+function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null, $reset = FALSE) {
   if ($old_re_id == null || $new_re_id == null) {
     // Get the last two releases.
     $result = db_select('drulenium_vr_releases', 'vr_re')
@@ -123,6 +123,13 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
     $old_re_id = $row2['rid'];
   }
 
+  // Wipe the current comparison's to trigger a refresh.
+  if ($reset) {
+    $or = db_or()->condition('release_base_id', $old_re_id)->condition('release_cmp_id', $new_re_id);
+    $num_pages = db_delete('drulenium_vr_results')
+      ->condition($or)
+      ->execute();
+  }
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
  
   // Process the queue using Batch API.
