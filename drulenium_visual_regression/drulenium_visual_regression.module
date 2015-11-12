@@ -1055,12 +1055,12 @@ function drulenium_visual_regression_create_release_form($form, &$form_state) {
 }
 
 function drulenium_visual_regression_create_release_form_validate($form, &$form_state) {
-  if($form_state['values']['drulenium_vr_config_server_opt'] == "drulenium"){
-    //check if base url is reachable
+  if ($form_state['values']['drulenium_vr_config_server_opt'] == "drulenium") {
+    // Check if base url is reachable.
     $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
         'drulenium.api_validate_release' => array($form_state['values']['drulenium_vr_release_base_url']),
     ));
-    if($result != 1) {
+    if ($result != 1) {
       form_set_error('drulenium_vr_release_base_url', $result);
     }
   }
@@ -1189,35 +1189,36 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
 }
 
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
-  //dsm($form_state);
-  variable_set('drulenium_vr_path_custom', $form_state['values']['drulenium_vr_path_custom']);
-  variable_set('drulenium_vr_node_custom', $form_state['values']['drulenium_vr_node_custom']);
-  variable_set('drulenium_vr_term_custom', $form_state['values']['drulenium_vr_term_custom']);
-  
-  variable_set('drulenium_vr_config_server_opt', $form_state['values']['drulenium_vr_config_server_opt']);
-  variable_set('drulenium_vr_release_selenium_host', $form_state['values']['drulenium_vr_release_selenium_host']);
-  variable_set('drulenium_vr_release_selenium_browser', $form_state['values']['drulenium_vr_release_selenium_browser']);
-  variable_set('drulenium_vr_release_imagemagick_path', $form_state['values']['drulenium_vr_release_imagemagick_path']);
-  
-  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
-  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
-  variable_set('drulenium_vr_release_user_name', $test_user_name);
-  variable_set('drulenium_vr_release_user_pass', $test_user_pass);
-  $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
-  variable_set('drulenium_vr_release_base_url', $vr_base_url);
-  $notify_email = $form_state['values']['drulenium_vr_release_notify_email'];
-  variable_set('drulenium_vr_release_notify_email', $notify_email);
-
-  $secureid = drupal_hash_base64(drupal_random_bytes(55));
-  $release_name = $form_state['values']['drulenium_vr_release_name'];
-
-
 
   $pages_array = array();
 
   $specific_pages = $form_state['values']['drulenium_vr_path_custom'];
   $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
   $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
+  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
+  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
+  $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
+  $notify_email = $form_state['values']['drulenium_vr_release_notify_email'];
+
+  // Store some values globally as default for the next time.
+  variable_set('drulenium_vr_path_custom', $specific_pages);
+  variable_set('drulenium_vr_node_custom', $specific_node_types);
+  variable_set('drulenium_vr_term_custom', $specific_term_types);
+  
+  variable_set('drulenium_vr_config_server_opt', $form_state['values']['drulenium_vr_config_server_opt']);
+  variable_set('drulenium_vr_release_selenium_host', $form_state['values']['drulenium_vr_release_selenium_host']);
+  variable_set('drulenium_vr_release_selenium_browser', $form_state['values']['drulenium_vr_release_selenium_browser']);
+  variable_set('drulenium_vr_release_imagemagick_path', $form_state['values']['drulenium_vr_release_imagemagick_path']);
+  
+  variable_set('drulenium_vr_release_user_name', $test_user_name);
+  variable_set('drulenium_vr_release_user_pass', $test_user_pass);
+  variable_set('drulenium_vr_release_base_url', $vr_base_url);
+  variable_set('drulenium_vr_release_notify_email', $notify_email);
+
+
+  $secureid = drupal_hash_base64(drupal_random_bytes(55));
+  $release_name = $form_state['values']['drulenium_vr_release_name'];
+
 
   $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
 
@@ -1228,10 +1229,10 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
         'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url, $test_user_name, $test_user_pass),
     ));
     drupal_set_message($result);
-    drupal_goto("admin/structure/drulenium/vr/release/".$release_id);
-  }else{
+    drupal_goto("admin/structure/drulenium/vr/release/" . $release_id);
+  } else {
     drupal_set_message("Your request is being processed locally, in a batch.");
-    drupal_goto("admin/structure/drulenium/vr/release/process-local/".$release_id);
+    drupal_goto("admin/structure/drulenium/vr/release/process-local/" . $release_id);
   }
   
 }
