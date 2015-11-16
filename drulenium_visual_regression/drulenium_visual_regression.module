@@ -1124,7 +1124,7 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
 }
 
 function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
-  if(empty($vr_base_url)) {
+  if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
   }
@@ -1135,7 +1135,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       $selected_node_types_array[] = $node_type;
     }
   }
-  if(!empty($selected_node_types_array)) {
+  if (!empty($selected_node_types_array)) {
     // Select an example node of each type.
     $result = db_query(
         'SELECT nid, type FROM {node} n WHERE status = 1 AND type IN (:types)',
@@ -1170,13 +1170,13 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   }
 
   $specific_pages = trim($specific_pages);
-  if(!empty($specific_pages)) {
+  if (!empty($specific_pages)) {
     $specific_pages_array = explode("\n", $specific_pages);
     foreach ($specific_pages_array as $key => $page) {
       $page = trim($page);
 
       // Expand wildcards in $specific_pages based uyppon menu links in the database.
-      if(_drulenium_vr_endsWith($page, "*")) {
+      if (_drulenium_vr_endsWith($page, "*")) {
         $pattern = substr($page, 0, strlen($page) - 1);
         $result = db_query(
           'SELECT link_path FROM {menu_links} m WHERE link_path like :pattern',
