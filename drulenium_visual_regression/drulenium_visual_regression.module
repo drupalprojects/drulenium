@@ -1250,6 +1250,47 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   return $release_id;
 }
 
+function drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
+  drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_term_types, $specific_pages);
+
+  if (empty($pages_array)) {
+    drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
+    return "";
+  }
+  $fields = array(
+    'name' => $release_name,
+    'base_url' => $vr_base_url,
+    'user_name' => $vr_user_name,
+    'user_pass' => $vr_user_pass,
+  );
+  db_update('drulenium_vr_releases')->fields($fields)->condition('rid', $release_id)->execute();
+
+  // Delete entries in drulenium_vr_runs.
+  db_delete('drulenium_vr_runs')
+    ->condition('re_id', $release_id)
+    ->execute();
+
+  // Create db records for the individual pages.
+  foreach ($pages_array as $key => $page) {
+    if (empty($page)) {
+      unset($pages_array[$key]);
+    }
+    else {
+      if($page == "<front>"){
+        $page = "";
+        $pages_array[$key] = $page;
+      }
+      $fields = array(
+	      're_id' => $release_id,
+	      'url' => $page,
+      );
+      $result = db_insert('drulenium_vr_runs')->fields($fields)->execute();
+    }
+  }
+
+  return $release_id;
+}
+
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
 
   $pages_array = array();
@@ -1286,7 +1327,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   }
   else {
     // Update
-    // TODO
+    $release_id = drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
   }
 
   if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
