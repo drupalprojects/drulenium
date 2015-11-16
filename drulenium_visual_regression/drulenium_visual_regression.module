@@ -971,10 +971,6 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
   );
 
-  $form['submit_button'] = array(
-    '#type' => 'submit',
-    '#value' => t('Take Snapshot'),
-  );
 
   if (!empty($release_id)) {
     $form_state['drulenium_visual_regression']['release_id'] = $release_id;
@@ -1011,6 +1007,16 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     if (empty($release['user_name'])) {
       $form['drulenium_vr_config']['drulenium_vr_config_user']['#collapsed'] = TRUE;
     }
+    $form['submit_button'] = array(
+      '#type' => 'submit',
+      '#value' => t('Update Snapshot'),
+    );
+  }
+  else {
+    $form['submit_button'] = array(
+      '#type' => 'submit',
+      '#value' => t('Take Snapshot'),
+    );
   }
   return $form;
 }
