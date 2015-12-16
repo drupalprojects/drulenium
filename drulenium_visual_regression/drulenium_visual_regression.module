@@ -1009,6 +1009,10 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     }
     $form['submit_button'] = array(
       '#type' => 'submit',
+      '#value' => t('Save'),
+    );
+    $form['update_button'] = array(
+      '#type' => 'submit',
       '#value' => t('Update Snapshot'),
     );
   }
@@ -1322,12 +1326,17 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
 
   if (empty($release_id)) {
-    // new
+    // New.
     $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
   }
   else {
-    // Update
+    // Update.
     $release_id = drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
+  }
+
+  // No need to continue with processing if only asked to save the settings.
+  if ($form_state['values']['op'] == t('Save')) {
+    return;
   }
 
   if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
