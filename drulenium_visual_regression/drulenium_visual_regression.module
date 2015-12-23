@@ -830,6 +830,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     if (!empty($cmp_result['diff_highlight'])) {
       $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 height=200 />";
       $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
+      $highlighted_link .= '<br /> &nbsp;';
     }
 
     // When there is no difference, link to one screenshot.
