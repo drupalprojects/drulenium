@@ -303,6 +303,30 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     $m = array();
     _drulenium_vr_open_images($image1, $image2, $m);
 
+    $maxheight = max($m['height1'], $m['height2']);
+    $maxwidth = max($m['width1'], $m['width2']);
+    if ($m['height1'] != $m['height2'] || $m['width1'] != $m['width2']) {
+      // Add some padding to the smaller image to make them equal in size.
+      $tempfile = tempnam("/tmp", "FOO") . '.png';
+      $command = "convert $image1 -resize ${maxwidth}x${maxheight}\>  -size ${maxwidth}x${maxheight} xc:blue +swap -gravity North  -composite $tempfile";
+      $exec_error = exec($command);
+      if(!empty($exec_error)) {
+        watchdog("drulenium", $exec_error . " -> $command");
+      }
+      $m['im1'] = imagecreatefrompng($tempfile);
+      $m['im1name'] = $tempfile;
+      $image1 = $tempfile;
+
+      $tempfile = tempnam("/tmp", "FOO") . '.png';
+      $command = "convert $image2 -resize ${maxwidth}x${maxheight}\>  -size ${maxwidth}x${maxheight} xc:blue +swap -gravity North  -composite $tempfile";
+      $exec_error = exec($command);
+      if(!empty($exec_error)) {
+        watchdog("drulenium", $exec_error . " -> $command");
+      }
+      $m['im2'] = imagecreatefrompng($tempfile);
+      $m['im2name'] = $tempfile;
+      $image2 = $tempfile;
+    }
 
     $diff = _drulenium_vr_image_compare($m, 5, 5, 5, 1, 5);
 
