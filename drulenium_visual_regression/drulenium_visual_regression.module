@@ -300,13 +300,13 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     $image2 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image2);
     //dsm( "$image1 $image2");
     //$output = exec("$image_magick_path/compare -metric AE -fuzz '2%' $image1 $image2 -null: 2>&1");
-    $diff = _drulenium_vr_image_compare($image1, $image2, 5, 5, 5, 1, 5);
-    if($diff == "Width does not match." || $diff == "Height does not match."){
-      // Forcing highlighted diff & gif to be generated.
-      $diff_percent = 2.99999;
-      watchdog("drulenium", $diff . " -> $image1 : $image2");
-    }
-    elseif (!isset($diff['PercentDifference'])) {
+    $m = array();
+    _drulenium_vr_open_images($image1, $image2, $m);
+
+
+    $diff = _drulenium_vr_image_compare($m, 5, 5, 5, 1, 5);
+
+    if (!isset($diff['PercentDifference'])) {
       $diff_percent = 0;
     }
     else {
@@ -1481,7 +1481,7 @@ function _drulenium_vr_contains($substring, $string) {
 
 }
 
-function _drulenium_vr_image_compare($image1, $image2, $RTolerance=0, $GTolerance=0, $BTolerance=0, $WarningTolerance=1, $ErrorTolerance=5)
+function _drulenium_vr_open_images($image1, $image2, &$meta)
 {
   if (is_resource($image1)) {
     $im = $image1;
@@ -1500,21 +1500,30 @@ function _drulenium_vr_image_compare($image1, $image2, $RTolerance=0, $GToleranc
   }
 
 
-  $OutOfSpec = 0;
-  $width2 = imagesx($im2);
-  $height2 = imagesy($im2);
+  $meta['width1'] = imagesx($im);
+  $meta['height1'] = imagesy($im);
+  $meta['width2'] = imagesx($im2);
+  $meta['height2'] = imagesy($im2);
 
-  if (imagesx($im) != imagesx($im2)) {
-    return "Width does not match.";
-  }
-  if (imagesy($im) != imagesy($im2)) {
-    return "Height does not match.";
-  }
+  $meta['im1'] = $im;
+  $meta['im2'] = $im2;
+
+}
+
+function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTolerance=0, $WarningTolerance=1, $ErrorTolerance=5) {
+  $im = $meta['im1'];
+  $im2 = $meta['im2'];
+
+  $OutOfSpec = 0;
+  $width1 = $meta['width1'];
+  $height1 = $meta['height1'];
+  $width2 = $meta['width2'];
+  $height2 = $meta['height2'];
 
   // By columns.
-  for ($width = 0; $width <= imagesx($im) - 1; $width++)
+  for ($width = 0; $width <= $width1 - 1; $width++)
   {
-    for ($height = 0; $height <= imagesy($im) - 1; $height++)
+    for ($height = 0; $height <= $height1 - 1; $height++)
     {
       $rgb = imagecolorat($im, $width, $height);
       $r1 = ($rgb >> 16) & 0xFF;
