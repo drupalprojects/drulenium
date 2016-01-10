@@ -842,7 +842,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     }
     $rows[] = array(
       $cmp_result['result_id'],
-      l($url_text, $test_base_url . $cmp_result['url']),
+      l($url_text, $test_base_url . $cmp_result['url']) . ' (' . l('B', $cmp_base_url . $cmp_result['url']) . ')',
       $cmp_result['diff_percent'],
       $highlighted_link,
       $gif_link,
