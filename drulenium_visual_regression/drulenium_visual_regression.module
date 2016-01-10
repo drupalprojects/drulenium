@@ -83,7 +83,7 @@ function drulenium_visual_regression_menu() {
   );
   $items['admin/structure/drulenium/vr/compare/%/%'] = array(
     'title' => 'Compare',
-    'page callback' => 'drulenium_visual_regression_releases_compare',
+    'page callback' => 'drulenium_visual_regression_releases_compare_admin',
     'page arguments' => array(5,6),
     'access arguments' => array('run_visual_tests'),
     'type' => MENU_CALLBACK,
@@ -111,6 +111,13 @@ function drulenium_visual_regression_menu() {
 	'page callback' => 'drulenium_visual_regression_compare_snapshots_twenty_twenty',
 	'page arguments' => array(2,3),
     'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['vr/compare/%/%'] = array(
+    'title' => 'Compare',
+    'page callback' => 'drulenium_visual_regression_releases_compare',
+    'page arguments' => array(2,3),
+    'access arguments' => array('run_visual_tests'),
     'type' => MENU_CALLBACK,
   );
 
@@ -770,36 +777,23 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-    ->fields('vr_re', array('secure_id', 'name', 'base_url'))
+    ->fields('vr_re', array('name', 'base_url'))
     ->condition('vr_re.rid', $old_re_id)
     ->execute();
   $release = $result->fetchAssoc();
-  $base_release_secure_id = $release['secure_id'];
-  $test_base_url = $release['base_url'];
   $base_release_name = $release['name'];
+  $test_base_url = $release['base_url'];
 
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
-    ->fields('vr_re', array('secure_id', 'name'))
+    ->fields('vr_re', array('name', 'base_url'))
     ->condition('vr_re.rid', $new_re_id)
     ->execute();
   $release = $result->fetchAssoc();
-  $cmp_release_secure_id = $release['secure_id'];
   $cmp_release_name = $release['name'];
+  $cmp_base_url = $release['base_url'];
 
   drupal_set_title("Compare: " . $base_release_name . " & " . $cmp_release_name);
-
-  $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
-  $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
-  $output .= '<div class="update checked">';
-  if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
-    $output .= ' <span class="process-locally">(' . l(t('Process locally'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
-  }
-  else {
-    $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
-    $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
-  }
-  $output .= "</div>\n";
 
   $header = array(t('Id'), t('URL'), t('Percentage Difference'), t('Diff Highlighted'), t('Animated GIF'));
   $rows = array();
@@ -854,8 +848,55 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       $gif_link,
     );
   }
+  if (count($rows)) {
+    $output = theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    $output = t("Sorry no results yet.");
+  }
+  return $output;
+}
 
-  if (!count($rows)) {
+function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_id) {
+  // If new id is less than old id, swap for comparison.
+  if($new_re_id < $old_re_id){
+    $tmp = $new_re_id;
+    $new_re_id = $old_re_id;
+    $old_re_id = $tmp;
+  }
+
+  $query = db_select('drulenium_vr_releases', 'vr_re');
+  $result = $query
+    ->fields('vr_re', array('secure_id', 'name'))
+    ->condition('vr_re.rid', $old_re_id)
+    ->execute();
+  $release = $result->fetchAssoc();
+  $base_release_secure_id = $release['secure_id'];
+
+  $query = db_select('drulenium_vr_releases', 'vr_re');
+  $result = $query
+    ->fields('vr_re', array('secure_id'))
+    ->condition('vr_re.rid', $new_re_id)
+    ->execute();
+  $release = $result->fetchAssoc();
+  $cmp_release_secure_id = $release['secure_id'];
+
+
+  $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
+  $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
+  $output .= '<div class="update checked">';
+  if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
+    $output .= ' <span class="process-locally">(' . l(t('Process locally'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
+  }
+  else {
+    $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
+    $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
+  }
+  $output .= "</div>\n";
+
+  $output2 = drulenium_visual_regression_releases_compare($old_re_id, $new_re_id);
+
+  if ($output2 == t("Sorry no results yet.")) {
     drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
@@ -872,8 +913,9 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       drupal_goto("admin/structure/drulenium/vr/compare/$old_re_id/$new_re_id");
     }
   }
-
-  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  else {
+    $output .= $output2;
+  }
   return $output;
 }
 
