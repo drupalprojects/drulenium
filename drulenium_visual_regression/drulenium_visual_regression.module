@@ -103,13 +103,13 @@ function drulenium_visual_regression_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['drulenium_vr/vote/js'] = array(
-	'page callback' => 'drulenium_visual_regression_vote_ahah',
-	'access arguments' => array('run_visual_tests'),
-	'type' => MENU_CALLBACK
+    'page callback' => 'drulenium_visual_regression_vote_ahah',
+    'access arguments' => array('run_visual_tests'),
+    'type' => MENU_CALLBACK,
   );
   $items['vr/twenty-twenty/%/%'] = array(
-	'page callback' => 'drulenium_visual_regression_compare_snapshots_twenty_twenty',
-	'page arguments' => array(2,3),
+    'page callback' => 'drulenium_visual_regression_compare_snapshots_twenty_twenty',
+    'page arguments' => array(2,3),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -140,25 +140,24 @@ function drulenium_visual_regression_compare_snapshots_twenty_twenty($base_run_i
  * AHAH callback for the vote buttons.
  */
 function drulenium_visual_regression_vote_ahah() {
-  $unique_content_id = filter_var(trim(filter_xss($_POST["unique_id"])),FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH);
-  //Convert content ID to MD5 hash (optional)
+  $unique_content_id = filter_var(trim(filter_xss($_POST["unique_id"])), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH);
+  // Convert content ID to MD5 hash (optional)
   //$unique_content_id = hash('md5', $unique_content_id);
   $user_vote_type = trim(filter_xss($_POST['vote']));
 
-  switch ($user_vote_type)
-  {
+  switch ($user_vote_type) {
 
     ##### User liked the content #########
     case 'up':
 
-      //check if user has already voted, determined by unique content cookie
-      if (isset($_COOKIE["voted_".$unique_content_id]))
-      {
-        header('HTTP/1.1 500 Already Voted'); //cookie found, user has already voted
-        exit(); //exit script
+      // Check if user has already voted, determined by unique content cookie.
+      if (isset($_COOKIE["voted_".$unique_content_id])) {
+        // Cookie found, user has already voted.
+        header('HTTP/1.1 500 Already Voted');
+        exit();
       }
 
-      //get vote_up value from db using unique_content_id
+      // Get vote_up value from db using unique_content_id.
       $criteria = array(
         'content_type' => 'drulenium_vr',
         'value_type' => 'points',
@@ -167,7 +166,7 @@ function drulenium_visual_regression_vote_ahah() {
       );
       $ret = votingapi_select_results($criteria, 1);
       $get_vote_up = 0;
-      if(!empty($ret)){
+      if (!empty($ret)) {
         $get_vote_up = $ret[0]['value'];
       }
 
@@ -181,21 +180,21 @@ function drulenium_visual_regression_vote_ahah() {
       $votes = array($vote);
       votingapi_set_votes($votes);
 
-      setcookie("voted_".$unique_content_id, 1, time()+7200); // set cookie that expires in 2 hour "time()+7200".
-      echo ($get_vote_up+1); //display total liked votes
+      setcookie("voted_" . $unique_content_id, 1, time() + 7200); // set cookie that expires in 2 hour "time()+7200".
+      // Display total liked votes.
+      echo ($get_vote_up + 1);
       break;
 
       ##### User disliked the content #########
     case 'down':
 
-      //check if user has already voted, determined by unique content cookie
-      if (isset($_COOKIE["voted_".$unique_content_id]))
-      {
-        header('HTTP/1.1 500 Already Voted this Content!'); //cookie found, user has already voted
-        exit(); //exit script
+      // Check if user has already voted, determined by unique content cookie.
+      if (isset($_COOKIE["voted_" . $unique_content_id])) {
+        header('HTTP/1.1 500 Already Voted this Content!');
+        exit();
       }
 
-      //get vote_up value from db using unique_content_id
+      // Get vote_up value from db using unique_content_id.
       //$result = mysqli_query($sql_con,"SELECT vote_down FROM voting_count WHERE unique_content_id='$unique_content_id' LIMIT 1");
       $criteria = array(
         'content_type' => 'drulenium_vr',
@@ -205,7 +204,7 @@ function drulenium_visual_regression_vote_ahah() {
       );
       $ret = votingapi_select_results($criteria, 1);
       $get_vote_down = 0;
-      if(!empty($ret)){
+      if (!empty($ret)) {
         $get_vote_down = $ret[0]['value'];
       }
 
@@ -219,8 +218,9 @@ function drulenium_visual_regression_vote_ahah() {
       $votes = array($vote);
       votingapi_set_votes($votes);
 
-      setcookie("voted_".$unique_content_id, 1, time()+7200);  // set cookie that expires in 2 hour "time()+7200".
-      echo ($get_vote_down+1);//display total disliked votes
+      setcookie("voted_" . $unique_content_id, 1, time() + 7200);  // set cookie that expires in 2 hour "time()+7200".
+      // Display total disliked votes.
+      echo ($get_vote_down + 1);
       break;
 
   }
@@ -248,7 +248,7 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
 
   $batch = array(
     'operations' => array(),
-    'finished' => 'drulenium_visual_regression_compare_batch_finished', // runs after batch is finished
+    'finished' => 'drulenium_visual_regression_compare_batch_finished', // runs after batch is finished.
     'title' => t('Processing request'),
     'init_message' => t('Comparision process is starting.'),
     'progress_message' => t('Processed @current out of @total sets.'),
@@ -271,7 +271,7 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
   $row = $result->fetchAssoc();
   $max = $row['run_count'];
 
-  while($progress <= $max) {
+  while ($progress <= $max) {
     $batch['operations'][] = array('drulenium_visual_regression_compare_batch_op', array($old_re_id, $new_re_id, $progress, $limit));
     $progress = $progress + $limit;
   }
@@ -297,17 +297,17 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
   $query->range(0,$limit);
   $result = $query->execute();
   $image_magick_path = variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin");
-  exec("$image_magick_path/convert -version", $out, $image_magick_code); //Try to get ImageMagick "convert" program version number.
-  //$image_magick_code = 0 if OK, nonzero if error.
 
-  while($res = $result->fetchAssoc()) {
+// Try to get ImageMagick "convert" program version number.
+  exec("$image_magick_path/convert -version", $out, $image_magick_code);
+  // $image_magick_code = 0 if OK, nonzero if error.
+
+  while ($res = $result->fetchAssoc()) {
     //have to use proc_open http://cgit.drupalcode.org/imagemagick/tree/imagemagick.module#n478
     $image1 = $res['snapshot'];
     $image2 = $res['r_c_snapshot'];
     $image1 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image1);
     $image2 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image2);
-    //dsm( "$image1 $image2");
-    //$output = exec("$image_magick_path/compare -metric AE -fuzz '2%' $image1 $image2 -null: 2>&1");
     $m = array();
     _drulenium_vr_open_images($image1, $image2, $m);
 
@@ -318,7 +318,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       $tempfile = tempnam("/tmp", "FOO") . '.png';
       $command = "convert $image1 -resize ${maxwidth}x${maxheight}\>  -size ${maxwidth}x${maxheight} xc:blue +swap -gravity North  -composite $tempfile";
       $exec_error = exec($command);
-      if(!empty($exec_error)) {
+      if (!empty($exec_error)) {
         watchdog("drulenium", $exec_error . " -> $command");
       }
       $m['im1'] = imagecreatefrompng($tempfile);
@@ -328,7 +328,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       $tempfile = tempnam("/tmp", "FOO") . '.png';
       $command = "convert $image2 -resize ${maxwidth}x${maxheight}\>  -size ${maxwidth}x${maxheight} xc:blue +swap -gravity North  -composite $tempfile";
       $exec_error = exec($command);
-      if(!empty($exec_error)) {
+      if (!empty($exec_error)) {
         watchdog("drulenium", $exec_error . " -> $command");
       }
       $m['im2'] = imagecreatefrompng($tempfile);
@@ -344,17 +344,17 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     else {
       $diff_percent = $diff['PercentDifference'];
     }
-    
+
     $gif_link = "";
     if ($diff_percent > 0 && $image_magick_code == 0) {
-      // Generate animated GIF
+      // Generate animated GIF.
       $unique_id = "drulenium/gif_" . microtime(TRUE) . ".gif";
       $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
       $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
       //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
       $command = "$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path 2>&1";
       $exec_error = exec($command);
-      if(!empty($exec_error)){
+      if (!empty($exec_error)) {
         $gif_link = "";
         watchdog("drulenium", $exec_error . " -> $command");
       }
@@ -381,10 +381,10 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
       WHERE res.rid = :res_id",
       array(':res_id' => $res['rid'], ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
-    
-    
+
+
   }
-  // update progress for message
+  // Update progress for message.
   $progress = $progress + $limit;
   // update message during each run so you know where you are in the process
   $context['message'] = 'Now processing compare: ' . $progress;
@@ -435,7 +435,7 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
     LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
     LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
     SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
-    where run.url = :url AND (rel.secure_id = :base_rel_secure_id OR rel.secure_id = :cmp_release_secure_id)", 
+    where run.url = :url AND (rel.secure_id = :base_rel_secure_id OR rel.secure_id = :cmp_release_secure_id)",
     array(':url' => $cmp_res['url'], ':base_rel_secure_id' => $base_release_secure_id, ':cmp_release_secure_id' => $cmp_release_secure_id, ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
   }
   $query = db_select('drulenium_vr_releases', 'vr_re');
@@ -632,7 +632,7 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element = null) {
 
   return $relative_file_path;
 }
-    
+
 function drulenium_visual_regression_release_status($secureid) {
   // RPC call
   $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
@@ -691,7 +691,7 @@ function drulenium_visual_regression_release_delete_form_submit($form, &$form_st
 function drulenium_visual_regression_release_detail($re_id) {
   // If Local, check if there is anything pending.
   variable_get('drulenium_vr_config_server_opt', 'drulenium');
-  
+
   $query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
     ->fields('vr_re', array('secure_id','name', 'base_url'))
@@ -704,7 +704,7 @@ function drulenium_visual_regression_release_detail($re_id) {
 
   $last = variable_get("drulenium_vr_last_check" . $re_id);
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
-  $output .= '<div class="update checked">';  
+  $output .= '<div class="update checked">';
   if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), 'admin/structure/drulenium/vr/release/process-local/' . $re_id) . ')</span>';
   }
@@ -941,17 +941,17 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     '#collapsed' => FALSE,
   );
   $form['drulenium_vr_config']['drulenium_vr_release_name'] = array(
-    '#title' => t('Release name'), 
-    '#type' => 'textfield', 
-    '#required' => TRUE, 
-    '#description' => t('Name of the release. default is current date & time.'), 
+    '#title' => t('Release name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#description' => t('Name of the release. default is current date & time.'),
     '#default_value' => format_date(REQUEST_TIME),
   );
   global $base_url;
   $form['drulenium_vr_config']['drulenium_vr_release_base_url'] = array(
-    '#title' => t('Base URL'), 
-    '#type' => 'textfield', 
-    '#required' => TRUE, 
+    '#title' => t('Base URL'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
     '#description' => t('Base URL of Site you want to test.<br/>For drupal7 sites, Base URL can be something like http://drupal7.example.com/?q= or http://drupal7.example.com/<br/>For drupal8 sites, Base URL can be something like http://drupal8.example.com/index.php/<br/>If your site is protected by HTTP Basic authentication, you can put the username & password in base url like https://user:password@www.stagesite.com/'),
     '#default_value' => variable_get('drulenium_vr_release_base_url', $base_url."/?q="),
   );
@@ -1029,15 +1029,15 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     '#collapsed' => FALSE,
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
-    '#title' => t('User name'), 
-    '#type' => 'textfield', 
-    '#description' => t('User name of the user to test as.'), 
+    '#title' => t('User name'),
+    '#type' => 'textfield',
+    '#description' => t('User name of the user to test as.'),
     '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
-    '#title' => t('Password'), 
-    '#type' => 'password', 
-    '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."), 
+    '#title' => t('Password'),
+    '#type' => 'password',
+    '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
     '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
   );
 
@@ -1114,9 +1114,9 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
   # the options to display in our form radio buttons
   $options = array(
     'local' => t('Local server'),
-    'drulenium' => t('Remote Drulenium server'), 
+    'drulenium' => t('Remote Drulenium server'),
   );
-  
+
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_config_server_opt'] = array(
     '#type' => 'radios',
     '#title' => t('Server:'),
@@ -1142,14 +1142,14 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
    * Selenium host url
    */
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config']['drulenium_vr_release_selenium_host'] = array(
-    '#title' => t('Selenium host url'), 
-    '#type' => 'textfield', 
-    '#description' => t('Site URL to selenium host. Usually http://localhost:4444/wd/hub'), 
+    '#title' => t('Selenium host url'),
+    '#type' => 'textfield',
+    '#description' => t('Site URL to selenium host. Usually http://localhost:4444/wd/hub'),
     '#default_value' => variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"),
   );
   /* ChromeDriver
-   * The path to the driver executable must be set by the webdriver.chrome.driver system property; 
-   * for more information, see http://code.google.com/p/selenium/wiki/ChromeDriver. 
+   * The path to the driver executable must be set by the webdriver.chrome.driver system property;
+   * for more information, see http://code.google.com/p/selenium/wiki/ChromeDriver.
    * The latest version can be downloaded from http://chromedriver.storage.googleapis.com/index.html
    */
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config']['drulenium_vr_release_selenium_browser'] = array(
@@ -1163,9 +1163,9 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
      '#description' => t('Pick a browser to test with.'),
    );
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config']['drulenium_vr_release_imagemagick_path'] = array(
-    '#title' => t('Path to the Image Magick binary'), 
-    '#type' => 'textfield', 
-    '#description' => t('The complete path of the ImageMagick <kbd>convert</kbd> binary. For example: <kbd>/usr/bin</kbd> or <kbd>C:\Program Files\ImageMagick-6.3.4-Q16</kbd>. Run "which" command in linux terminal to get the path, like "which convert"'), 
+    '#title' => t('Path to the Image Magick binary'),
+    '#type' => 'textfield',
+    '#description' => t('The complete path of the ImageMagick <kbd>convert</kbd> binary. For example: <kbd>/usr/bin</kbd> or <kbd>C:\Program Files\ImageMagick-6.3.4-Q16</kbd>. Run "which" command in linux terminal to get the path, like "which convert"'),
     '#default_value' => variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin"),
   );
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config'] = array(
@@ -1182,9 +1182,9 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
   );
   $site_email = variable_get('site_mail', '');
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_release_notify_email'] = array(
-    '#title' => t('Email'), 
-    '#type' => 'textfield', 
-    '#description' => t('Email to Notify on completion.'), 
+    '#title' => t('Email'),
+    '#type' => 'textfield',
+    '#description' => t('Email to Notify on completion.'),
     '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
   );
 
@@ -1320,7 +1320,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       $result = db_insert('drulenium_vr_runs')->fields($fields)->execute();
     }
   }
-  
+
   return $release_id;
 }
 
@@ -1385,7 +1385,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
   variable_set('drulenium_vr_path_custom', $specific_pages);
   variable_set('drulenium_vr_node_custom', $specific_node_types);
   variable_set('drulenium_vr_term_custom', $specific_term_types);
-  
+
   variable_set('drulenium_vr_release_user_name', $test_user_name);
   variable_set('drulenium_vr_release_user_pass', $test_user_pass);
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
@@ -1423,7 +1423,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     drupal_set_message("Your request is being processed locally, in a batch.");
     drupal_goto("admin/structure/drulenium/vr/release/process-local/" . $release_id);
   }
-  
+
 }
 
 function drulenium_visual_regression_compare_releases_form($form, $form_state) {
@@ -1560,7 +1560,7 @@ function _drulenium_vr_open_images($image1, $image2, &$meta)
     trigger_error("Image 1:$image1 could not be opened", E_USER_ERROR);
     return;
   }
-   
+
   if (is_resource($image2)) {
     $im2 = $image2;
   }
@@ -1605,7 +1605,7 @@ function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTol
         $r2 = ($rgb >> 16) & 0xFF;
         $g2 = ($rgb >> 8) & 0xFF;
         $b2 = $rgb & 0xFF;
-         
+
         if (!($r1>=$r2-$RTolerance && $r1<=$r2+$RTolerance))
           $OutOfSpec++;
 
@@ -1625,7 +1625,7 @@ function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTol
   $RET['PixelsByColors'] = $TotalPixelsWithColors;
   $RET['PixelsOutOfSpec'] = $OutOfSpec;
 
-  if ($OutOfSpec!=0 && $TotalPixelsWithColors!=0)
+  if ($OutOfSpec != 0 && $TotalPixelsWithColors != 0)
   {
     $PercentOut = ($OutOfSpec / $TotalPixelsWithColors) * 100;
     $RET['PercentDifference'] = $PercentOut;
@@ -1644,7 +1644,7 @@ function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTol
  * @param int|string $from First ID.
  * @param int|string $to Second ID.
  * @param string $token Received token.
- * @return boolean
+ * @return bool Access or not.
  */
 function _drulenium_visual_regression_access_vr_compare($from, $to, $token = NULL) {
   $token_access = isset($token) && $token == _drulenium_secure_link_token($from, $to);
@@ -1656,7 +1656,7 @@ function _drulenium_visual_regression_access_vr_compare($from, $to, $token = NUL
  *
  * @param int|string $from First ID
  * @param int|string $to Second ID
- * @return string
+ * @return string Secure token.
  */
 function _drulenium_secure_link_token($from, $to) {
   return sha1($from . $to . drupal_get_private_key());
