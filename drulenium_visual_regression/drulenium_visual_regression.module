@@ -117,7 +117,8 @@ function drulenium_visual_regression_menu() {
     'title' => 'Compare',
     'page callback' => 'drulenium_visual_regression_releases_compare',
     'page arguments' => array(2,3),
-    'access arguments' => array('run_visual_tests'),
+    'access callback' => '_drulenium_visual_regression_access_vr_compare',
+    'access arguments' => array(2, 3, 4),
     'type' => MENU_CALLBACK,
   );
 
@@ -893,6 +894,8 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
   $output .= "</div>\n";
+  $output .= "<div class='sharelink'>" . l(t('Secure share link'), "vr/compare/$old_re_id/$new_re_id/" . _drulenium_secure_link_token($old_re_id, $new_re_id));
+  $output .= "</div>\n";
 
   $output2 = drulenium_visual_regression_releases_compare($old_re_id, $new_re_id);
 
@@ -1633,4 +1636,28 @@ function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTol
   }
 
   return $RET;
+}
+
+/**
+ * Access hook for Visual compare.
+ *
+ * @param int|string $from First ID.
+ * @param int|string $to Second ID.
+ * @param string $token Received token.
+ * @return boolean
+ */
+function _drulenium_visual_regression_access_vr_compare($from, $to, $token = NULL) {
+  $token_access = isset($token) && $token == _drulenium_secure_link_token($from, $to);
+  return $token_access || user_access('run_visual_tests');
+}
+
+/**
+ * Create a token based on two release ID's.
+ *
+ * @param int|string $from First ID
+ * @param int|string $to Second ID
+ * @return string
+ */
+function _drulenium_secure_link_token($from, $to) {
+  return sha1($from . $to . drupal_get_private_key());
 }
