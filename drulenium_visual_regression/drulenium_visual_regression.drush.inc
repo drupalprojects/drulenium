@@ -67,7 +67,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
     $vr_base_url = $base_url . "/?q=";
   }
 
-  drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url), 'ok'));
+  drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
   $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
   drulenium_visual_regression_release_setup_batch($re_id);
