@@ -51,15 +51,15 @@ function drulenium_visual_regression_drush_command() {
  */
 function drush_drulenium_visual_regression_create($vr_base_url = "", $release_name = "") {
   $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
-  $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass");
-  $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name");
+  $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass", '');
+  $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name", '');
   //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
   //$drulenium_vr_path_custom = str_replace("&gt;",">",$drulenium_vr_path_custom);
   $secureid = drupal_hash_base64(drupal_random_bytes(55));
   if (empty($release_name)) {
     $release_name = format_date(REQUEST_TIME);
   }
-  $pages_array = array();
+  $pages_array = array('<front>');
 
   // Default to the current site if no $vr_base_url is provided.
   if (empty($vr_base_url)) {
