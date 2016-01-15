@@ -2085,8 +2085,9 @@ function drulenium_visual_regression_compare_releases_form($form, $form_state) {
   $form['submit'] = array('#type' => 'submit', '#value' => t('Compare'));
 
 
-  $form['#attached']['css'] = array('sites/all/modules/diff/css/diff.default.css');
-  $form['#attached']['js'] = array('sites/all/modules/diff/js/diff.js');
+  $diff_module = drupal_get_path('module', 'diff');
+  $form['#attached']['css'] = array($diff_module . '/css/diff.default.css');
+  $form['#attached']['js'] = array($diff_module . '/js/diff.js');
   // dsm($form);
   return $form;
 }
