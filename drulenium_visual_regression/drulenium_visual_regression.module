@@ -14,6 +14,10 @@ function drulenium_visual_regression_permission() {
       'title' => t('Run Tests'),
       'description' => t('Configure, Run & Compare tests.'),
     ),
+    'administer_drulenium_vr' => array(
+      'title' => t('Administer Drulenium VR config'),
+      'description' => t('Configure & run cleanup tasks.'),
+    ),
   );
 }
 
@@ -46,6 +50,14 @@ function drulenium_visual_regression_libraries_info() {
  * Implements hook_menu().
  */
 function drulenium_visual_regression_menu() {
+  $items['admin/structure/drulenium/cleanup'] = array(
+    'title' => 'Drulenium cleanup',
+    'description' => 'Cleanup Drulenium data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drulenium_visual_regression_cache_settings_form'),
+    'access arguments' => array('administer_drulenium_vr'),
+    'file' => 'drulenium_visual_regression.admin.inc',
+  );
   $items['admin/structure/drulenium/vr'] = array(
     'type' => MENU_LOCAL_TASK,
     'title' => 'Visual Regression',
