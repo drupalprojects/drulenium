@@ -944,7 +944,12 @@ function drulenium_visual_regression_releases() {
 }
 
 function drulenium_visual_regression_create_release_form($form, &$form_state, $release_id = NULL) {
+  $preset_cid = '';
+  if(isset($_GET["cid"])) {
+    $preset_cid = $_GET["cid"];
+  }
   $form = array();
+  dsm("in drulenium_visual_regression_create_release_form");
   $form['drulenium_vr_config'] = array(
     '#type' => 'fieldset',
     '#title' => t('Configure'),
@@ -967,91 +972,95 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     '#description' => t('Base URL of Site you want to test.<br/>For drupal7 sites, Base URL can be something like http://drupal7.example.com/?q= or http://drupal7.example.com/<br/>For drupal8 sites, Base URL can be something like http://drupal8.example.com/index.php/<br/>If your site is protected by HTTP Basic authentication, you can put the username & password in base url like https://user:password@www.stagesite.com/'),
     '#default_value' => variable_get('drulenium_vr_release_base_url', $base_url."/?q="),
   );
-  $form['drulenium_vr_config']['pages'] = array(
-      '#type' => 'vertical_tabs',
-      '#attached' => array(
-          'js' => array(drupal_get_path('module', 'block') . '/block.js'),
-  ),
-  );
 
-  // Per-path pages.
-  $form['drulenium_vr_config']['pages']['path'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Pages'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#group' => 'pages',
-      '#weight' => 0,
-  );
-  $form['drulenium_vr_config']['pages']['path']['drulenium_vr_path_custom'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Test on specific pages'),
-      '#description' => "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. Use <front> for home page.",
-      '#default_value' => variable_get('drulenium_vr_path_custom', '<front>'),
-  );
+  if (empty($preset_cid)) {
+    $form['drulenium_vr_config']['pages'] = array(
+        '#type' => 'vertical_tabs',
+        '#attached' => array(
+            'js' => array(drupal_get_path('module', 'block') . '/block.js'),
+    ),
+    );
 
-  // Per-node-type testing.
-  $form['drulenium_vr_config']['pages']['node'] = array(
+    // Per-path pages.
+    $form['drulenium_vr_config']['pages']['path'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Pages'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#group' => 'pages',
+        '#weight' => 0,
+    );
+    $form['drulenium_vr_config']['pages']['path']['drulenium_vr_path_custom'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Test on specific pages'),
+        '#description' => "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. Use <front> for home page.",
+        '#default_value' => variable_get('drulenium_vr_path_custom', '<front>'),
+    );
+
+    // Per-node-type testing.
+    $form['drulenium_vr_config']['pages']['node'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Content Types'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#group' => 'pages',
+        '#weight' => 20,
+    );
+    $node_types = array();
+    $result = db_query('SELECT type, name FROM {node_type}');
+    foreach ($result as $row) {
+      $node_types[$row->type] = $row->name;
+    }
+    $form['drulenium_vr_config']['pages']['node']['drulenium_vr_node_custom'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Test for specific content types'),
+        '#options' => $node_types,
+        '#description' => t('Test on pages that display content of the given type(s).'),
+        '#default_value' => variable_get('drulenium_vr_node_custom', array()),
+    );
+
+    // Per-term-type testing.
+    $form['drulenium_vr_config']['pages']['term'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Taxonomy'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#group' => 'pages',
+        '#weight' => 20,
+    );
+    $vocabs = array();
+    $result = db_query('SELECT vid, name FROM {taxonomy_vocabulary}');
+    foreach ($result as $row) {
+      $vocabs[$row->vid] = $row->name;
+    }
+    $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Test for specific Taxonomy Vocabularies'),
+        '#options' => $vocabs,
+        '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
+        '#default_value' => variable_get('drulenium_vr_term_custom', array()),
+    );
+
+    $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Content Types'),
+      '#title' => t('User Configuration'),
+      '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#group' => 'pages',
-      '#weight' => 20,
-  );
-  $node_types = array();
-  $result = db_query('SELECT type, name FROM {node_type}');
-  foreach ($result as $row) {
-    $node_types[$row->type] = $row->name;
+      '#collapsed' => FALSE,
+    );
+    $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
+      '#title' => t('User name'),
+      '#type' => 'textfield',
+      '#description' => t('User name of the user to test as.'),
+      '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
+    );
+    $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
+      '#title' => t('Password'),
+      '#type' => 'password',
+      '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
+      '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
+    );
   }
-  $form['drulenium_vr_config']['pages']['node']['drulenium_vr_node_custom'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Test for specific content types'),
-      '#options' => $node_types,
-      '#description' => t('Test on pages that display content of the given type(s).'),
-      '#default_value' => variable_get('drulenium_vr_node_custom', array()),
-  );
-
-  // Per-term-type testing.
-  $form['drulenium_vr_config']['pages']['term'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Taxonomy'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#group' => 'pages',
-      '#weight' => 20,
-  );
-  $vocabs = array();
-  $result = db_query('SELECT vid, name FROM {taxonomy_vocabulary}');
-  foreach ($result as $row) {
-    $vocabs[$row->vid] = $row->name;
-  }
-  $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Test for specific Taxonomy Vocabularies'),
-      '#options' => $vocabs,
-      '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
-      '#default_value' => variable_get('drulenium_vr_term_custom', array()),
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('User Configuration'),
-    '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
-    '#title' => t('User name'),
-    '#type' => 'textfield',
-    '#description' => t('User name of the user to test as.'),
-    '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
-    '#title' => t('Password'),
-    '#type' => 'password',
-    '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
-    '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
-  );
 
 
   if (!empty($release_id)) {
@@ -1293,7 +1302,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
     }
   }
 }
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
   if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
@@ -1308,6 +1317,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   $fields = array(
       'name' => $release_name,
       'secure_id' => $secureid,
+      'preset_cid' => $preset_cid,
   	  'base_url' => $vr_base_url,
       'user_name' => $vr_user_name,
   	  'user_pass' => $vr_user_pass,
@@ -1336,7 +1346,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   return $release_id;
 }
 
-function drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
+function drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
   drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_term_types, $specific_pages);
 
   if (empty($pages_array)) {
@@ -1346,6 +1356,7 @@ function drulenium_visual_regression_update_release_in_db($release_id, $release_
   $fields = array(
     'name' => $release_name,
     'base_url' => $vr_base_url,
+    'preset_cid' => $preset_cid,
     'user_name' => $vr_user_name,
     'user_pass' => $vr_user_pass,
   );
@@ -1378,28 +1389,44 @@ function drulenium_visual_regression_update_release_in_db($release_id, $release_
 }
 
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
+  $preset_cid = '';
+  if(isset($_GET["cid"])) {
+    $preset_cid = $_GET["cid"];
+  }
 
   $pages_array = array();
 
-  $specific_pages = $form_state['values']['drulenium_vr_path_custom'];
-  if (!empty($form_state['drulenium_visual_regression']['release_id'])) {
-    $specific_node_types = $specific_term_types = array();
-    $release_id = $form_state['drulenium_visual_regression']['release_id'];
+  if(empty($preset_cid)) {
+    $specific_pages = $form_state['values']['drulenium_vr_path_custom'];
+    if (!empty($form_state['drulenium_visual_regression']['release_id'])) {
+      $specific_node_types = $specific_term_types = array();
+      $release_id = $form_state['drulenium_visual_regression']['release_id'];
+    } else {
+      $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
+      $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
+    }
+    $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
+    $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
+
+    // Store some values globally as default for the next time.
+    variable_set('drulenium_vr_path_custom', $specific_pages);
+    variable_set('drulenium_vr_node_custom', $specific_node_types);
+    variable_set('drulenium_vr_term_custom', $specific_term_types);
+
+    variable_set('drulenium_vr_release_user_name', $test_user_name);
+    variable_set('drulenium_vr_release_user_pass', $test_user_pass);
   } else {
-    $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
-    $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
+    //Get pages from $preset_cid
+    $preset_obj = drulenium_preset_load($preset_cid);
+
+    $specific_pages = $preset_obj->settings['pages']['path']['custom'];
+    $specific_node_types = $preset_obj->settings['pages']['node']['custom'];
+    $specific_term_types = $preset_obj->settings['pages']['term']['custom'];
+
+    $test_user_name = '';
+    $test_user_pass = '';
   }
-  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
-  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
-
-  // Store some values globally as default for the next time.
-  variable_set('drulenium_vr_path_custom', $specific_pages);
-  variable_set('drulenium_vr_node_custom', $specific_node_types);
-  variable_set('drulenium_vr_term_custom', $specific_term_types);
-
-  variable_set('drulenium_vr_release_user_name', $test_user_name);
-  variable_set('drulenium_vr_release_user_pass', $test_user_pass);
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
 
 
@@ -1409,11 +1436,11 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
   if (empty($release_id)) {
     // New.
-    $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
+    $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages, $preset_cid);
   }
   else {
     // Update.
-    $release_id = drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages);
+    $release_id = drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages, $preset_cid);
   }
 
   // No need to continue with processing if only asked to save the settings.

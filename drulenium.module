@@ -201,6 +201,15 @@ function drulenium_menu() {
       )
   );
 
+  $items['admin/structure/drulenium/presets/run'] = array(
+      'title' => 'Run tests',
+      'page callback' => 'drulenium_tests_table_list',
+      'access arguments' => array(
+          'run_test_cases'
+      ),
+      'type' => MENU_LOCAL_TASK // This adds another tab under 'Update'
+  );
+
   return $items;
 }
 
@@ -583,7 +592,7 @@ function drulenium_tests_catch_output() {
 }
 
 function drulenium_tests_table_list() {
-  $header = array(t('Name'), t('Description'), t('Download'), t('Test'));
+  $header = array(t('Name'), t('Description'), t('Visual regression'), t('Download'), t('Test'));
   $rows = array();
   $presets = drulenium_preset_load();
   $category_presets = array();
@@ -611,6 +620,7 @@ function drulenium_tests_table_list() {
       $rows[] = array(
           $key,
           $value->description,
+          l(t("Visual regression"), "admin/structure/drulenium/vr", array('query' => array('cid' => $key))),
           '<a href="'.$base_url.'/drulenium/tests/case/'.$key.'">Download</a>',
           $test_link,
       );

@@ -11,7 +11,7 @@ $plugin = array(
     'menu' => array(
         'menu prefix' => 'admin/structure/drulenium',
         'menu item' => 'presets',
-        'menu title' => 'Presets',
+        'menu title' => 'Tests',
         'menu description' => 'Add, edit or delete presets.',
     ),
     'title' => t('Drupal presets'),

@@ -30,6 +30,13 @@ function drulenium_visual_regression_schema() {
               'default' => '',
               'not null' => TRUE,
           ),
+          'preset_cid' => array(
+              'description' => 'Preset cid.',
+              'type' => 'varchar',
+              'length' => 120,
+              'default' => '',
+              'not null' => TRUE,
+          ),
           'base_url' => array(
               'description' => 'Base URL.',
               'type' => 'varchar',
@@ -237,4 +244,18 @@ function drulenium_visual_regression_update_7003() {
               'default' => '',
               'not null' => TRUE,
           ));
+}
+
+/**
+ * Add newcolumn preset_cid to {drulenium_vr_releases} table.
+ */
+
+function drulenium_visual_regression_update_7004() {
+  db_add_field('drulenium_vr_releases', 'preset_cid', array(
+    'description' => 'Preset cid.',
+    'type' => 'varchar',
+    'length' => 120,
+    'default' => '',
+    'not null' => TRUE,
+  ));
 }
