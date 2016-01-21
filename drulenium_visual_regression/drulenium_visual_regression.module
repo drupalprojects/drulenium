@@ -428,11 +428,65 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
 }
 
 function drulenium_visual_regression_release_process_saucelabs($re_id) {
+  //drulenium_visual_regression_saucelabs_batch_op("", "", "", "");
+  //return 'drulenium_visual_regression_saucelabs_batch_op';
   //URL as third parameter $param[2]
-  $command = "cd /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/modules/drulenium/drulenium_visual_regression/includes/sausage.inc http://saucelabs.com/test/guinea-pig 2>&1";
+  $command = "cd /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/modules/drulenium/drulenium_visual_regression/includes/sausage.inc http://saucelabs.com/test/guinea-pig 2>&1";
   $exec_error = exec($command);
   dsm($exec_error);
   return 'Sauce Labs';
+}
+
+function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit) {
+  //Create .inc file for phpunit
+  $mydir = file_default_scheme() . '://drulenium/saucelabs/phpunit';
+  file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
+  $unique_id = "drulenium/saucelabs/phpunit/" . time() . ".inc";
+  $Selenium2TestCaseFilePath = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
+  $data = '<?php
+
+require_once "/Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage/vendor/autoload.php";
+
+define("SAUCE_HOST", "nd49:8f872f51-97a0-4f6a-ba30-f67ef68e3912@ondemand.saucelabs.com");
+
+class WebTest extends PHPUnit_Extensions_Selenium2TestCase
+{
+ protected $start_url = "http://saucelabs.com/test/guinea-pig";
+
+ public static $browsers = array(
+        array(
+            "browserName" => "firefox",
+            "host" => SAUCE_HOST,
+            "port" => 80,
+            "desiredCapabilities" => array(
+                "version" => "15",
+                "platform" => "Windows 2012"
+            )
+        )
+    );
+
+    protected function setUp()
+    {
+        $this->setBrowserUrl("");  
+    }
+
+    public function testTitle()
+    {
+        //echo print_r($_SERVER["argv"], TRUE);
+        //$param = $_SERVER["argv"];
+        $url = $this->start_url;
+        $this->url($url);
+        $this->assertContains("I am a page title", $this->title());
+    }
+}
+  ';
+  file_unmanaged_save_data($data, $destination = $Selenium2TestCaseFilePath, $replace = FILE_EXISTS_REPLACE);
+  dsm($Selenium2TestCaseFilePath);
+  $command = "cd /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
+  dsm($command);
+  $exec_error = exec($command);
+  dsm($exec_error);
+  
 }
 
 function drulenium_visual_regression_release_process_local($re_id) {
