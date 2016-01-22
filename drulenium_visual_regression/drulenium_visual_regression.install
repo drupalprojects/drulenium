@@ -87,6 +87,13 @@ function drulenium_visual_regression_schema() {
               'type' => 'text',
               'not null' => TRUE,
           ),
+          'step_num' => array(
+              'description' => 'step_num for run',
+              'type' => 'int',
+              'unsigned' => TRUE,
+              'not null' => TRUE,
+              'default' => 0,
+          ),
           'snapshot' => array(
               'description' => 'file path to snapshot image.',
               'type' => 'varchar',
@@ -257,5 +264,19 @@ function drulenium_visual_regression_update_7004() {
     'length' => 120,
     'default' => '',
     'not null' => TRUE,
+  ));
+}
+
+/**
+ * Add newcolumn step_num to {drulenium_vr_runs} table.
+ */
+
+function drulenium_visual_regression_update_7005() {
+  db_add_field('drulenium_vr_runs', 'step_num', array(
+    'description' => 'step_num for run',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
   ));
 }
