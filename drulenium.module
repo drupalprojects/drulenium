@@ -1,7 +1,7 @@
 <?php
 
-define('PLUGIN_FILL_TEXTBOX', 'drulenium_facepile');
-define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_verify_attribute');
+define('PLUGIN_FILL_TEXTBOX', 'drulenium_filltextbox');
+define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_takescreenshot');
 
 /**
  * Implementation of hook_perm().

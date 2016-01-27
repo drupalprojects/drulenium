@@ -622,7 +622,7 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
         drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr);
         break;
       case PLUGIN_TAKE_SCREENSHOT:
-        drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $step_num, $re_id, $page_url);
+        drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url);
         break;
     }
   }
@@ -634,8 +634,13 @@ function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plu
   $driver->findElement(WebDriverBy::id($element_id))->sendKeys($value);
 }
 
-function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $step_num, $re_id, $page_url) {
-  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, null, "_$step_num");
+function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url) {
+  $element_id = $plugin_arr['description']['locator'];
+  $element = null;
+  if(!empty($element_id)){
+    $element = $driver->findElement(WebDriverBy::id($element_id));
+  }
+  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element, "_$step_num");
 
   $fields = array(
       're_id' => $re_id,
@@ -667,7 +672,7 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element = null, $
 
   // Continue to crop out a specific element.
 
-  $screenshot = drupal_realpath(file_default_scheme() . '://') . $unique_id; // Change the path here as well
+  $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id; // Change the path here as well
 
   //dsm($relative_file_path);
   $element_width = $element->getSize()->getWidth();
