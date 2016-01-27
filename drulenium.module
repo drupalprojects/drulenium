@@ -1,7 +1,7 @@
 <?php
 
-// facebook developers site
-//define('FB_REF_BASE_URL', 'http://developers.facebook.com/docs/reference/plugins/');
+define('PLUGIN_FILL_TEXTBOX', 'drulenium_facepile');
+define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_verify_attribute');
 
 /**
  * Implementation of hook_perm().
@@ -693,8 +693,61 @@ function drulenium_theme($existing, $type, $theme, $path) {
               'plugin_type' => NULL,
               'options' => array()
           )
-      )
+      ),
   );
+}
+
+function drulenium_sort_plugins_by_weight($a, $b)
+{
+  $a_weight = $a['weight']['#default_value'];
+  $b_weight = $b['weight']['#default_value'];
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return ($a_weight < $b_weight) ? -1 : 1;
+}
+
+function drulenium_presets_ui_form_table_theme($orig_form) {
+  $form = $orig_form;
+  // Initialize the variable which will store our table rows.
+  $rows = array();
+
+  uasort($form['test_plugin_type']['plugin_items'], "drulenium_sort_plugins_by_weight");
+
+  // Iterate over each element in our $form['test_plugin_type']['plugin_items'] array.
+  foreach (element_children($form['test_plugin_type']['plugin_items']) as $id) {
+    foreach (element_children($form['test_plugin_type']['plugin_items'][$id]['description']) as $ele_id) {
+      //Copying default_value to #value because of https://www.drupal.org/node/283640
+      $form['test_plugin_type']['plugin_items'][$id]['description'][$ele_id]['#value'] = $form['test_plugin_type']['plugin_items'][$id]['description'][$ele_id]['#default_value'];
+    }
+    $form['test_plugin_type']['plugin_items'][$id]['weight']['#value'] = $form['test_plugin_type']['plugin_items'][$id]['weight']['#default_value'];
+    unset($form['test_plugin_type']['plugin_items'][$id]['weight']['#attributes']['class'][2]);
+
+    $rows[] = array(
+        'data' => array(
+            drupal_render($form['test_plugin_type']['plugin_items'][$id]['name']),
+            drupal_render($form['test_plugin_type']['plugin_items'][$id]['description']),
+            drupal_render($form['test_plugin_type']['plugin_items'][$id]['weight']),
+        ),
+        'class' => array('draggable'),
+    );
+  }
+
+  // We now define the table header values.  Ensure that the 'header' count
+  // matches the final column count for your table.
+  $header = array(t('Name'), t('Description'), t('Weight'));
+
+  $table_id = 'plugin-items-table';
+
+  // We can render our tabledrag table for output.
+  $output = theme('table', array(
+      'header' => $header,
+      'rows' => $rows,
+      'attributes' => array('id' => $table_id),
+  ));
+
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'plugin-item-weight');
+  return $output;
 }
 
 /**

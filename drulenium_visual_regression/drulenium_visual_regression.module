@@ -613,14 +613,24 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
 
 function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $page_url) {
   $preset_obj = drulenium_preset_load($preset_cid);
-  $plugin_type = $preset_obj->plugin_type;
-  drulenium_visual_regression_selenium_task_fill_textbox_do($driver, "edit-name", "123");
-  drulenium_visual_regression_selenium_task_take_screenshot_do($driver, 1, $re_id, $page_url);
-  drulenium_visual_regression_selenium_task_fill_textbox_do($driver, "edit-pass", "qwert");
-  drulenium_visual_regression_selenium_task_take_screenshot_do($driver, 2, $re_id, $page_url);
+  $step_num = 0;
+  foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
+    $step_num++;
+    $plugin_type = $plugin_arr["type"];
+    switch ($plugin_type) {
+      case PLUGIN_FILL_TEXTBOX:
+        drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr);
+        break;
+      case PLUGIN_TAKE_SCREENSHOT:
+        drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $step_num, $re_id, $page_url);
+        break;
+    }
+  }
 }
 
-function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $element_id, $value) {
+function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr) {
+  $element_id = $plugin_arr['description']['locator'];
+  $value = $plugin_arr['description']['text'];
   $driver->findElement(WebDriverBy::id($element_id))->sendKeys($value);
 }
 

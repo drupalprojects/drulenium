@@ -31,11 +31,12 @@ $plugin = array(
  * submit handler
 */
 function drulenium_presets_ui_form_submit(&$form, &$form_state) {
-  //dpm($form_state);
   $type = $form_state['values']['test_plugin_type']['plugin_type'];
   $form_state['item']->plugin_type = $type;
   $form_state['item']->drulenium_attrs = $form_state['values']['drulenium_settings_' . $type]['drulenium_attrs_' . $type];
   $form_state['item']->settings = $form_state['values']['drulenium_settings_' . $type]['settings_' . $type];
+
+  $form_state['item']->settings["plugins"] = $form_state['values']['test_plugin_type']['plugin_items'];
 }
 
 /**
@@ -70,7 +71,85 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       '#type' => 'fieldset',
       '#title' => t('Drulenium plugin type'),
       '#collapsible' => TRUE,
-      '#tree' => TRUE
+      // Set up the wrapper so that AJAX will be able to replace the fieldset.
+      '#prefix' => '<div id="settings-fieldset-wrapper">',
+      '#suffix' => '</div>',
+      '#tree' => TRUE,
+  );
+
+  foreach ( $all_plugins as $type => $plugin ) {
+    if (empty($form_state['num_of_add_plugin_'.$type])) {
+      $form_state['num_of_add_plugin_'.$type] = 0;
+    }
+    $form['test_plugin_type']["add_plugin_$type"] = array(
+        '#type' => 'submit',
+        '#value' => t('Add')." {$plugin['description']}",
+        '#submit' => array('drulenium_plugin_add_more_add_one'),
+        // See the examples in dynamic_fieldable_content_settings.module for more details on the
+        // properties of #ajax.
+        '#ajax' => array(
+            'callback' => 'drulenium_plugin_add_more_callback',
+            'wrapper' => 'settings-fieldset-wrapper',
+        ),
+    );
+  }
+
+  $form['plugin_items']['#tree'] = TRUE;
+  $plugin_ctr = 0;
+  foreach ($export->settings['plugins'] as $type_and_num => $plugin_arr) {
+    $plugin_ctr++;
+    $plugin_type = $plugin_arr["type"];
+    $plugin_weight = $plugin_arr["weight"];
+    $plugin_name = $all_plugins[$plugin_type]['description'];
+    $form['test_plugin_type']['plugin_items'][$type_and_num] = array(
+        // We'll use a form element of type '#markup' to display the item name.
+        'name' => array(
+            '#markup' => $plugin_name,
+            '#attributes' => array(
+                'class' => array(
+                    'element-invisible',
+                ),
+            ),
+        ),
+        'type' => array('#type' => 'value', '#value' => $plugin_type),
+
+        // The 'weight' field will be manipulated as we move the items around in
+        // the table using the tabledrag activity.  We use the 'weight' element
+        // defined in Drupal's Form API.
+        'weight' => array(
+            '#type' => 'weight',
+            '#title' => t('Weight'),
+            '#default_value' => $plugin_weight,
+            '#delta' => 10,
+            '#attributes' => array(
+                'class' => array(
+                    'plugin-item-weight',
+                    'plugin-weight-' . $type_and_num,
+                    'element-invisible',
+                ),
+            ),
+            '#title_display' => 'invisible',
+        ),
+    );
+    // Drulenium attrs
+    $form['test_plugin_type']['plugin_items'][$type_and_num]['description'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => 'Drulenium plugin attributes',
+    );
+    $form['test_plugin_type']['plugin_items'][$type_and_num]['weight'] = form_process_weight($form['test_plugin_type']['plugin_items'][$type_and_num]['weight']);
+
+    $form['test_plugin_type']['plugin_items'][$type_and_num]['description'] += drulenium_test_plugin_fb_settings_form($plugin_type, $plugin_arr["description"]);
+
+    //Add classes for javascript handling
+    foreach (element_children($form['test_plugin_type']['plugin_items'][$type_and_num]['description']) as $ele_id) {
+      $form['test_plugin_type']['plugin_items'][$type_and_num]['description'][$ele_id]['#attributes']['class'] = array("plugin-type-$plugin_type", "plugin-num-$plugin_ctr", "plugin-setting-$ele_id");
+    }
+  }
+
+  $form['test_plugin_type']['mkup'] = array(
+      '#markup' => drulenium_presets_ui_form_table_theme($form),
   );
 
   $form['test_plugin_type']['plugin_type'] = array(
@@ -81,12 +160,7 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       '#description' => t('Description for this preset.')
   );
 
-  // output all form settings here but show/hide using
-  // ctools 'dependent' plugin
-
-
   foreach ( $all_plugins as $type => $plugin ) {
-
     // fb settings
     $id = 'drulenium-settings-' . $type;
     $wrapper_id = $id . '-wrapper';
@@ -139,6 +213,31 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
     $form['drulenium_settings_' . $type]['settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
     //dsm($export);
   }
+  $form['#attached']['js'] = array(
+      drupal_get_path('module', 'drulenium') . '/js/drulenium_preset_form.js',
+  );
+}
+
+/**
+ * Submit handler for the "add-one-more" button.
+ *
+ * Increments the max counter and causes a rebuild.
+ */
+function drulenium_plugin_add_more_add_one($form, &$form_state) {
+  $clicked_plugin_type = end($form_state['triggering_element']['#parents']);
+  //remove add_plugin_ string from $clicked_plugin_type
+  $plugin_type = substr($clicked_plugin_type, 11);
+  $form_state['item']->settings['plugins'][$plugin_type.'_1'] = array('type' => $plugin_type, 'weight' => 0, 'description' => array());
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Callback for both ajax-enabled buttons.
+ *
+ * Selects and returns the fieldset with the names in it.
+ */
+function drulenium_plugin_add_more_callback($form, $form_state) {
+  return $form['test_plugin_type'];
 }
 
 function _drulenium_presets_ui_create_block_form($export) {
