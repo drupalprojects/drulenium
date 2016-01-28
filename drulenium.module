@@ -1,7 +1,7 @@
 <?php
 
-// facebook developers site
-//define('FB_REF_BASE_URL', 'http://developers.facebook.com/docs/reference/plugins/');
+define('PLUGIN_FILL_TEXTBOX', 'drulenium_filltextbox');
+define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_takescreenshot');
 
 /**
  * Implementation of hook_perm().
@@ -199,6 +199,15 @@ function drulenium_menu() {
       'access arguments' => array(
           'create_test_cases'
       )
+  );
+
+  $items['admin/structure/drulenium/presets/run'] = array(
+      'title' => 'Run tests',
+      'page callback' => 'drulenium_tests_table_list',
+      'access arguments' => array(
+          'run_test_cases'
+      ),
+      'type' => MENU_LOCAL_TASK // This adds another tab under 'Update'
   );
 
   return $items;
@@ -559,19 +568,19 @@ function drulenium_tests_catch_output() {
   $suite_name = strip_tags($_POST['suite']);;
 
   $newnode->title = $suite_name;
-  $newnode->body['und'][0]['value'] = $_POST['log'];
+  $newnode->body[LANGUAGE_NONE][0]['value'] = $_POST['log'];
 
-  $newnode->drulenium_version['und'][0]['value'] = $_POST['selenium_version'];
-  $newnode->drulenium_revision['und'][0]['value'] = $_POST['selenium_revision'];
-  $newnode->drulenium_result['und'][0]['value'] = $_POST['result'];
-  $newnode->drulenium_total_time['und'][0]['value'] = $_POST['totalTime'];
-  $newnode->drulenium_num_test_passes['und'][0]['value'] = $_POST['numTestPasses'];
-  $newnode->drulenium_num_test_failures['und'][0]['value'] = $_POST['numTestFailures'];
-  $newnode->drulenium_num_command_passes['und'][0]['value'] = $_POST['numCommandPasses'];
-  $newnode->drulenium_num_command_failures['und'][0]['value'] = $_POST['numCommandFailures'];
-  $newnode->drulenium_num_command_errors['und'][0]['value'] = $_POST['numCommandErrors'];
-  $newnode->drulenium_num_test_total['und'][0]['value'] = $_POST['numTestTotal'];
-  $newnode->drulenium_suite['und'][0]['value'] = $suite_name;
+  $newnode->drulenium_version[LANGUAGE_NONE][0]['value'] = $_POST['selenium_version'];
+  $newnode->drulenium_revision[LANGUAGE_NONE][0]['value'] = $_POST['selenium_revision'];
+  $newnode->drulenium_result[LANGUAGE_NONE][0]['value'] = $_POST['result'];
+  $newnode->drulenium_total_time[LANGUAGE_NONE][0]['value'] = $_POST['totalTime'];
+  $newnode->drulenium_num_test_passes[LANGUAGE_NONE][0]['value'] = $_POST['numTestPasses'];
+  $newnode->drulenium_num_test_failures[LANGUAGE_NONE][0]['value'] = $_POST['numTestFailures'];
+  $newnode->drulenium_num_command_passes[LANGUAGE_NONE][0]['value'] = $_POST['numCommandPasses'];
+  $newnode->drulenium_num_command_failures[LANGUAGE_NONE][0]['value'] = $_POST['numCommandFailures'];
+  $newnode->drulenium_num_command_errors[LANGUAGE_NONE][0]['value'] = $_POST['numCommandErrors'];
+  $newnode->drulenium_num_test_total[LANGUAGE_NONE][0]['value'] = $_POST['numTestTotal'];
+  $newnode->drulenium_suite[LANGUAGE_NONE][0]['value'] = $suite_name;
 
   $newnode->status = 1;
   $newnode->type = 'drulenium';
@@ -583,7 +592,7 @@ function drulenium_tests_catch_output() {
 }
 
 function drulenium_tests_table_list() {
-  $header = array(t('Name'), t('Description'), t('Download'), t('Test'));
+  $header = array(t('Name'), t('Description'), t('Visual regression'), t('Download'), t('Test'));
   $rows = array();
   $presets = drulenium_preset_load();
   $category_presets = array();
@@ -611,6 +620,7 @@ function drulenium_tests_table_list() {
       $rows[] = array(
           $key,
           $value->description,
+          l(t("Visual regression"), "admin/structure/drulenium/vr", array('query' => array('cid' => $key))),
           '<a href="'.$base_url.'/drulenium/tests/case/'.$key.'">Download</a>',
           $test_link,
       );
@@ -683,8 +693,71 @@ function drulenium_theme($existing, $type, $theme, $path) {
               'plugin_type' => NULL,
               'options' => array()
           )
-      )
+      ),
   );
+}
+
+function drulenium_sort_plugins_by_weight($a, $b)
+{
+  $a_weight = $a['weight']['#default_value'];
+  $b_weight = $b['weight']['#default_value'];
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return ($a_weight < $b_weight) ? -1 : 1;
+}
+
+function drulenium_sort_plugin_items_by_weight($a, $b)
+{
+  $a_weight = $a['weight'];
+  $b_weight = $b['weight'];
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return ($a_weight < $b_weight) ? -1 : 1;
+}
+
+function drulenium_presets_ui_form_table_theme($orig_form) {
+  $form = $orig_form;
+  // Initialize the variable which will store our table rows.
+  $rows = array();
+
+  uasort($form['test_plugin_type']['plugin_items'], "drulenium_sort_plugins_by_weight");
+
+  // Iterate over each element in our $form['test_plugin_type']['plugin_items'] array.
+  foreach (element_children($form['test_plugin_type']['plugin_items']) as $id) {
+    foreach (element_children($form['test_plugin_type']['plugin_items'][$id]['description']) as $ele_id) {
+      //Copying default_value to #value because of https://www.drupal.org/node/283640
+      $form['test_plugin_type']['plugin_items'][$id]['description'][$ele_id]['#value'] = $form['test_plugin_type']['plugin_items'][$id]['description'][$ele_id]['#default_value'];
+    }
+    $form['test_plugin_type']['plugin_items'][$id]['weight']['#value'] = $form['test_plugin_type']['plugin_items'][$id]['weight']['#default_value'];
+    unset($form['test_plugin_type']['plugin_items'][$id]['weight']['#attributes']['class'][2]);
+
+    $rows[] = array(
+        'data' => array(
+            drupal_render($form['test_plugin_type']['plugin_items'][$id]['name']),
+            drupal_render($form['test_plugin_type']['plugin_items'][$id]['description']),
+            drupal_render($form['test_plugin_type']['plugin_items'][$id]['weight']),
+        ),
+        'class' => array('draggable'),
+    );
+  }
+
+  // We now define the table header values.  Ensure that the 'header' count
+  // matches the final column count for your table.
+  $header = array(t('Name'), t('Description'), t('Weight'));
+
+  $table_id = 'plugin-items-table';
+
+  // We can render our tabledrag table for output.
+  $output = theme('table', array(
+      'header' => $header,
+      'rows' => $rows,
+      'attributes' => array('id' => $table_id),
+  ));
+
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'plugin-item-weight');
+  return $output;
 }
 
 /**

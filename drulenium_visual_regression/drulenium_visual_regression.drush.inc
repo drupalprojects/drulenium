@@ -22,11 +22,24 @@ function drulenium_visual_regression_drush_command() {
     ),
     'aliases' => array('vrc'),
   );
+  $items['vr-update'] = array(
+    'callback' => 'drush_drulenium_visual_regression_update',
+    'description' => 'Generate new snapshots for a release.',
+    'drupal dependencies' => array('drulenium_visual_regression'),
+    'arguments' => array(
+      'release_name' => 'Name of the release to update.',
+    ),
+    'aliases' => array('vru'),
+  );
   $items['vr-diff'] = array(
     'callback' => 'drush_drulenium_visual_regression_diff',
     'description' => 'Generate comparision report for 2 releases.',
     'drupal dependencies' => array('drulenium_visual_regression'),
-    'arguments' => array(),
+    'arguments' => array(
+      'from' => 'Release ID of the first set of screenshots.',
+      'to' => 'Release ID of the second set of screenshots.',
+    ),
+
     'options' => array(),
     'aliases' => array('vrd'),
   );
@@ -38,68 +51,85 @@ function drulenium_visual_regression_drush_command() {
  */
 function drush_drulenium_visual_regression_create($vr_base_url = "", $release_name = "") {
   $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
-  $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass");
-  $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name");
+  $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass", '');
+  $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name", '');
   //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
   //$drulenium_vr_path_custom = str_replace("&gt;",">",$drulenium_vr_path_custom);
   $secureid = drupal_hash_base64(drupal_random_bytes(55));
   if (empty($release_name)) {
     $release_name = format_date(REQUEST_TIME);
   }
-  $pages_array = array();
+  $pages_array = array('<front>');
+
+  // Default to the current site if no $vr_base_url is provided.
   if (empty($vr_base_url)) {
     global $base_url;
-    $vr_base_url = $base_url."/?q=";
+    $vr_base_url = $base_url . "/?q=";
   }
+
+  drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
   $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
-  // Process the queue using Batch API.
-  $batch = array(
-    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module',
-    'operations' => array(),
-    'finished' => 'drulenium_visual_regression_release_batch_finished',
-    'title' => t('Performing %operation on the selected items...', array('%operation' => "snapshot generation")),
-  );
-  $progress = 0; // where to start
-  $limit = 3; // how many to process for each run
- 
-  $query = db_select('drulenium_vr_runs', 'ru')
-    ->fields('ru')
-    ->condition('re_id', $re_id,'=')
-    ->condition('snapshot', '','=');
-  $query->addExpression('COUNT(rid)', 'run_count');
-  $result = $query->execute();
-  $run = $result->fetchAssoc();
-  $max = $run['run_count'];
+  drulenium_visual_regression_release_setup_batch($re_id);
 
-  while ($progress <= $max) {
-    $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($vr_base_url, $re_id, $progress, $limit));
-    $progress = $progress + $limit;
-  }
-  batch_set($batch);
   drush_backend_batch_process();
   
   drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => count($drulenium_vr_path_custom))), 'success');
 }
 
 /**
+ * Command callback. Update a release & generate snapshots.
+ */
+function drush_drulenium_visual_regression_update($release_name = "") {
+
+  drush_log("Updating Drulenium release: $release_name", 'ok');
+  $release_id = db_select('drulenium_vr_releases', 're')
+    ->fields('re')
+    ->condition('name', $release_name, '=')
+    ->execute()
+    ->fetchField();
+
+  // Wipe the current snapshot's to trigger a refresh.
+  $num_pages = db_update('drulenium_vr_runs')
+    ->fields(array('snapshot' => ''))
+    ->condition('re_id', $release_id, '=')
+    ->execute();
+
+  drulenium_visual_regression_release_setup_batch($release_id);
+
+  drush_backend_batch_process();
+
+  drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => $num_pages)), 'success');
+
+}
+
+/**
  * Command callback. Generate comparision report for 2 releases.
  */
-function drush_drulenium_visual_regression_diff() {
-  //Get the last two releases
-  $result = db_select('drulenium_vr_releases', 'vr_re')
-    ->fields('vr_re', array('rid'))
-    ->orderBy('rid', 'DESC')
-    ->range(0,2)
-    ->execute();
-  $row1 = $result->fetchAssoc();
-  $new_re_id = $row1['rid'];
-  $row2 = $result->fetchAssoc();
-  $old_re_id = $row2['rid'];
-  if ($new_re_id < $old_re_id) {
-    $tmp = $new_re_id;
-    $new_re_id = $old_re_id;
-    $old_re_id = $tmp;
+function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null, $reset = FALSE) {
+  if ($old_re_id == null || $new_re_id == null) {
+    // Get the last two releases.
+    $result = db_select('drulenium_vr_releases', 'vr_re')
+      ->fields('vr_re', array('rid'))
+      ->orderBy('rid', 'DESC')
+      ->range(0,2)
+      ->execute();
+  }
+  if ($new_re_id == null) {
+    $row1 = $result->fetchAssoc();
+    $new_re_id = $row1['rid'];
+  }
+  if ($old_re_id == null) {
+    $row2 = $result->fetchAssoc();
+    $old_re_id = $row2['rid'];
+  }
+
+  // Wipe the current comparison's to trigger a refresh.
+  if ($reset) {
+    $or = db_or()->condition('release_base_id', $old_re_id)->condition('release_cmp_id', $new_re_id);
+    $num_pages = db_delete('drulenium_vr_results')
+      ->condition($or)
+      ->execute();
   }
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
  
@@ -133,4 +163,7 @@ function drush_drulenium_visual_regression_diff() {
   
   batch_set($batch);
   drush_backend_batch_process();
+  global $base_url;
+
+  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
 }

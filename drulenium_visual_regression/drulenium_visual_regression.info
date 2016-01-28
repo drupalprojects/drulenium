@@ -4,5 +4,5 @@ package = "Testing"
 core =7.x
 
 configure = admin/structure/drulenium/vr
-dependencies[] = votingapi
 dependencies[] = "libraries"
+dependencies[] = "drulenium"
