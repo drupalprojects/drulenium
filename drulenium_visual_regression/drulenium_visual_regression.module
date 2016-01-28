@@ -473,16 +473,56 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
 }
 
 function drulenium_visual_regression_release_process_saucelabs($re_id) {
+  drulenium_visual_regression_release_setup_batch($re_id);
+
+  // Start processing, pass the page to return to after completing.
+  batch_process("admin/structure/drulenium/vr/release/" . $re_id);/*
   //drulenium_visual_regression_saucelabs_batch_op("", "", "", "");
   //return 'drulenium_visual_regression_saucelabs_batch_op';
   //URL as third parameter $param[2]
   $command = "cd /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/modules/drulenium/drulenium_visual_regression/includes/sausage.inc http://saucelabs.com/test/guinea-pig 2>&1";
   $exec_error = exec($command);
   dsm($exec_error);
-  return 'Sauce Labs';
+  return 'Sauce Labs';*/
 }
 
-function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit) {
+function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
+  watchdog("debi progress", $progress);
+  $saucelabs_username = variable_get('saucelabs_username', '');
+  $saucelabs_access_key = variable_get('saucelabs_api', '');
+  $sauce_host = "$saucelabs_username:$saucelabs_access_key@ondemand.saucelabs.com";
+  //  /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage
+  $sausage_library_path = realpath(".") . "/" . libraries_get_path("sausage");
+
+  $result = db_select('drulenium_vr_runs', 'ru')
+  ->fields('ru')
+  ->condition('re_id', $re_id, '=')
+  ->condition('snapshot', '', '=')
+  ->range(0, $limit)
+  ->execute();
+  $take_screenshot_code = '';
+
+  //Image directory preperations
+  $imageDir = file_default_scheme() . '://drulenium/saucelabs/snapshots';
+  file_prepare_directory($imageDir, FILE_CREATE_DIRECTORY);
+
+  $snapshot_array = array();
+  $cloned_result = clone $result;
+  while($run = $result->fetchAssoc()) {
+    $url = $test_base_url . $run['url'];
+    $file_id = $run['step_num'];
+    $unique_id = "drulenium/saucelabs/snapshots/" . microtime(TRUE) . "_{$file_id}.png";
+    //    /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/default/files/drulenium/saucelabs/snapshots/1454015491.2882_1.png
+    $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
+    $relative_file_path = file_create_url(file_default_scheme() . '://').$unique_id;
+    $snapshot_array[$run['rid']] = array("image_path" => $screenshot, "image_url" => $relative_file_path);
+    $take_screenshot_code .= '
+        $this->url("'.$url.'");
+        $imageData = $this->currentScreenshot();
+        file_put_contents("'.$screenshot.'", $imageData);
+        ';
+  }
+
   //Create .inc file for phpunit
   $mydir = file_default_scheme() . '://drulenium/saucelabs/phpunit';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
@@ -490,22 +530,23 @@ function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, 
   $Selenium2TestCaseFilePath = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
   $data = '<?php
 
-require_once "/Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage/vendor/autoload.php";
+require_once "'.$sausage_library_path.'/vendor/autoload.php";
 
-define("SAUCE_HOST", "nd49:8f872f51-97a0-4f6a-ba30-f67ef68e3912@ondemand.saucelabs.com");
+define("SAUCE_HOST", "'.$sauce_host.'");
 
 class WebTest extends PHPUnit_Extensions_Selenium2TestCase
 {
- protected $start_url = "http://saucelabs.com/test/guinea-pig";
 
- public static $browsers = array(
+   public static $browsers = array(
         array(
             "browserName" => "firefox",
             "host" => SAUCE_HOST,
             "port" => 80,
             "desiredCapabilities" => array(
                 "version" => "15",
-                "platform" => "Windows 2012"
+                "platform" => "Windows 2012",
+                "record-screenshots" => FALSE,
+                "record-video" => FALSE
             )
         )
     );
@@ -515,23 +556,37 @@ class WebTest extends PHPUnit_Extensions_Selenium2TestCase
         $this->setBrowserUrl("");  
     }
 
-    public function testTitle()
+    public function testScreenshot()
     {
-        //echo print_r($_SERVER["argv"], TRUE);
-        //$param = $_SERVER["argv"];
-        $url = $this->start_url;
-        $this->url($url);
-        $this->assertContains("I am a page title", $this->title());
+        '.$take_screenshot_code.'
     }
 }
   ';
   file_unmanaged_save_data($data, $destination = $Selenium2TestCaseFilePath, $replace = FILE_EXISTS_REPLACE);
-  dsm($Selenium2TestCaseFilePath);
+  //dsm($Selenium2TestCaseFilePath);
   $command = "cd /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
-  dsm($command);
+  //dsm($command);
   $exec_error = exec($command);
   dsm($exec_error);
+
+  foreach ($snapshot_array as $run_rid => $value){
+    // Update database if screenshot file exists.
+    $image_path = $value["image_path"];
+    if(file_exists($image_path)){
+      $image_url = $value["image_url"];
+      db_update('drulenium_vr_runs')
+        ->fields(array(
+        'snapshot' => $image_url,
+        ))
+        ->condition('rid', $run_rid)
+        ->execute();
+    }
+  }
   
+  // update progress for message
+  $progress = $progress + $limit;
+  // update message during each run so you know where you are in the process
+  $context['message'] = 'Now processing snapshot ' . $progress . ' - URL: '. $url;
 }
 
 function drulenium_visual_regression_release_process_local($re_id) {
@@ -581,7 +636,11 @@ function drulenium_visual_regression_release_setup_batch($re_id) {
   $max = $run['run_count'];
 
   while($progress <= $max) {
-    $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($test_base_url, $re_id, $progress, $limit));
+    if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
+      $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($test_base_url, $re_id, $progress, $limit));
+    }elseif(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'saucelabs'){
+      $batch['operations'][] = array('drulenium_visual_regression_saucelabs_batch_op', array($test_base_url, $re_id, $progress, $limit));
+    }
     $progress = $progress + $limit;
   }
 
@@ -1393,14 +1452,14 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('SauceLabs Username'),
     '#description' => t('Your Saucelabs account username.'),
-    '#default_value' => variable_get('drulenium_vr_saucelabs_username', ''),
+    '#default_value' => variable_get('saucelabs_username', ''),
     '#required' => FALSE,
   );
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['saucelabs_api'] = array(
     '#type' => 'textfield',
     '#title' => t('SauceLabs Access Key'),
     '#description' => t('Your Saucelabs account access key.'),
-    '#default_value' => variable_get('drulenium_vr_saucelabs_api', ''),
+    '#default_value' => variable_get('saucelabs_api', ''),
     '#required' => FALSE,
   );
 
@@ -1658,7 +1717,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     ));
     drupal_set_message($result);
     drupal_goto("admin/structure/drulenium/vr/release/".$release_id);
-  } elseif ($form_state['values']['drulenium_vr_config_server_opt'] == "saucelabs") {
+  } elseif (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "saucelabs") {
     drupal_goto("admin/structure/drulenium/vr/release/process-saucelabs/".$release_id);
   } else {
     drupal_set_message("Your request is being processed locally, in a batch.");
