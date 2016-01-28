@@ -36,6 +36,7 @@ function drulenium_presets_ui_form_submit(&$form, &$form_state) {
   $form_state['item']->drulenium_attrs = $form_state['values']['drulenium_settings_' . $type]['drulenium_attrs_' . $type];
   $form_state['item']->settings = $form_state['values']['drulenium_settings_' . $type]['settings_' . $type];
 
+  uasort($form_state['values']['test_plugin_type']['plugin_items'], "drulenium_sort_plugin_items_by_weight");
   $form_state['item']->settings["plugins"] = $form_state['values']['test_plugin_type']['plugin_items'];
 }
 

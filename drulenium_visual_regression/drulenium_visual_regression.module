@@ -916,7 +916,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     }
     $task_html = $cmp_result['step_num'];
     if(!empty($preset_cid)) {
-      $task_html .= " -> Snapshot after ";
+      $task_html .= drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $cmp_result['step_num']);
     }
     $rows[] = array(
       $cmp_result['result_id'],
@@ -933,6 +933,34 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
   else {
     $output = t("Sorry no results yet.");
   }
+  return $output;
+}
+
+function drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step_num) {
+  if($step_num == 0) return " -> Default";
+  $output = "";
+  $plugins = $preset_obj->settings['plugins'];
+  $allPluginKeys = array_keys($plugins);
+  dsm($allPluginKeys);
+  $prev_plugin_key = $allPluginKeys[$step_num-2];
+  $prev_plugin_arr = $plugins[$prev_plugin_key];
+  $output .= " -> Snapshot taken after ";
+  // Removing suffix number from drulenium_filltextbox_1
+  $prev_plugin_key = substr($prev_plugin_key, 0, strrpos($prev_plugin_key, "_"));
+  switch ($prev_plugin_key) {
+    case PLUGIN_FILL_TEXTBOX:
+      $output .= drulenium_visual_regression_fill_textbox_plugin_to_text($prev_plugin_arr);
+      break;
+    case PLUGIN_TAKE_SCREENSHOT:
+      break;
+  }
+  return $output;
+}
+
+function drulenium_visual_regression_fill_textbox_plugin_to_text($prev_plugin_arr) {
+  $element_id = $prev_plugin_arr['description']['locator'];
+  $value = $prev_plugin_arr['description']['text'];
+  $output = "filling textbox[ID: \"$element_id\"] with value \"$value\"";
   return $output;
 }
 
