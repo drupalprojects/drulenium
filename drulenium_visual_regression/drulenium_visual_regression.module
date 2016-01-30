@@ -43,6 +43,15 @@ function drulenium_visual_regression_libraries_info() {
       'php' => array('lib/__init__.php'),
     ),
   );
+  $libraries['php-github-api'] = array(
+      'name' => 'php-github-api',
+      'vendor url' => 'https://github.com/KnpLabs/php-github-api',
+      'download url' => 'https://github.com/KnpLabs/php-github-api',
+      'version' => '1',
+      'files' => array(
+          'php' => array('vendor/autoload.php'),
+      ),
+  );
   return $libraries;
 }
 
@@ -306,7 +315,7 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
 function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $progress, $limit, &$context) {
   $query = db_select('drulenium_vr_results', 'vr_re');
   $query->fields('vr_re');
-  $query->fields('r_b', array('snapshot'));
+  $query->fields('r_b', array('snapshot', 'url'));
   $query->fields('r_c', array('snapshot'));
   $query->join('drulenium_vr_runs', 'r_b', 'vr_re.run_base_id = r_b.rid');
   $query->join('drulenium_vr_runs', 'r_c', 'vr_re.run_cmp_id = r_c.rid');
@@ -316,10 +325,6 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
   $query->range(0,$limit);
   $result = $query->execute();
   $image_magick_path = variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin");
-
-// Try to get ImageMagick "convert" program version number.
-  exec("$image_magick_path/convert -version", $out, $image_magick_code);
-  // $image_magick_code = 0 if OK, nonzero if error.
 
   while ($res = $result->fetchAssoc()) {
     //have to use proc_open http://cgit.drupalcode.org/imagemagick/tree/imagemagick.module#n478
@@ -365,32 +370,83 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     }
 
     $gif_link = "";
-    if ($diff_percent > 0 && $image_magick_code == 0) {
-      // Generate animated GIF.
-      $unique_id = "drulenium/gif_" . microtime(TRUE) . ".gif";
-      $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
-      $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
-      //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
-      $command = "$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path 2>&1";
-      $exec_error = exec($command);
-      if (!empty($exec_error)) {
-        $gif_link = "";
-        watchdog("drulenium", $exec_error . " -> $command");
-      }
-    }
-    //$diff_percent = sprintf("%.3f",($output/(400*300))*100);
     $highlighted_link = '';
-    if ($diff_percent > 0 && $image_magick_code == 0) {
-      // Generate highlighted image.
-      $unique_id = "drulenium/highlight_" . microtime(TRUE) . ".png";
-      $highlighted_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
-      $highlighted_link = file_create_url(file_default_scheme() . '://') . $unique_id;
-      //dsm("$image_magick_path/compare $image1 $image2 -compose src $highlighted_path");
-      $command = "$image_magick_path/compare $image1 $image2 $highlighted_path 2>&1";
-      $exec_error = exec($command);
-      if(!empty($exec_error)) {
-        $highlighted_link = "";
-        watchdog("drulenium", $exec_error . " -> $command");
+    $github_username = variable_get('github_username', '');
+    $github_password = variable_get('github_password', '');
+    $github_repo = variable_get('github_repo', '');
+    $github_email = variable_get('github_email', '');
+    if(!empty($github_username) && !empty($github_password)){
+      if (($library = libraries_load("php-github-api")) && !empty($library['loaded'])) {
+        $client = new \Github\Client();
+        $client->authenticate($github_username, $github_password, Github\Client::AUTH_HTTP_PASSWORD);
+        $image1_data = file_get_contents($image1);
+        // dsm image data doesn't print for some reason but the data is there in the variable.
+        $image2_data = file_get_contents($image2);
+
+        $committer = array('name' => $github_username, 'email' => $github_email);
+        //$committer = array();
+        $branch = "master";
+        // Release names in folder name, URL in file name
+        // If step_num > 0 URL as folder name
+        // URL in commit message
+        $base_release_name = db_select('drulenium_vr_releases', 'vr_re')
+          ->fields('vr_re', array('name'))
+          ->condition('vr_re.rid', $old_re_id)
+          ->execute()->fetchfield();
+        $cmp_release_name = db_select('drulenium_vr_releases', 'vr_re')
+        ->fields('vr_re', array('name'))
+        ->condition('vr_re.rid', $new_re_id)
+        ->execute()->fetchfield();
+        $link_url = $res['url'];
+        // Replace / with _
+        $underscored_link_url = str_replace("/", "_", $link_url);
+        $path = "Diff/{$base_release_name} -> {$cmp_release_name}/{$underscored_link_url}_{$res['rid']}.png";
+        $commitMessage = "Base version of {$link_url}";
+        $fileExists = $client->api('repo')->contents()->exists($github_username, $github_repo, $path, $reference = null);
+        if(!$fileExists){
+          // File doesn't exist, create new
+          $fileInfo = $client->api('repo')->contents()->create($github_username, $github_repo, $path, $content = $image1_data, $commitMessage, $branch, $committer);
+        }else{
+          // File already exists, update existing
+          $oldFile = $client->api('repo')->contents()->show($github_username, $github_repo, $path, $branch);
+          $fileInfo = $client->api('repo')->contents()->update($github_username, $github_repo, $path, $content = $image1_data, $commitMessage, $oldFile['sha'], $branch, $committer);
+        }
+        $commitMessage = "Comparision version of {$link_url}";
+        $firstFile = $client->api('repo')->contents()->show($github_username, $github_repo, $path, $branch);
+        $fileInfo2 = $client->api('repo')->contents()->update($github_username, $github_repo, $path, $content = $image2_data, $commitMessage, $firstFile['sha'], $branch, $committer);
+        $commit_sha = $fileInfo2['commit']['sha'];
+        $highlighted_link = "https://github.com/{$github_username}/{$github_repo}/commit/$commit_sha";
+      }
+    } else {
+      // Try to get ImageMagick "convert" program version number.
+      exec("$image_magick_path/convert -version", $out, $image_magick_code);
+      // $image_magick_code = 0 if OK, nonzero if error.
+      if ($diff_percent > 0 && $image_magick_code == 0) {
+        // Generate animated GIF.
+        $unique_id = "drulenium/gif_" . microtime(TRUE) . ".gif";
+        $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
+        $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
+        //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
+        $command = "$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path 2>&1";
+        $exec_error = exec($command);
+        if (!empty($exec_error)) {
+          $gif_link = "";
+          watchdog("drulenium", $exec_error . " -> $command");
+        }
+      }
+      //$diff_percent = sprintf("%.3f",($output/(400*300))*100);
+      if ($diff_percent > 0 && $image_magick_code == 0) {
+        // Generate highlighted image.
+        $unique_id = "drulenium/highlight_" . microtime(TRUE) . ".png";
+        $highlighted_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
+        $highlighted_link = file_create_url(file_default_scheme() . '://') . $unique_id;
+        //dsm("$image_magick_path/compare $image1 $image2 -compose src $highlighted_path");
+        $command = "$image_magick_path/compare $image1 $image2 $highlighted_path 2>&1";
+        $exec_error = exec($command);
+        if(!empty($exec_error)) {
+          $highlighted_link = "";
+          watchdog("drulenium", $exec_error . " -> $command");
+        }
       }
     }
 
@@ -476,14 +532,7 @@ function drulenium_visual_regression_release_process_saucelabs($re_id) {
   drulenium_visual_regression_release_setup_batch($re_id);
 
   // Start processing, pass the page to return to after completing.
-  batch_process("admin/structure/drulenium/vr/release/" . $re_id);/*
-  //drulenium_visual_regression_saucelabs_batch_op("", "", "", "");
-  //return 'drulenium_visual_regression_saucelabs_batch_op';
-  //URL as third parameter $param[2]
-  $command = "cd /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/modules/drulenium/drulenium_visual_regression/includes/sausage.inc http://saucelabs.com/test/guinea-pig 2>&1";
-  $exec_error = exec($command);
-  dsm($exec_error);
-  return 'Sauce Labs';*/
+  batch_process("admin/structure/drulenium/vr/release/" . $re_id);
 }
 
 function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
@@ -1026,9 +1075,14 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     }
     $highlighted_link = "";
     if (!empty($cmp_result['diff_highlight'])) {
-      $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 height=200 />";
-      $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-      $highlighted_link .= '<br /> &nbsp;';
+      // If it's github don't render image
+      if (strpos($cmp_result['diff_highlight'],'github.com') !== false) {
+        $highlighted_link = l("Diff on github", $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank')));
+      } else {
+        $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 height=200 />";
+        $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
+        $highlighted_link .= '<br /> &nbsp;';
+      }
     }
 
     // When there is no difference, link to one screenshot.
@@ -1456,16 +1510,48 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     '#required' => FALSE,
   );
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['saucelabs_api'] = array(
-    '#type' => 'textfield',
+    '#type' => 'password',
     '#title' => t('SauceLabs Access Key'),
     '#description' => t('Your Saucelabs account access key.'),
     '#default_value' => variable_get('saucelabs_api', ''),
     '#required' => FALSE,
   );
 
-  $form['submit_button'] = array(
-    '#type' => 'submit',
-    '#value' => t('Take Snapshot'),
+  // Github Config
+  $form['drulenium_vr_config']['drulenium_vr_config_github'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('GitHub Configuration'),
+      '#description' => t('GitHub details for comparing images.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_username'] = array(
+      '#type' => 'textfield',
+      '#title' => t('GitHub Username'),
+      '#description' => t('Your GitHub account username.'),
+      '#default_value' => variable_get('github_username', ''),
+      '#required' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_password'] = array(
+      '#type' => 'password',
+      '#title' => t('GitHub Password'),
+      '#description' => t('Your GitHub account password.'),
+      '#default_value' => variable_get('github_password', ''),
+      '#required' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('GitHub Email'),
+      '#description' => t('Your GitHub account email id.'),
+      '#default_value' => variable_get('github_email', ''),
+      '#required' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_repo'] = array(
+      '#type' => 'textfield',
+      '#title' => t('GitHub Repository'),
+      '#description' => t('Your GitHub repository name.'),
+      '#default_value' => variable_get('github_repo', ''),
+      '#required' => FALSE,
   );
 
   return $form;
