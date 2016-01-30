@@ -1125,7 +1125,6 @@ function drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step
   $output = "";
   $plugins = $preset_obj->settings['plugins'];
   $allPluginKeys = array_keys($plugins);
-  dsm($allPluginKeys);
   $prev_plugin_key = $allPluginKeys[$step_num-2];
   $prev_plugin_arr = $plugins[$prev_plugin_key];
   $output .= " -> Snapshot taken after ";
@@ -1317,28 +1316,26 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
         '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
         '#default_value' => variable_get('drulenium_vr_term_custom', array()),
     );
-
-    $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('User Configuration'),
-      '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-    );
-    $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
-      '#title' => t('User name'),
-      '#type' => 'textfield',
-      '#description' => t('User name of the user to test as.'),
-      '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
-    );
-    $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
-      '#title' => t('Password'),
-      '#type' => 'password',
-      '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
-      '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
-    );
   }
-
+  $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User Configuration'),
+    '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
+    '#title' => t('User name'),
+    '#type' => 'textfield',
+    '#description' => t('User name of the user to test as.'),
+    '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
+    '#title' => t('Password'),
+    '#type' => 'password',
+    '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
+    '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
+  );
 
   if (!empty($release_id)) {
     $form_state['drulenium_visual_regression']['release_id'] = $release_id;
@@ -1535,7 +1532,7 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
   $form['drulenium_vr_config']['drulenium_vr_config_github']['github_password'] = array(
       '#type' => 'password',
       '#title' => t('GitHub Password'),
-      '#description' => t('Your GitHub account password.'),
+      '#description' => t('Your GitHub account password.<br/> Password is stored in plain text in the database.'),
       '#default_value' => variable_get('github_password', ''),
       '#required' => FALSE,
   );
@@ -1741,6 +1738,8 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
   $pages_array = array();
 
+  $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
+  $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
   if(empty($preset_cid)) {
     $specific_pages = $form_state['values']['drulenium_vr_path_custom'];
     if (!empty($form_state['drulenium_visual_regression']['release_id'])) {
@@ -1750,8 +1749,6 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
       $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
       $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
     }
-    $test_user_pass = $form_state['values']['drulenium_vr_release_user_pass'];
-    $test_user_name = $form_state['values']['drulenium_vr_release_user_name'];
 
     // Store some values globally as default for the next time.
     variable_set('drulenium_vr_path_custom', $specific_pages);
@@ -1767,9 +1764,6 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     $specific_pages = $preset_obj->settings['pages']['path']['custom'];
     $specific_node_types = $preset_obj->settings['pages']['node']['custom'];
     $specific_term_types = $preset_obj->settings['pages']['term']['custom'];
-
-    $test_user_name = '';
-    $test_user_pass = '';
   }
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
