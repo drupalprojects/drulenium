@@ -613,10 +613,9 @@ class WebTest extends PHPUnit_Extensions_Selenium2TestCase
   ';
   file_unmanaged_save_data($data, $destination = $Selenium2TestCaseFilePath, $replace = FILE_EXISTS_REPLACE);
   //dsm($Selenium2TestCaseFilePath);
-  $command = "cd /Users/hhdtemp12/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
-  //dsm($command);
+  $command = "cd {$sausage_library_path} && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
   $exec_error = exec($command);
-  dsm($exec_error);
+  drupal_set_message($exec_error);
 
   foreach ($snapshot_array as $run_rid => $value){
     // Update database if screenshot file exists.
@@ -798,6 +797,12 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
       case PLUGIN_FILL_TEXTBOX:
         drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr);
         break;
+      case PLUGIN_CLICK_BUTTON:
+        drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr);
+        break;
+      case PLUGIN_HOVER_OVER:
+        drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr);
+        break;
       case PLUGIN_TAKE_SCREENSHOT:
         drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url);
         break;
@@ -806,16 +811,28 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
 }
 
 function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr) {
-  $element_id = $plugin_arr['description']['locator'];
+  $element_css_locator = $plugin_arr['description']['locator'];
   $value = $plugin_arr['description']['text'];
-  $driver->findElement(WebDriverBy::id($element_id))->sendKeys($value);
+  $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->sendKeys($value);
+}
+
+function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr) {
+  // https://github.com/facebook/php-webdriver/wiki/Example-command-reference
+  $element_css_locator = $plugin_arr['description']['locator'];
+  $element = $driver->findElement(WebDriverBy::cssSelector($element_css_locator));
+  $driver->getMouse()->mouseMove( $element->getCoordinates() );
+}
+
+function drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr) {
+  $element_css_locator = $plugin_arr['description']['locator'];
+  $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->click();
 }
 
 function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url) {
-  $element_id = $plugin_arr['description']['locator'];
+  $element_css_locator = $plugin_arr['description']['locator'];
   $element = null;
-  if(!empty($element_id)){
-    $element = $driver->findElement(WebDriverBy::id($element_id));
+  if(!empty($element_css_locator)){
+    $element = $driver->findElement(WebDriverBy::cssSelector($element_css_locator));
   }
   $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element, "_$step_num");
 
@@ -1175,7 +1192,9 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';
-  if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
+  $github_username = variable_get('github_username', '');
+  $github_password = variable_get('github_password', '');
+  if((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local')||(!empty($github_username) && !empty($github_password))){
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
   }
   else {
@@ -1192,7 +1211,7 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
-    if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local') {
+    if((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local')||(!empty($github_username) && !empty($github_password))){
       drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id");
     }
     else {

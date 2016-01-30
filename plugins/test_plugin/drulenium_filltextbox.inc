@@ -23,7 +23,7 @@ function drulenium_filltextbox_fb_settings($options) {
   $form['locator'] = array(
       '#type' => 'textfield',
       '#title' => t('Element Locator'),
-      '#description' => t('The Locator of the element you want to fill with text.')
+      '#description' => t('The Locator of the element you want to fill with text. CSS selector like {#food span.dairy}')
   );
   $form['text'] = array(
       '#type' => 'textfield', 

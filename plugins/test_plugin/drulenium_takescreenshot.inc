@@ -22,7 +22,7 @@ function drulenium_takescreenshot_fb_settings($options) {
   $form['locator'] = array(
     '#type' => 'textfield',
     '#title' => t('Element Locator'),
-    '#description' => t('The Locator of the element you want to take screenshot.')
+    '#description' => t('The Locator of the element you want to take screenshot. CSS selector like {#food span.dairy}')
   );
 
   $defaults = drulenium_takescreenshot_defaults();
