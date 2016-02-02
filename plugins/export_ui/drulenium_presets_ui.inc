@@ -107,7 +107,7 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       $plugin_ctr++;
       $plugin_type = $plugin_arr["type"];
       $plugin_weight = $plugin_arr["weight"];
-      $plugin_name = $all_plugins[$plugin_type]['description'];
+      $plugin_name = $all_plugins[$plugin_type]['title'];
       $form['test_plugin_type']['plugin_items'][$type_and_num] = array(
           // We'll use a form element of type '#markup' to display the item name.
           'name' => array(
@@ -138,9 +138,7 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       // Drulenium attrs
       $form['test_plugin_type']['plugin_items'][$type_and_num]['description'] = array(
           '#type' => 'fieldset',
-          '#collapsible' => TRUE,
-          '#collapsed' => TRUE,
-          '#title' => 'Drulenium plugin attributes',
+          '#title' => 'Plugin attributes',
           '#attributes' => array(
             'class' => array(
                 'element-invisible',

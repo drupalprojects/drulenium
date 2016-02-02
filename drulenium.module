@@ -737,6 +737,7 @@ function drulenium_presets_ui_form_table_theme($orig_form) {
       unset($form['test_plugin_type']['plugin_items'][$id]['name']['#prefix']);
       unset($form['test_plugin_type']['plugin_items'][$id]['name']['#suffix']);
       unset($form['test_plugin_type']['plugin_items'][$id]['description']['#attributes']);
+      $form['test_plugin_type']['plugin_items'][$id]['description']['#attributes']['class'] = array('collapsible');
 
       $rows[] = array(
           'data' => array(
