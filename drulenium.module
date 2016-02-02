@@ -734,6 +734,9 @@ function drulenium_presets_ui_form_table_theme($orig_form) {
       }
       $form['test_plugin_type']['plugin_items'][$id]['weight']['#value'] = $form['test_plugin_type']['plugin_items'][$id]['weight']['#default_value'];
       unset($form['test_plugin_type']['plugin_items'][$id]['weight']['#attributes']['class'][2]);
+      unset($form['test_plugin_type']['plugin_items'][$id]['name']['#prefix']);
+      unset($form['test_plugin_type']['plugin_items'][$id]['name']['#suffix']);
+      unset($form['test_plugin_type']['plugin_items'][$id]['description']['#attributes']);
 
       $rows[] = array(
           'data' => array(

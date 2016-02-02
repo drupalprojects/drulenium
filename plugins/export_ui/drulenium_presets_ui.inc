@@ -73,7 +73,8 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
 
   $form['test_plugin_type'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Drulenium plugin type'),
+      '#title' => t('Plugins'),
+      '#description' => t('Add plugins by clicking the buttons below.'),
       '#collapsible' => TRUE,
       // Set up the wrapper so that AJAX will be able to replace the fieldset.
       '#prefix' => '<div id="settings-fieldset-wrapper">',
@@ -87,7 +88,8 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
     }
     $form['test_plugin_type']["add_plugin_$type"] = array(
         '#type' => 'submit',
-        '#value' => t('Add')." {$plugin['description']}",
+        '#value' => $plugin['title'],
+        '#suffix' => ' &nbsp;',
         '#submit' => array('drulenium_plugin_add_more_add_one'),
         // See the examples in dynamic_fieldable_content_settings.module for more details on the
         // properties of #ajax.
@@ -110,11 +112,8 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
           // We'll use a form element of type '#markup' to display the item name.
           'name' => array(
               '#markup' => $plugin_name,
-              '#attributes' => array(
-                  'class' => array(
-                      'element-invisible',
-                  ),
-              ),
+              '#prefix' => '<span class="element-invisible">',
+              '#suffix' => '</span>',
           ),
           'type' => array('#type' => 'value', '#value' => $plugin_type),
 
@@ -142,6 +141,11 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
           '#collapsible' => TRUE,
           '#collapsed' => TRUE,
           '#title' => 'Drulenium plugin attributes',
+          '#attributes' => array(
+            'class' => array(
+                'element-invisible',
+            ),
+          ),
       );
       $form['test_plugin_type']['plugin_items'][$type_and_num]['weight'] = form_process_weight($form['test_plugin_type']['plugin_items'][$type_and_num]['weight']);
 
