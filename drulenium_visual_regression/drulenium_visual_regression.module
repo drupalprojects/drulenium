@@ -549,8 +549,6 @@ function drulenium_visual_regression_release_process_saucelabs($re_id) {
 function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
   $saucelabs_username = variable_get('saucelabs_username', '');
   $saucelabs_access_key = variable_get('saucelabs_api', '');
-  $sauce_host = "$saucelabs_username:$saucelabs_access_key@ondemand.saucelabs.com";
-  $sauce_config_command_host = "$saucelabs_access_key@ondemand.saucelabs.com";
   $sauce_browser_platform = variable_get('drulenium_vr_saucelabs_os', '');
   $sauce_browser_platform_id = drulenium_visual_regression_name_to_id($sauce_browser_platform);
   $sauce_browser_name = variable_get('drulenium_vr_saucelabs_browser_'.$sauce_browser_platform_id, '');
@@ -629,15 +627,12 @@ function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, 
 
 require_once "'.$sausage_library_path.'/vendor/autoload.php";
 
-define("SAUCE_HOST", "'.$sauce_host.'");
-
-class WebTest extends PHPUnit_Extensions_Selenium2TestCase
+class WebTest extends Sauce\Sausage\WebDriverTestCase
 {
 
    public static $browsers = array(
         array(
             "browserName" => "'.$sauce_browser_name.'",
-            "host" => SAUCE_HOST,
             "port" => 80,
             "desiredCapabilities" => array(
                 "version" => "'.$sauce_browser_version.'",
@@ -648,11 +643,6 @@ class WebTest extends PHPUnit_Extensions_Selenium2TestCase
         )
     );
 
-    protected function setUp()
-    {
-        $this->setBrowserUrl("");  
-    }
-
     public function testScreenshot()
     {
         '.$take_screenshot_code.'
@@ -661,7 +651,9 @@ class WebTest extends PHPUnit_Extensions_Selenium2TestCase
   ';
   file_unmanaged_save_data($data, $destination = $Selenium2TestCaseFilePath, $replace = FILE_EXISTS_REPLACE);
   //dsm($Selenium2TestCaseFilePath);
-  $command = "cd {$sausage_library_path} && vendor/bin/sauce_config {$saucelabs_username} {$sauce_config_command_host} 2>&1";
+  $command = 'export SAUCE_USERNAME="'.$saucelabs_username.'" 2>&1';
+  exec($command);
+  $command = 'export SAUCE_ACCESS_KEY="'.$saucelabs_access_key.'" 2>&1';
   exec($command);
   $command = "cd {$sausage_library_path} && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
   $exec_error = exec($command);
