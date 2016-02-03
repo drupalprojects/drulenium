@@ -550,6 +550,7 @@ function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, 
   $saucelabs_username = variable_get('saucelabs_username', '');
   $saucelabs_access_key = variable_get('saucelabs_api', '');
   $sauce_host = "$saucelabs_username:$saucelabs_access_key@ondemand.saucelabs.com";
+  $sauce_config_command_host = "$saucelabs_access_key@ondemand.saucelabs.com";
   $sauce_browser_platform = variable_get('drulenium_vr_saucelabs_os', '');
   $sauce_browser_platform_id = drulenium_visual_regression_name_to_id($sauce_browser_platform);
   $sauce_browser_name = variable_get('drulenium_vr_saucelabs_browser_'.$sauce_browser_platform_id, '');
@@ -557,6 +558,23 @@ function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, 
   $sauce_browser_version = variable_get('drulenium_vr_saucelabs_browser_version_'."{$sauce_browser_platform_id}_{$sauce_browser_name_id}", '');
   //  /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage
   $sausage_library_path = realpath(".") . "/" . libraries_get_path("sausage");
+
+  /*
+   * Get preset cid from release id
+  * get preset object & thus get drulenium test plugins & tasks todo
+  */
+  $preset_cid = db_select('drulenium_vr_releases', 'vr_re')
+  ->fields('vr_re', array('preset_cid'))
+  ->condition('vr_re.rid', $re_id)
+  ->execute()
+  ->fetchfield();
+
+  // Getting username, password & base url from release.
+  $release_result = db_select('drulenium_vr_releases', 're')
+  ->fields('re')
+  ->condition('rid', $re_id, '=')
+  ->execute()
+  ->fetchAssoc();
 
   $result = db_select('drulenium_vr_runs', 'ru')
   ->fields('ru')
@@ -570,8 +588,18 @@ function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, 
   $imageDir = file_default_scheme() . '://drulenium/saucelabs/snapshots';
   file_prepare_directory($imageDir, FILE_CREATE_DIRECTORY);
 
+  // Logging in as specified user
+  $test_user_name = $release_result['user_name'];
+  $test_user_pass = $release_result['user_pass'];
+  if(!empty($test_user_name) && !empty($test_user_pass)){
+    $take_screenshot_code .= '
+        $this->url("'.$test_base_url.'user/login");
+        $this->byCss("#edit-name")->value("'.$test_user_name.'");
+        $this->byCss("#edit-pass")->value("'.$test_user_pass.'");
+        $this->byCss("#edit-submit")->click();
+        ';
+  }
   $snapshot_array = array();
-  $cloned_result = clone $result;
   while($run = $result->fetchAssoc()) {
     $url = $test_base_url . $run['url'];
     $file_id = $run['step_num'];
@@ -582,9 +610,14 @@ function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, 
     $snapshot_array[$run['rid']] = array("image_path" => $screenshot, "image_url" => $relative_file_path);
     $take_screenshot_code .= '
         $this->url("'.$url.'");
+    ';
+    if(!empty($preset_cid)){
+      $take_screenshot_code .= drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url'], $saucelabs = TRUE);
+    }
+    $take_screenshot_code .= '
         $imageData = $this->currentScreenshot();
         file_put_contents("'.$screenshot.'", $imageData);
-        ';
+    ';
   }
 
   //Create .inc file for phpunit
@@ -628,6 +661,8 @@ class WebTest extends PHPUnit_Extensions_Selenium2TestCase
   ';
   file_unmanaged_save_data($data, $destination = $Selenium2TestCaseFilePath, $replace = FILE_EXISTS_REPLACE);
   //dsm($Selenium2TestCaseFilePath);
+  $command = "cd {$sausage_library_path} && vendor/bin/sauce_config {$saucelabs_username} {$sauce_config_command_host} 2>&1";
+  exec($command);
   $command = "cd {$sausage_library_path} && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
   $exec_error = exec($command);
   drupal_set_message($exec_error);
@@ -802,49 +837,71 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
   }
 }
 
-function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $page_url) {
+function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $page_url, $saucelabs = FALSE) {
   $preset_obj = drulenium_preset_load($preset_cid);
   $step_num = 0;
+  $output = "";
   foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
     $step_num++;
     $plugin_type = $plugin_arr["type"];
     switch ($plugin_type) {
       case PLUGIN_FILL_TEXTBOX:
-        drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr);
+        $output .= drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs);
         break;
       case PLUGIN_CLICK_BUTTON:
-        drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr);
+        $output .= drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr, $saucelabs);
         break;
       case PLUGIN_HOVER_OVER:
-        drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr);
+        $output .= drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs);
         break;
       case PLUGIN_TAKE_SCREENSHOT:
-        drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url);
+        $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs);
         break;
     }
   }
+  return $output;
 }
 
-function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr) {
+function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs = FALSE) {
   $element_css_locator = $plugin_arr['description']['locator'];
   $value = $plugin_arr['description']['text'];
+  if($saucelabs) {
+    $output = '
+        $this->byCss("'.$element_css_locator.'")->value("'.$value.'");
+    ';
+    return $output;
+  }
   $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->sendKeys($value);
 }
 
-function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr) {
+function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs = FALSE) {
   // https://github.com/facebook/php-webdriver/wiki/Example-command-reference
   $element_css_locator = $plugin_arr['description']['locator'];
+  if($saucelabs) {
+    $output = '';
+    return $output;
+  }
   $element = $driver->findElement(WebDriverBy::cssSelector($element_css_locator));
   $driver->getMouse()->mouseMove( $element->getCoordinates() );
 }
 
-function drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr) {
+function drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr, $saucelabs = FALSE) {
   $element_css_locator = $plugin_arr['description']['locator'];
+  if($saucelabs) {
+    $output = '
+        $this->byCss("'.$element_css_locator.'")->click();
+    ';
+    return $output;
+  }
   $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->click();
 }
 
-function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url) {
+function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs = FALSE) {
   $element_css_locator = $plugin_arr['description']['locator'];
+  if($saucelabs) {
+    $output = '';
+    return $output;
+  }
   $element = null;
   if(!empty($element_css_locator)){
     $element = $driver->findElement(WebDriverBy::cssSelector($element_css_locator));
@@ -1566,12 +1623,14 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     $browser_version_options = array();
     foreach ($all_browsers as $browser_array) {
       $short_version = $browser_array['short_version'];
-      $long_name = $browser_array['long_name'];
+      // TODO: Show long name in select box & use api name internally
+      //$long_name = $browser_array['long_name'];
+      $browser_api_name = $browser_array['api_name'];
       $os = $browser_array['os'];
 
       $os_options[$os] = $os;
-      $browser_options[$os][$long_name] = $long_name;
-      $browser_version_options[$os][$long_name][$short_version] = $short_version;
+      $browser_options[$os][$browser_api_name] = $browser_api_name;
+      $browser_version_options[$os][$browser_api_name][$short_version] = $short_version;
     }
     asort($os_options);
     $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['drulenium_vr_saucelabs_browsers'] = array(
