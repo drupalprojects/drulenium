@@ -209,7 +209,7 @@ function drulenium_menu() {
       'access arguments' => array(
           'run_test_cases'
       ),
-      'type' => MENU_LOCAL_TASK // This adds another tab under 'Update'
+      'type' => MENU_LOCAL_TASK
   );
 
   return $items;

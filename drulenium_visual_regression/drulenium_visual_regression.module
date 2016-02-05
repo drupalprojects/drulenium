@@ -160,6 +160,45 @@ function drulenium_visual_regression_menu() {
     'access arguments' => array(2, 3, 4),
     'type' => MENU_CALLBACK,
   );
+  $items['admin/structure/drulenium/settings/vr'] = array(
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 0,
+      'title' => 'Visual regression settings',
+      'description' => 'Settings for Visual regression functionality.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drulenium_visual_regression_admin_settings_form'),
+      'access arguments' => array('administer_drulenium_vr'),
+  );
+  $items['admin/structure/drulenium/settings/github'] = array(
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 3,
+      'title' => 'GitHub',
+      'description' => 'Settings for Github Integration.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drulenium_visual_regression_github_settings_form'),
+      'access arguments' => array('administer_drulenium_vr'),
+      'file' => 'drulenium_visual_regression.admin.inc',
+  );
+  $items['admin/structure/drulenium/settings/saucelabs'] = array(
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 2,
+      'title' => 'Sauce Labs',
+      'description' => 'Settings for Sauce Labs Integration.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drulenium_visual_regression_saucelabs_settings_form'),
+      'access arguments' => array('administer_drulenium_vr'),
+      'file' => 'drulenium_visual_regression.admin.inc',
+  );
+  $items['admin/structure/drulenium/settings/local'] = array(
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
+      'title' => 'Local Server',
+      'description' => 'Settings for Local Server Integration.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drulenium_visual_regression_local_settings_form'),
+      'access arguments' => array('administer_drulenium_vr'),
+      'file' => 'drulenium_visual_regression.admin.inc',
+  );
 
   return $items;
 }
@@ -549,6 +588,7 @@ function drulenium_visual_regression_release_process_saucelabs($re_id) {
 function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
   $saucelabs_username = variable_get('saucelabs_username', '');
   $saucelabs_access_key = variable_get('saucelabs_api', '');
+  $sauce_host = "{$saucelabs_username}:{$saucelabs_access_key}@ondemand.saucelabs.com";
   $sauce_browser_platform = variable_get('drulenium_vr_saucelabs_os', '');
   $sauce_browser_platform_id = drulenium_visual_regression_name_to_id($sauce_browser_platform);
   $sauce_browser_name = variable_get('drulenium_vr_saucelabs_browser_'.$sauce_browser_platform_id, '');
@@ -633,6 +673,7 @@ class WebTest extends Sauce\Sausage\WebDriverTestCase
    public static $browsers = array(
         array(
             "browserName" => "'.$sauce_browser_name.'",
+            "host" => "'.$sauce_host.'",
             "port" => 80,
             "desiredCapabilities" => array(
                 "version" => "'.$sauce_browser_version.'",
@@ -1257,11 +1298,11 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';
   $github_username = variable_get('github_username', '');
-  $github_password = variable_get('github_password', '');
-  if((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local')||(!empty($github_username) && !empty($github_password))){
+  if((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'local')){
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
-  }
-  else {
+  } elseif((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username)) {
+    $output .= ' <span class="process-locally">(' . l(t('Process via GitHub'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
+  } elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
@@ -1275,10 +1316,10 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
-    if((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local')||(!empty($github_username) && !empty($github_password))){
+    if((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'local')||((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username))){
       drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id");
     }
-    else {
+    elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
       //If local table is empty, make a rpc call to create entries
       $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
         'drulenium.api_create_compare_request' => array($base_release_secure_id, $cmp_release_secure_id),
@@ -1480,19 +1521,29 @@ function drulenium_visual_regression_create_release_form_validate($form, &$form_
   if (!empty($form_state['values']['drulenium_vr_release_user_name']) && empty($form_state['values']['drulenium_vr_release_user_pass'])) {
     form_set_error('drulenium_vr_release_user_pass', t("If the username exists, Password can't be empty. Remove username if you want to test as Anonymous user."));
   }
+
+  if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
+    // Check if base url is reachable.
+    $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
+        'drulenium.api_validate_release' => array($form_state['values']['drulenium_vr_release_base_url']),
+    ));
+    if ($result != 1) {
+      form_set_error('drulenium_vr_release_base_url', $result);
+    }
+  }
 }
 
 function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
   $form['drulenium_vr_config']['drulenium_vr_config_server'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Server Configuration'),
+    '#title' => t('Snapshot Server Configuration'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
   # the options to display in our form radio buttons
   $options = array(
-    'local' => t('Local server'),
     'drulenium' => t('Remote Drulenium server'),
+    'local' => t('Local server'),
     'saucelabs' => t('Sauce labs server'),
   );
 
@@ -1503,50 +1554,7 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     '#description' => t('Pick the server you want to use. You will find Installation steps at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a>'),
     '#default_value' => variable_get('drulenium_vr_config_server_opt', 'drulenium'),
   );
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Local Server'),
-    '#description' => t('Configuration for your local server.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="drulenium_vr_config_server_opt"]' => array('value' => 'local'),
-      ),
-    ),
-  );
-  /*
-   * Image styles for comparision
-   * browser type, width, height https://github.com/facebook/php-webdriver/wiki/Example-command-reference
-   * Selenium host url
-   */
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config']['drulenium_vr_release_selenium_host'] = array(
-    '#title' => t('Selenium host url'),
-    '#type' => 'textfield',
-    '#description' => t('Site URL to selenium host. Usually http://localhost:4444/wd/hub'),
-    '#default_value' => variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"),
-  );
-  /* ChromeDriver
-   * The path to the driver executable must be set by the webdriver.chrome.driver system property;
-   * for more information, see http://code.google.com/p/selenium/wiki/ChromeDriver.
-   * The latest version can be downloaded from http://chromedriver.storage.googleapis.com/index.html
-   */
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config']['drulenium_vr_release_selenium_browser'] = array(
-     '#type' => 'select',
-     '#title' => t('Browser'),
-     '#options' => array(
-       'firefox' => t('firefox'),
-       'chrome' => t('chrome'),
-     ),
-     '#default_value' => variable_get('drulenium_vr_release_selenium_browser', 'firefox'),
-     '#description' => t('Pick a browser to test with.'),
-   );
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_local_config']['drulenium_vr_release_imagemagick_path'] = array(
-    '#title' => t('Path to the Image Magick binary'),
-    '#type' => 'textfield',
-    '#description' => t('The complete path of the ImageMagick <kbd>convert</kbd> binary. For example: <kbd>/usr/bin</kbd> or <kbd>C:\Program Files\ImageMagick-6.3.4-Q16</kbd>. Run "which" command in linux terminal to get the path, like "which convert"'),
-    '#default_value' => variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin"),
-  );
+
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config'] = array(
     '#type' => 'fieldset',
     '#title' => t('Remote Drulenium Server'),
@@ -1567,150 +1575,28 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
   );
 
-  /*
-   * Sauce Labs
-   */
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Sauce Labs'),
-    '#description' => t('Configuration for taking screenshots using Sauce Labs.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="drulenium_vr_config_server_opt"]' => array('value' => 'saucelabs'),
-      ),
-    ),
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['saucelabs_username'] = array(
-    '#type' => 'textfield',
-    '#title' => t('SauceLabs Username'),
-    '#description' => t('Your Saucelabs account username.'),
-    '#default_value' => variable_get('saucelabs_username', ''),
-    '#required' => FALSE,
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['saucelabs_api'] = array(
-    '#type' => 'password',
-    '#title' => t('SauceLabs Access Key'),
-    '#description' => t('Your Saucelabs account access key.'),
-    '#default_value' => variable_get('saucelabs_api', ''),
-    '#required' => FALSE,
-  );
-  $saucelabs_username = variable_get('saucelabs_username', '');
-  $saucelabs_access_key = variable_get('saucelabs_api', '');
-  $cache_bin = "cache";
-  $cid = "drulenium_saucelabs_browsers";
-  if ($cache = cache_get($cid, $cache_bin)) {
-    $cache_data = $cache->data;
-    $all_browsers = drupal_json_decode($cache_data);
-  } elseif (!empty($saucelabs_username) && !empty($saucelabs_access_key) && ($library = libraries_load("sausage")) && !empty($library['loaded'])) {
-    $s = new Sauce\Sausage\SauceAPI($saucelabs_username, $saucelabs_access_key);
-    $all_browsers = $s->getAllBrowsers();
-    $cache_data = drupal_json_encode($all_browsers);
-    cache_set($cid, $cache_data, $cache_bin, SAUCE_CACHE_EXPIRE_TIME);
-  }
-  if(!empty($all_browsers)) {
-    $os_options = array();
-    $browser_options = array();
-    $browser_version_options = array();
-    foreach ($all_browsers as $browser_array) {
-      $short_version = $browser_array['short_version'];
-      // TODO: Show long name in select box & use api name internally
-      //$long_name = $browser_array['long_name'];
-      $browser_api_name = $browser_array['api_name'];
-      $os = $browser_array['os'];
-
-      $os_options[$os] = $os;
-      $browser_options[$os][$browser_api_name] = $browser_api_name;
-      $browser_version_options[$os][$browser_api_name][$short_version] = $short_version;
-    }
-    asort($os_options);
-    $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['drulenium_vr_saucelabs_browsers'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Browsers'),
-        '#description' => t('Configuration for taking screenshots using Sauce Labs.'),
-        '#collapsible' => TRUE,
-        '#collapsed' => FALSE,
-    );
-    $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['drulenium_vr_saucelabs_browsers']['drulenium_vr_saucelabs_os'] = array(
-        '#type' => 'select',
-        '#title' => t('OS'),
-        '#options' => $os_options,
-        '#default_value' => variable_get('drulenium_vr_saucelabs_os', ''),
-        '#description' => t('Pick an operating system for the device to test. Mac for iPad, Linux for Android...'),
-    );
-    foreach ($os_options as $os) {
-      asort($browser_options[$os]);
-      $os_id = drulenium_visual_regression_name_to_id($os);
-      $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['drulenium_vr_saucelabs_browsers']['drulenium_vr_saucelabs_browser_'.$os_id] = array(
-          '#type' => 'select',
-          '#title' => t('Browser'),
-          '#options' => $browser_options[$os],
-          '#default_value' => variable_get('drulenium_vr_saucelabs_browser_'.$os_id, ''),
-          '#description' => t('Pick a browser.'),
-          '#states' => array(
-              'visible' => array(
-                  ':input[name="drulenium_vr_saucelabs_os"]' => array('value' => $os),
-              ),
-          ),
-      );
-      foreach ($browser_options[$os] as $browser) {
-        asort($browser_version_options[$os][$browser]);
-        $browser_id = drulenium_visual_regression_name_to_id($browser);
-        $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_saucelabs_config']['drulenium_vr_saucelabs_browsers']['drulenium_vr_saucelabs_browser_version_'."{$os_id}_{$browser_id}"] = array(
-            '#type' => 'select',
-            '#title' => t('Version'),
-            '#options' => $browser_version_options[$os][$browser],
-            '#default_value' => variable_get('drulenium_vr_saucelabs_browser_version_'."{$os_id}_{$browser_id}", ''),
-            '#description' => t('Pick a version.'),
-            '#states' => array(
-                'visible' => array(
-                    ':input[name="drulenium_vr_saucelabs_os"]' => array('value' => $os),
-                    ':input[name="drulenium_vr_saucelabs_browser_'.$os_id.'"]' => array('value' => $browser),
-                ),
-            ),
-        );
-      }
-    }
-  }
-
-  // Github Config
-  $form['drulenium_vr_config']['drulenium_vr_config_github'] = array(
+  $form['drulenium_vr_config']['drulenium_vr_config_image_server'] = array(
       '#type' => 'fieldset',
-      '#title' => t('GitHub Configuration'),
-      '#description' => t('GitHub details for comparing images.'),
+      '#title' => t('Image Server Configuration'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
   );
-  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_username'] = array(
-      '#type' => 'textfield',
-      '#title' => t('GitHub Username'),
-      '#description' => t('Your GitHub account username.'),
-      '#default_value' => variable_get('github_username', ''),
-      '#required' => FALSE,
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_password'] = array(
-      '#type' => 'password',
-      '#title' => t('GitHub Password'),
-      '#description' => t('Your GitHub account password.<br/> Password is stored in plain text in the database.'),
-      '#default_value' => variable_get('github_password', ''),
-      '#required' => FALSE,
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_email'] = array(
-      '#type' => 'textfield',
-      '#title' => t('GitHub Email'),
-      '#description' => t('Your GitHub account email id.'),
-      '#default_value' => variable_get('github_email', ''),
-      '#required' => FALSE,
-  );
-  $form['drulenium_vr_config']['drulenium_vr_config_github']['github_repo'] = array(
-      '#type' => 'textfield',
-      '#title' => t('GitHub Repository'),
-      '#description' => t('Your GitHub repository name.'),
-      '#default_value' => variable_get('github_repo', ''),
-      '#required' => FALSE,
+  # the options to display in our form radio buttons
+  $options = array(
+    'drulenium' => t('Remote Drulenium server'),
+    'local' => t('Local Image Magick server'),
+    'github' => t('GitHub server'),
   );
 
+  $form['drulenium_vr_config']['drulenium_vr_config_image_server']['drulenium_vr_config_image_server_opt'] = array(
+      '#type' => 'radios',
+      '#title' => t('Server:'),
+      '#options' => $options,
+      '#description' => t('Pick the server you want to use. You will find Installation steps at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a>'),
+      '#default_value' => variable_get('drulenium_vr_config_image_server_opt', 'drulenium'),
+  );
+
+  $form = system_settings_form($form);
   return $form;
 }
 
@@ -1722,15 +1608,16 @@ function drulenium_visual_regression_name_to_id($name) {
 }
 
 function drulenium_visual_regression_admin_settings_form_validate($form, &$form_state) {
-  if ($form_state['values']['drulenium_vr_config_server_opt'] == "drulenium") {
-    // Check if base url is reachable.
-    $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
-        'drulenium.api_validate_release' => array($form_state['values']['drulenium_vr_release_base_url']),
-    ));
-    if ($result != 1) {
-      form_set_error('drulenium_vr_release_base_url', $result);
-    }
+  // If Snapshot server is Drulenium, Image server should also be Drulenium
+  if (($form_state['values']['drulenium_vr_config_server_opt'] == "drulenium") && ($form_state['values']['drulenium_vr_config_image_server_opt'] != "drulenium")) {
+    form_set_error('drulenium_vr_config_image_server_opt', 'If Snapshot server is configured to use Drulenium, Image server should also be Drulenium.');
   }
+  // If Image server is Drulenium, Snapshot server should also be Drulenium
+  if (($form_state['values']['drulenium_vr_config_image_server_opt'] == "drulenium") && ($form_state['values']['drulenium_vr_config_server_opt'] != "drulenium")) {
+    form_set_error('drulenium_vr_config_server_opt', 'If Image server is configured to use Drulenium, Snapshot server should also be Drulenium.');
+  }
+
+  // TODO: Test saucelabs, github, local server settings for appropriate user choice
 }
 
 function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {

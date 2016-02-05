@@ -47,10 +47,6 @@ function drulenium_admin_settings_form($form, &$form_state) {
    );
   }
 
-  if (module_exists('drulenium_visual_regression')) {
-    $form = drulenium_visual_regression_admin_settings_form($form, $form_state);
-  }
-
   $form = system_settings_form($form);
   return $form;
 }

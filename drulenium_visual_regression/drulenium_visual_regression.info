@@ -4,5 +4,4 @@ package = "Testing"
 core =7.x
 
 configure = admin/structure/drulenium/vr
-dependencies[] = "libraries"
-dependencies[] = "drulenium"
+dependencies[] = "diff"
