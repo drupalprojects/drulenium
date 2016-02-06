@@ -70,14 +70,6 @@ function drulenium_visual_regression_libraries_info() {
  * Implements hook_menu().
  */
 function drulenium_visual_regression_menu() {
-  $items['admin/structure/drulenium/cleanup'] = array(
-    'title' => 'Drulenium cleanup',
-    'description' => 'Cleanup Drulenium data',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('drulenium_visual_regression_cache_settings_form'),
-    'access arguments' => array('administer_drulenium_vr'),
-    'file' => 'drulenium_visual_regression.admin.inc',
-  );
   $items['admin/structure/drulenium/vr'] = array(
     'type' => MENU_LOCAL_TASK,
     'title' => 'Visual Regression',
@@ -169,9 +161,19 @@ function drulenium_visual_regression_menu() {
       'page arguments' => array('drulenium_visual_regression_admin_settings_form'),
       'access arguments' => array('administer_drulenium_vr'),
   );
+  $items['admin/structure/drulenium/settings/cleanup'] = array(
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 2,
+      'title' => 'Cleanup',
+      'description' => 'Cleanup Drulenium data',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drulenium_visual_regression_cache_settings_form'),
+      'access arguments' => array('administer_drulenium_vr'),
+      'file' => 'drulenium_visual_regression.admin.inc',
+  );
   $items['admin/structure/drulenium/settings/github'] = array(
       'type' => MENU_LOCAL_TASK,
-      'weight' => 3,
+      'weight' => 8,
       'title' => 'GitHub',
       'description' => 'Settings for Github Integration.',
       'page callback' => 'drupal_get_form',
@@ -181,7 +183,7 @@ function drulenium_visual_regression_menu() {
   );
   $items['admin/structure/drulenium/settings/saucelabs'] = array(
       'type' => MENU_LOCAL_TASK,
-      'weight' => 2,
+      'weight' => 6,
       'title' => 'Sauce Labs',
       'description' => 'Settings for Sauce Labs Integration.',
       'page callback' => 'drupal_get_form',
@@ -191,7 +193,7 @@ function drulenium_visual_regression_menu() {
   );
   $items['admin/structure/drulenium/settings/local'] = array(
       'type' => MENU_LOCAL_TASK,
-      'weight' => 1,
+      'weight' => 4,
       'title' => 'Local Server',
       'description' => 'Settings for Local Server Integration.',
       'page callback' => 'drupal_get_form',
