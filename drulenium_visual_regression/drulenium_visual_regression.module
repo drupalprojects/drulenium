@@ -1618,6 +1618,40 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
   if (($form_state['values']['drulenium_vr_config_image_server_opt'] == "drulenium") && ($form_state['values']['drulenium_vr_config_server_opt'] != "drulenium")) {
     form_set_error('drulenium_vr_config_server_opt', 'If Image server is configured to use Drulenium, Snapshot server should also be Drulenium.');
   }
+  // If not Drulenium, check if libraries module is enabled
+  if ($form_state['values']['drulenium_vr_config_server_opt'] != "drulenium") {
+    if (!module_exists('libraries')) {
+      form_set_error('drulenium_vr_config_server_opt', 'Enable libraries module. https://www.drupal.org/project/libraries');
+    }
+  }
+  // If Image magick, check version
+  if ($form_state['values']['drulenium_vr_config_image_server_opt'] == "local") {
+    $image_magick_path = variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin");
+    exec("$image_magick_path/convert -version", $out, $image_magick_code);
+    // $image_magick_code = 0 if OK, nonzero if error.
+    if ($image_magick_code != 0) {
+      form_set_error('drulenium_vr_config_image_server_opt', 'Install Image magick & configure the Path to the Image Magick binary accordingly at /admin/structure/drulenium/settings/local');
+    }
+  }
+  //If Github, check authentication
+  if ($form_state['values']['drulenium_vr_config_image_server_opt'] == "github") {
+    if (($library = libraries_load("php-github-api")) && !empty($library['loaded'])) {
+      $github_username = variable_get('github_username', '');
+      $github_password = variable_get('github_password', '');
+      $github_repo = variable_get('github_repo', '');
+      $client = new \Github\Client();
+      $client->authenticate($github_username, $github_password, Github\Client::AUTH_HTTP_PASSWORD);
+      try {
+        // Call an API that requires Authentication and test if authenticated
+        $keys = $client->api('repo')->keys()->all($github_username, $github_repo);
+      }
+      catch (Exception $e) {
+        form_set_error('drulenium_vr_config_image_server_opt', 'Configure Github accordingly at /admin/structure/drulenium/settings/github');
+      }
+    }else{
+      form_set_error('drulenium_vr_config_image_server_opt', 'Install Github library accordingly');
+    }
+  }
 
   // TODO: Test saucelabs, github, local server settings for appropriate user choice
 }
