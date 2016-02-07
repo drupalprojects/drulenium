@@ -1652,6 +1652,36 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
       form_set_error('drulenium_vr_config_image_server_opt', 'Install Github library accordingly');
     }
   }
+  //If Sauce labs, check library
+  if ($form_state['values']['drulenium_vr_config_server_opt'] == "saucelabs") {
+    $saucelabs_username = variable_get('saucelabs_username', '');
+    $saucelabs_access_key = variable_get('saucelabs_api', '');
+    if (!empty($saucelabs_username) && !empty($saucelabs_access_key) && ($library = libraries_load("sausage")) && !empty($library['loaded'])) {
+      $s = new Sauce\Sausage\SauceAPI($saucelabs_username, $saucelabs_access_key);
+      $res = $s->getAccountDetails();
+      if(isset($res['error']) && !empty($res['error'])) {
+        form_set_error('drulenium_vr_config_server_opt', 'Install Sauce Labs library & configure it accordingly at /admin/structure/drulenium/settings/saucelabs');
+      }
+    }
+  }
+  // If local, check Selenium
+  if ($form_state['values']['drulenium_vr_config_server_opt'] == "local") {
+    if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
+      $host = variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"); // this is the default
+      $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
+      $capabilities = DesiredCapabilities::$browser();
+      try {
+        $driver = RemoteWebDriver::create($host, $capabilities, 5000);
+        // Close the Firefox.
+        $driver->quit();
+      }
+      catch (Exception $e) {
+        form_set_error('drulenium_vr_config_server_opt', 'Configure local Selenium config accordingly at /admin/structure/drulenium/settings/local and run the selenium server.');
+      }
+    }else{
+      form_set_error('drulenium_vr_config_server_opt', 'Install selenium_webdriver library accordingly');
+    }
+  }
 
   // TODO: Test saucelabs, github, local server settings for appropriate user choice
 }
