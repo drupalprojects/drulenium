@@ -73,6 +73,16 @@ function drulenium_visual_regression_browserstack_settings_form($form, &$form_st
       '#default_value' => variable_get('browserstack_access_key', ''),
       '#required' => TRUE,
   );
+  $form['browserstack_debugging'] = array(
+      '#type' => 'radios',
+      '#title' => t('Debugging'),
+      '#options' => array(
+        'false' => t('False'),
+        'true' => t('True'),
+      ),
+      '#default_value' => variable_get('browserstack_debugging', 'false'),
+      '#description' => t('Debugging to true, generates a live screencast and logs (text, visual, and raw).'),
+  );
 
   $browser_stack_username = variable_get('browserstack_username', "");
   $browser_stack_access_key = variable_get('browserstack_access_key', "");

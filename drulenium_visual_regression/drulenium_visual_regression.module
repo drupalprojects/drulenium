@@ -860,7 +860,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
           "browser_version" => $browserstack_browser_version,
           "os" => $browserstack_browser_platform_os,
           "os_version" => $browserstack_browser_platform_os_version,
-          "browserstack.debug" => "true"
+          "browserstack.debug" => variable_get('browserstack_debugging', 'false'),
       );
     }
     $driver = RemoteWebDriver::create($host, $capabilities, 5000);
