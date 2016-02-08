@@ -191,6 +191,16 @@ function drulenium_visual_regression_menu() {
       'access arguments' => array('administer_drulenium_vr'),
       'file' => 'drulenium_visual_regression.admin.inc',
   );
+  $items['admin/structure/drulenium/settings/browserstack'] = array(
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 5,
+      'title' => 'BrowserStack',
+      'description' => 'Settings for BrowserStack Integration.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drulenium_visual_regression_browserstack_settings_form'),
+      'access arguments' => array('administer_drulenium_vr'),
+      'file' => 'drulenium_visual_regression.admin.inc',
+  );
   $items['admin/structure/drulenium/settings/local'] = array(
       'type' => MENU_LOCAL_TASK,
       'weight' => 4,
@@ -769,7 +779,7 @@ function drulenium_visual_regression_release_setup_batch($re_id) {
   $max = $run['run_count'];
 
   while($progress <= $max) {
-    if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local'){
+    if((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local')||(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'browserstack')){
       $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($test_base_url, $re_id, $progress, $limit));
     }elseif(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'saucelabs'){
       $batch['operations'][] = array('drulenium_visual_regression_saucelabs_batch_op', array($test_base_url, $re_id, $progress, $limit));
@@ -826,9 +836,33 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       ->execute();
 
     // Start Firefox with 5 second timeout.
-    $host = variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"); // this is the default
-    $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
-    $capabilities = DesiredCapabilities::$browser();
+    if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local') {
+      $host = variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"); // this is the default
+      $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
+      $capabilities = DesiredCapabilities::$browser();
+    }
+    elseif(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'browserstack'){
+      $browser_stack_username = variable_get('browserstack_username', "");
+      $browser_stack_access_key = variable_get('browserstack_access_key', "");
+      $host = "http://{$browser_stack_username}:{$browser_stack_access_key}@hub.browserstack.com/wd/hub";
+
+      $browserstack_browser_platform = variable_get('drulenium_vr_browserstack_os', '');
+      $browserstack_browser_platform_os_version_seperator_index = strpos($browserstack_browser_platform, " -> ");
+      $browserstack_browser_platform_os = substr($browserstack_browser_platform, 0, $browserstack_browser_platform_os_version_seperator_index);
+      $browserstack_browser_platform_os_version = substr($browserstack_browser_platform, $browserstack_browser_platform_os_version_seperator_index+4);
+      $browserstack_browser_platform_id = drulenium_visual_regression_name_to_id($browserstack_browser_platform);
+      $browserstack_browser_name = variable_get('drulenium_vr_browserstack_browser_'.$browserstack_browser_platform_id, '');
+      $browserstack_browser_name_id = drulenium_visual_regression_name_to_id($browserstack_browser_name);
+      $browserstack_browser_version = variable_get('drulenium_vr_browserstack_browser_version_'."{$browserstack_browser_platform_id}_{$browserstack_browser_name_id}", '');
+
+      $capabilities = array(
+          "browser" => $browserstack_browser_name,
+          "browser_version" => $browserstack_browser_version,
+          "os" => $browserstack_browser_platform_os,
+          "os_version" => $browserstack_browser_platform_os_version,
+          "browserstack.debug" => "true"
+      );
+    }
     $driver = RemoteWebDriver::create($host, $capabilities, 5000);
     $driver->manage()->window()->maximize();
 
@@ -1546,6 +1580,7 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
   $options = array(
     'drulenium' => t('Remote Drulenium server'),
     'local' => t('Local server'),
+    'browserstack' => t('BrowserStack server'),
     'saucelabs' => t('Sauce labs server'),
   );
 

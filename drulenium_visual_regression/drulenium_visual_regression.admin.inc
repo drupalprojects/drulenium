@@ -58,6 +58,105 @@ function drulenium_visual_regression_local_settings_form($form, &$form_state) {
   return $form;
 }
 
+function drulenium_visual_regression_browserstack_settings_form($form, &$form_state) {
+  $form['browserstack_username'] = array(
+      '#type' => 'textfield',
+      '#title' => t('BrowserStack Username'),
+      '#description' => t('Your BrowserStack account username.'),
+      '#default_value' => variable_get('browserstack_username', ''),
+      '#required' => TRUE,
+  );
+  $form['browserstack_access_key'] = array(
+      '#type' => 'password',
+      '#title' => t('BrowserStack Access Key'),
+      '#description' => t('Your BrowserStack account access key.<br/> Access Key is stored in plain text in the database.'),
+      '#default_value' => variable_get('browserstack_access_key', ''),
+      '#required' => TRUE,
+  );
+
+  $browser_stack_username = variable_get('browserstack_username', "");
+  $browser_stack_access_key = variable_get('browserstack_access_key', "");
+  $cache_bin = "cache";
+  $cid = "drulenium_browserstack_browsers";
+  if ($cache = cache_get($cid, $cache_bin)) {
+    $cache_data = $cache->data;
+    $all_browsers = drupal_json_decode($cache_data);
+  } elseif (!empty($browser_stack_username) && !empty($browser_stack_access_key)) {
+    $browsers_api_url = "https://{$browser_stack_username}:{$browser_stack_access_key}@www.browserstack.com/automate/browsers.json";
+    $resp = drupal_http_request($browsers_api_url);
+    $cache_data = $resp->data;
+    if(($resp->code == 200) && !empty($cache_data)) {
+      $all_browsers = drupal_json_decode($cache_data);
+      cache_set($cid, $cache_data, $cache_bin, SAUCE_CACHE_EXPIRE_TIME);
+    }
+  }
+  if(!empty($all_browsers)) {
+    $os_options = array();
+    $browser_options = array();
+    $browser_version_options = array();
+    foreach ($all_browsers as $browser_array) {
+      $short_version = $browser_array['browser_version'];
+      $browser_api_name = $browser_array['browser'];
+      $os = "{$browser_array['os']} -> {$browser_array['os_version']}";
+
+      $os_options[$os] = $os;
+      $browser_options[$os][$browser_api_name] = $browser_api_name;
+      $browser_version_options[$os][$browser_api_name][$short_version] = $short_version;
+    }
+    asort($os_options);
+    $form['drulenium_vr_browserstack_browsers'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Browsers'),
+        '#description' => t('Configuration for taking screenshots using Sauce Labs.'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+    );
+    $form['drulenium_vr_browserstack_browsers']['drulenium_vr_browserstack_os'] = array(
+        '#type' => 'select',
+        '#title' => t('OS'),
+        '#options' => $os_options,
+        '#default_value' => variable_get('drulenium_vr_browserstack_os', ''),
+        '#description' => t('Pick an operating system for the device to test. Mac for iPad, Linux for Android...'),
+    );
+    foreach ($os_options as $os) {
+      asort($browser_options[$os]);
+      $os_id = drulenium_visual_regression_name_to_id($os);
+      $form['drulenium_vr_browserstack_browsers']['drulenium_vr_browserstack_browser_'.$os_id] = array(
+          '#type' => 'select',
+          '#title' => t('Browser'),
+          '#options' => $browser_options[$os],
+          '#default_value' => variable_get('drulenium_vr_browserstack_browser_'.$os_id, ''),
+          '#description' => t('Pick a browser.'),
+          '#states' => array(
+              'visible' => array(
+                  ':input[name="drulenium_vr_browserstack_os"]' => array('value' => $os),
+              ),
+          ),
+      );
+      foreach ($browser_options[$os] as $browser) {
+        asort($browser_version_options[$os][$browser]);
+        $browser_id = drulenium_visual_regression_name_to_id($browser);
+        $form['drulenium_vr_browserstack_browsers']['drulenium_vr_browserstack_browser_version_'."{$os_id}_{$browser_id}"] = array(
+            '#type' => 'select',
+            '#title' => t('Version'),
+            '#options' => $browser_version_options[$os][$browser],
+            '#default_value' => variable_get('drulenium_vr_browserstack_browser_version_'."{$os_id}_{$browser_id}", ''),
+            '#description' => t('Pick a version.'),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="drulenium_vr_browserstack_os"]' => array('value' => $os),
+                    ':input[name="drulenium_vr_browserstack_browser_'.$os_id.'"]' => array('value' => $browser),
+                ),
+            ),
+        );
+      }
+    }
+  }
+
+  $form = system_settings_form($form);
+  return $form;
+}
+
 function drulenium_visual_regression_saucelabs_settings_form($form, &$form_state) {
   /*
    * Sauce Labs
