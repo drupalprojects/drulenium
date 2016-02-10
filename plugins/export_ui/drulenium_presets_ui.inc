@@ -246,6 +246,9 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
   $form['#attached']['js'] = array(
       drupal_get_path('module', 'drulenium') . '/js/drulenium_preset_form.js',
   );
+  $form['#attached']['css'] = array(
+      drupal_get_path('module', 'drulenium') . '/css/drulenium_preset_form.css',
+  );
 }
 
 /**
