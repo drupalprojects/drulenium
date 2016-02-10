@@ -18,7 +18,8 @@ function drulenium_visual_regression_drush_command() {
       'release_name' => 'Name of the release to create.',
     ),
     'options' => array(
-      'role' => 'A user role to test the site as. Defaults to anonymous.',
+      'preset_cid' => 'Test Preset cid to base the test on.', // drush vrc --preset_cid=anonymous_permissions_test_case
+      'preset_category' => 'Test Preset category of all tests to run.',
     ),
     'aliases' => array('vrc'),
   );
@@ -32,15 +33,16 @@ function drulenium_visual_regression_drush_command() {
     'aliases' => array('vru'),
   );
   $items['vr-diff'] = array(
-    'callback' => 'drush_drulenium_visual_regression_diff',
+    'callback' => 'drush_drulenium_visual_regression_category_diff',
     'description' => 'Generate comparision report for 2 releases.',
     'drupal dependencies' => array('drulenium_visual_regression'),
     'arguments' => array(
       'from' => 'Release ID of the first set of screenshots.',
       'to' => 'Release ID of the second set of screenshots.',
     ),
-
-    'options' => array(),
+    'options' => array(
+      'preset_category' => 'Test Preset category of all tests to diff.',
+    ),
     'aliases' => array('vrd'),
   );
   return $items;
@@ -50,7 +52,16 @@ function drulenium_visual_regression_drush_command() {
  * Command callback. Create a release & generate snapshots.
  */
 function drush_drulenium_visual_regression_create($vr_base_url = "", $release_name = "") {
-  $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
+  // Option
+  $preset_cid = drush_get_option('preset_cid', ''); // Default to empty string
+  $preset_category = drush_get_option('preset_category', '');
+
+  if(empty($preset_cid)) {
+    $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
+  } else {
+    $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
+    $drulenium_vr_path_custom = $config_array['specific_pages'];
+  }
   $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass", '');
   $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name", '');
   //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
@@ -68,9 +79,21 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   }
 
   drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
-  $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
-  drulenium_visual_regression_release_setup_batch($re_id);
+  if(!empty($preset_category)) {
+    $presets = drulenium_preset_load();
+    foreach ($presets as $preset_cid => $value) {
+      $category = $value->category;
+      if(empty($category))  $category = 'Miscellaneous';
+      if($category == $preset_category){
+        $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
+        $drulenium_vr_path_custom = $config_array['specific_pages'];
+        $pages_array = array();
+        $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid);
+        drulenium_visual_regression_release_setup_batch($re_id);
+      }
+    }
+  }
 
   drush_backend_batch_process();
   
@@ -104,7 +127,41 @@ function drush_drulenium_visual_regression_update($release_name = "") {
 }
 
 /**
- * Command callback. Generate comparision report for 2 releases.
+ * Command callback. Generate comparision report of releases per category if exists.
+ */
+function drush_drulenium_visual_regression_category_diff($old_re_id = null, $new_re_id = null, $reset = FALSE) {
+  $preset_category = drush_get_option('preset_category', '');
+  if(!empty($preset_category)) {
+    $presets = drulenium_preset_load();
+    foreach ($presets as $preset_cid => $value) {
+      $category = $value->category;
+      if(empty($category))  $category = 'Miscellaneous';
+      if($category == $preset_category){
+        // Get last two releases of this preset.
+        $result = db_select('drulenium_vr_releases', 'vr_re')
+          ->fields('vr_re', array('rid'))
+          ->condition('vr_re.preset_cid', $preset_cid)
+          ->orderBy('rid', 'DESC')
+          ->range(0,2)
+          ->execute();
+        $row1 = $result->fetchAssoc();
+        $new_re_id = $row1['rid'];
+        $row2 = $result->fetchAssoc();
+        $old_re_id = $row2['rid'];
+        drush_drulenium_visual_regression_diff($old_re_id, $new_re_id, $reset);
+      }
+    }
+  } else {
+    drush_drulenium_visual_regression_diff($old_re_id, $new_re_id, $reset);
+  }
+  drush_backend_batch_process();
+  global $base_url;
+
+  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
+}
+
+/**
+ * Generate comparision report for 2 releases.
  */
 function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null, $reset = FALSE) {
   if ($old_re_id == null || $new_re_id == null) {
@@ -162,8 +219,4 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
   }
   
   batch_set($batch);
-  drush_backend_batch_process();
-  global $base_url;
-
-  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
 }

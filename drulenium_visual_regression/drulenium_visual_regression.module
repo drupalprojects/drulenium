@@ -437,7 +437,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     $github_password = variable_get('github_password', '');
     $github_repo = variable_get('github_repo', '');
     $github_email = variable_get('github_email', '');
-    if(!empty($github_username) && !empty($github_password)){
+    if($diff_percent > 0 && (variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github')) {
       if (($library = libraries_load("php-github-api")) && !empty($library['loaded'])) {
         $client = new \Github\Client();
         $client->authenticate($github_username, $github_password, Github\Client::AUTH_HTTP_PASSWORD);
@@ -1292,6 +1292,12 @@ function drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step
     case PLUGIN_FILL_TEXTBOX:
       $output .= drulenium_visual_regression_fill_textbox_plugin_to_text($prev_plugin_arr);
       break;
+    case PLUGIN_CLICK_BUTTON:
+      $output .= drulenium_visual_regression_click_button_plugin_to_text($prev_plugin_arr);
+      break;
+    case PLUGIN_HOVER_OVER:
+      $output .= drulenium_visual_regression_hover_over_plugin_to_text($prev_plugin_arr);
+      break;
     case PLUGIN_TAKE_SCREENSHOT:
       break;
   }
@@ -1301,7 +1307,19 @@ function drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step
 function drulenium_visual_regression_fill_textbox_plugin_to_text($prev_plugin_arr) {
   $element_id = $prev_plugin_arr['description']['locator'];
   $value = $prev_plugin_arr['description']['text'];
-  $output = "filling textbox[ID: \"$element_id\"] with value \"$value\"";
+  $output = "filling textbox[CSS: \"$element_id\"] with value \"$value\"";
+  return $output;
+}
+
+function drulenium_visual_regression_click_button_plugin_to_text($prev_plugin_arr) {
+  $element_id = $prev_plugin_arr['description']['locator'];
+  $output = "clicking button[CSS: \"$element_id\"]";
+  return $output;
+}
+
+function drulenium_visual_regression_hover_over_plugin_to_text($prev_plugin_arr) {
+  $element_id = $prev_plugin_arr['description']['locator'];
+  $output = "Hovering over element[CSS: \"$element_id\"]";
   return $output;
 }
 
@@ -1799,6 +1817,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
     }
   }
 }
+
 function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
   if (empty($vr_base_url)) {
     global $base_url;
@@ -1885,6 +1904,19 @@ function drulenium_visual_regression_update_release_in_db($release_id, $release_
   return $release_id;
 }
 
+function drulenium_visual_regression_get_preset_config($preset_cid) {
+  $preset_obj = drulenium_preset_load($preset_cid);
+  $specific_pages = $preset_obj->settings['pages']['path']['custom'];
+  $specific_node_types = $preset_obj->settings['pages']['node']['custom'];
+  $specific_term_types = $preset_obj->settings['pages']['term']['custom'];
+  $config = array(
+      'specific_pages' => $specific_pages,
+      'specific_node_types' => $specific_node_types,
+      'specific_term_types' => $specific_term_types,
+  );
+  return $config;
+}
+
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
   $preset_cid = '';
   if(isset($_GET["cid"])) {
@@ -1914,11 +1946,11 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     variable_set('drulenium_vr_release_user_pass', $test_user_pass);
   } else {
     //Get pages from $preset_cid
-    $preset_obj = drulenium_preset_load($preset_cid);
+    $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
 
-    $specific_pages = $preset_obj->settings['pages']['path']['custom'];
-    $specific_node_types = $preset_obj->settings['pages']['node']['custom'];
-    $specific_term_types = $preset_obj->settings['pages']['term']['custom'];
+    $specific_pages = $config_array['specific_pages'];
+    $specific_node_types = $config_array['specific_node_types'];
+    $specific_term_types = $config_array['specific_term_types'];
   }
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
   variable_set('drulenium_vr_release_base_url', $vr_base_url);
