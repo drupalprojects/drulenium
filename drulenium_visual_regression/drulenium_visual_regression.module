@@ -546,7 +546,7 @@ function drulenium_visual_regression_compare_batch_finished($success, $results, 
 
 function drulenium_visual_regression_compare_status($base_release_secure_id, $cmp_release_secure_id) {
   // RPC call
-  $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
+  $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
       'drulenium.api_compare_status' => array($base_release_secure_id, $cmp_release_secure_id),
   ));
   //dsm($result);
@@ -562,11 +562,11 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
     //$relative_url = substr($cmp_res['url'], strpos($cmp_res['url'], "?q=")+3);
     $gif_link = "";
     if(!empty($cmp_res['diff_gif'])){
-      $gif_link = "http://drulenium.technikh.com/".$cmp_res['diff_gif'];
+      $gif_link = "http://drulenium.org/".$cmp_res['diff_gif'];
     }
     $highlighted_link = "";
     if(!empty($cmp_res['diff_highlight'])){
-      $highlighted_link = "http://drulenium.technikh.com/".$cmp_res['diff_highlight'];
+      $highlighted_link = "http://drulenium.org/".$cmp_res['diff_highlight'];
     }
     $result = db_query("Update drulenium_vr_results res
     LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
@@ -902,7 +902,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     // update message during each run so you know where you are in the process
     $context['message'] = 'Now processing snapshot ' . $progress . ' - URL: '. $url;
   } elseif ($progress == 0) {
-    drupal_set_message('Didn\'t find the required selenium_webdriver library. Follow the installation instructions at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a> ');
+    drupal_set_message('Didn\'t find the required selenium_webdriver library. Follow the installation instructions at <a target="_blank" href="http://drulenium.org/installation">http://drulenium.org/installation</a> ');
   }
 }
 
@@ -1036,7 +1036,7 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element = null, $
 
 function drulenium_visual_regression_release_status($secureid) {
   // RPC call
-  $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
+  $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
       'drulenium.api_release_status' => array($secureid),
   ));
   //dsm($result);
@@ -1045,7 +1045,7 @@ function drulenium_visual_regression_release_status($secureid) {
     //$relative_url = substr($run['url'], strpos($run['url'], "?q=")+3);
     db_update('drulenium_vr_runs')
     ->fields(array(
-      'snapshot' => 'http://drulenium.technikh.com/'.$run['snapshot'],
+      'snapshot' => 'http://drulenium.org/'.$run['snapshot'],
     ))
     ->condition('re_id', $re_id)
     ->condition('url', $run['url'])
@@ -1375,7 +1375,7 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     }
     elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
       //If local table is empty, make a rpc call to create entries
-      $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
+      $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
         'drulenium.api_create_compare_request' => array($base_release_secure_id, $cmp_release_secure_id),
       ));
       drupal_set_message($result);
@@ -1578,7 +1578,7 @@ function drulenium_visual_regression_create_release_form_validate($form, &$form_
 
   if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
     // Check if base url is reachable.
-    $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
+    $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
         'drulenium.api_validate_release' => array($form_state['values']['drulenium_vr_release_base_url']),
     ));
     if ($result != 1) {
@@ -1606,7 +1606,7 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('Server:'),
     '#options' => $options,
-    '#description' => t('Pick the server you want to use. You will find Installation steps at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a>'),
+    '#description' => t('Pick the server you want to use. You will find Installation steps at <a target="_blank" href="http://drulenium.org/installation">http://drulenium.org/installation</a>'),
     '#default_value' => variable_get('drulenium_vr_config_server_opt', 'drulenium'),
   );
 
@@ -1647,7 +1647,7 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
       '#type' => 'radios',
       '#title' => t('Server:'),
       '#options' => $options,
-      '#description' => t('Pick the server you want to use. You will find Installation steps at <a target="_blank" href="http://drulenium.technikh.com/installation">http://drulenium.technikh.com/installation</a>'),
+      '#description' => t('Pick the server you want to use. You will find Installation steps at <a target="_blank" href="http://drulenium.org/installation">http://drulenium.org/installation</a>'),
       '#default_value' => variable_get('drulenium_vr_config_image_server_opt', 'drulenium'),
   );
 
@@ -1979,7 +1979,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     global $base_url;
     $site_email = variable_get('site_mail', '');
     $notify_email = variable_get('drulenium_vr_release_notify_email', $site_email);
-    $result = xmlrpc('http://drulenium.technikh.com/xmlrpc.php', array(
+    $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
         'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url, $test_user_name, $test_user_pass),
     ));
     drupal_set_message($result);
