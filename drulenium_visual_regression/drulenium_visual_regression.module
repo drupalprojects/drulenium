@@ -1131,7 +1131,7 @@ function drulenium_visual_regression_release_detail($re_id) {
       $url_text = "Home Page";
     }
     if(!empty($run['snapshot'])){
-      $snapshot_img = "<img src='" . $run['snapshot'] . "' width=200 height=200 />";
+      $snapshot_img = "<img src='" . $run['snapshot'] . "' width=200 />";
       $snapshot = l($snapshot_img, $run['snapshot'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
     $rows[] = array(
@@ -1227,7 +1227,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       $url_text = "Home Page";
     }
     if (!empty($cmp_result['diff_gif'])) {
-      $title = "<img src='" . $cmp_result['diff_gif'] . "' width=200 height=200 />";
+      $title = "<img src='" . $cmp_result['diff_gif'] . "' width=200 />";
 
       $gif_link = l($title, $cmp_result['diff_gif'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
@@ -1237,7 +1237,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
       if (strpos($cmp_result['diff_highlight'],'github.com') !== false) {
         $highlighted_link = l("Diff on github", $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank')));
       } else {
-        $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 height=200 />";
+        $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 />";
         $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
         $highlighted_link .= '<br /> &nbsp;';
       }
