@@ -1735,6 +1735,41 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
       form_set_error('drulenium_vr_config_server_opt', 'Install selenium_webdriver library accordingly');
     }
   }
+  // If BrowserStack, check Selenium
+  if ($form_state['values']['drulenium_vr_config_server_opt'] == "browserstack") {
+    if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
+      $browser_stack_username = variable_get('browserstack_username', "");
+      $browser_stack_access_key = variable_get('browserstack_access_key', "");
+      $host = "http://{$browser_stack_username}:{$browser_stack_access_key}@hub.browserstack.com/wd/hub";
+
+      $browserstack_browser_platform = variable_get('drulenium_vr_browserstack_os', '');
+      $browserstack_browser_platform_os_version_seperator_index = strpos($browserstack_browser_platform, " -> ");
+      $browserstack_browser_platform_os = substr($browserstack_browser_platform, 0, $browserstack_browser_platform_os_version_seperator_index);
+      $browserstack_browser_platform_os_version = substr($browserstack_browser_platform, $browserstack_browser_platform_os_version_seperator_index+4);
+      $browserstack_browser_platform_id = drulenium_visual_regression_name_to_id($browserstack_browser_platform);
+      $browserstack_browser_name = variable_get('drulenium_vr_browserstack_browser_'.$browserstack_browser_platform_id, '');
+      $browserstack_browser_name_id = drulenium_visual_regression_name_to_id($browserstack_browser_name);
+      $browserstack_browser_version = variable_get('drulenium_vr_browserstack_browser_version_'."{$browserstack_browser_platform_id}_{$browserstack_browser_name_id}", '');
+
+      $capabilities = array(
+          "browser" => $browserstack_browser_name,
+          "browser_version" => $browserstack_browser_version,
+          "os" => $browserstack_browser_platform_os,
+          "os_version" => $browserstack_browser_platform_os_version,
+          "browserstack.debug" => variable_get('browserstack_debugging', 'false'),
+      );
+      try {
+        $driver = RemoteWebDriver::create($host, $capabilities, 5000);
+        // Close the Firefox.
+        $driver->quit();
+      }
+      catch (Exception $e) {
+        form_set_error('drulenium_vr_config_server_opt', 'Configure BrowserStack config accordingly at /admin/structure/drulenium/settings/browserstack.');
+      }
+    }else{
+      form_set_error('drulenium_vr_config_server_opt', 'Install selenium_webdriver library accordingly');
+    }
+  }
 
   // TODO: Test saucelabs, github, local server settings for appropriate user choice
 }

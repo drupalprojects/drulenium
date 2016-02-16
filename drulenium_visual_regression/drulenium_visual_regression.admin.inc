@@ -117,7 +117,7 @@ function drulenium_visual_regression_browserstack_settings_form($form, &$form_st
     $form['drulenium_vr_browserstack_browsers'] = array(
         '#type' => 'fieldset',
         '#title' => t('Browsers'),
-        '#description' => t('Configuration for taking screenshots using Sauce Labs.'),
+        '#description' => t('Configuration for taking screenshots using BrowserStack.'),
         '#collapsible' => TRUE,
         '#collapsed' => FALSE,
     );
