@@ -220,6 +220,7 @@ function drulenium_visual_regression_menu() {
 }
 
 function drulenium_visual_regression_compare_snapshots_twenty_twenty($base_run_id, $cmp_run_id) {
+  drupal_add_js('https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js', 'external');
   drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/jquery.twentytwenty.js');
   drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/jquery.event.move.js');
   drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/vr_twenty.js');
