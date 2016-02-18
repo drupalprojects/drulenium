@@ -16,6 +16,10 @@ function drulenium_visual_regression_permission() {
       'title' => t('Run Tests'),
       'description' => t('Configure, Run & Compare tests.'),
     ),
+    'access_visual_test_reports' => array(
+          'title' => t('Access Test reports'),
+          'description' => t('Access visual test reports run by Drulenium.'),
+      ),
     'administer_drulenium_vr' => array(
       'title' => t('Administer Drulenium VR config'),
       'description' => t('Configure & run cleanup tasks.'),
@@ -141,7 +145,7 @@ function drulenium_visual_regression_menu() {
   $items['vr/twenty-twenty/%/%'] = array(
     'page callback' => 'drulenium_visual_regression_compare_snapshots_twenty_twenty',
     'page arguments' => array(2,3),
-    'access arguments' => array('access content'),
+    'access arguments' => array('access_visual_test_reports'),
     'type' => MENU_CALLBACK,
   );
   $items['vr/compare/%/%'] = array(
@@ -217,11 +221,22 @@ function drulenium_visual_regression_menu() {
 
 function drulenium_visual_regression_compare_snapshots_twenty_twenty($base_run_id, $cmp_run_id) {
   drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/jquery.twentytwenty.js');
+  drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/jquery.event.move.js');
   drupal_add_js(drupal_get_path('module', 'drulenium_visual_regression') . '/js/vr_twenty.js');
   drupal_add_css(drupal_get_path('module', 'drulenium_visual_regression') . '/css/twentytwenty.css');
+  $base_run_image_path = db_select('drulenium_vr_runs', 'vr_ru')
+    ->fields('vr_ru', array('snapshot'))
+    ->condition('vr_ru.rid', $base_run_id)
+    ->execute()
+    ->fetchfield();
+  $cmp_run_image_path = db_select('drulenium_vr_runs', 'vr_ru')
+    ->fields('vr_ru', array('snapshot'))
+    ->condition('vr_ru.rid', $cmp_run_id)
+    ->execute()
+    ->fetchfield();
   $output = '<div id="container1">
-  <img src="http://dev.proxy.drulenium.com/sites/dev.proxy.drulenium.com/files/drulenium/1438957920.png">
-  <img src="http://dev.proxy.drulenium.com/sites/dev.proxy.drulenium.com/files/drulenium/1438952614.png">
+  <img src="'.$base_run_image_path.'">
+  <img src="'.$cmp_run_image_path.'">
 </div>';
   return $output;
 }
@@ -1206,7 +1221,7 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
 
   drupal_set_title("Compare: " . $base_release_name . " & " . $cmp_release_name);
 
-  $header = array(t('Id'), t('URL'), t('Task'), t('Percentage Difference'), t('Diff Highlighted'), t('Animated GIF'));
+  $header = array(t('Id'), t('URL'), t('Task'), t('Percentage Difference'), t('20-20 Slider Diff'), t('Diff Highlighted'), t('Animated GIF'));
   $rows = array();
 
   $query = db_select('drulenium_vr_results', 're');
@@ -1260,11 +1275,16 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     if(!empty($preset_cid)) {
       $task_html .= drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $cmp_result['step_num']);
     }
+    $diff_20_20_link = "";
+    if($cmp_result['diff_percent'] > 0){
+      $diff_20_20_link = l('20-20 Diff', "/vr/twenty-twenty/".$cmp_result['run_base_id']."/".$cmp_result['run_cmp_id'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
+    }
     $rows[] = array(
       $cmp_result['result_id'],
       l($url_text, $test_base_url . $cmp_result['url']) . ' (' . l('B', $cmp_base_url . $cmp_result['url']) . ')',
       $task_html,
       $cmp_result['diff_percent'],
+      $diff_20_20_link,
       $highlighted_link,
       $gif_link,
     );
