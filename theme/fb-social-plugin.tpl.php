@@ -11,7 +11,7 @@ print $plugin_type;
 print"<br/><hr/>";
 print drupal_attributes($options);
 print"<br/><hr/>";
-print $tag_name
+print $tag_name;
 print"<br/><hr/>";
 ?>
 <div class="drulenium-<?php print $plugin_type?>-plugin">
