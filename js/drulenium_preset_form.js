@@ -23,6 +23,12 @@
 					$("."+classesSelector).not("#plugin-items-table input").val($(this).val());
 					//alert($("."+classesSelector).not("#plugin-items-table input").val());
 				});
+				$('#plugin-items-table select.form-select').each(function() {
+					var classes = $(this).attr('class');
+					var classesSelector = classes.replace(/ /g, ".");
+					$("."+classesSelector).not("#plugin-items-table select").val($(this).val());
+					//alert($("."+classesSelector).not("#plugin-items-table input").val());
+				});
 				//Weights Sync
 				$('#plugin-items-table .plugin-item-weight').each(function() {
 					var classes = $(this).attr('class');

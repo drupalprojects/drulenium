@@ -14,15 +14,25 @@ $plugin = array(
 function drulenium_takescreenshot_defaults() {
   return array(
     'locator' => '',
+    'snapshot_mode' => 'include',
   );
 }
 
 function drulenium_takescreenshot_fb_settings($options) {
   $form = array();
+  $form['snapshot_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('Type'),
+    '#options' => array(
+      'include' => t('Include'),
+      'exclude' => t('Exclude'),
+    ),
+    '#description' => t('Choose "Include" to take the snapshot of only the specified HTML element.<br/>Choose "Exclude" to take snapshot of the whole page except the specified HTML elements.'),
+  );
   $form['locator'] = array(
     '#type' => 'textfield',
     '#title' => t('Element Locator'),
-    '#description' => t('The Locator of the element you want to take screenshot. CSS selector like {#food span.dairy}')
+    '#description' => t('The Locator of the element you want to include or exclude in the screenshot. CSS selector like {#food span.dairy}.<br/>Multiple selectors can be coma seperated for exclusion.')
   );
 
   $defaults = drulenium_takescreenshot_defaults();

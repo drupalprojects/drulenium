@@ -35,7 +35,8 @@ function drulenium_presets_ui_form_submit(&$form, &$form_state) {
   //$type = $form_state['values']['test_plugin_type']['plugin_type'];
   $form_state['item']->plugin_type = $type;
   //$form_state['item']->drulenium_attrs = $form_state['values']['drulenium_settings_' . $type]['drulenium_attrs_' . $type];
-  $form_state['item']->settings = $form_state['values']['drulenium_settings_' . $type]['settings_' . $type];
+  //$form_state['item']->settings = $form_state['values']['drulenium_settings_' . $type]['settings_' . $type];
+  $form_state['item']->settings = $form_state['values']['drulenium_settings_' . $type];
 
   if(isset($form_state['values']['test_plugin_type']['plugin_items'])) {
     uasort($form_state['values']['test_plugin_type']['plugin_items'], "drulenium_sort_plugin_items_by_weight");
@@ -221,6 +222,7 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
     $form['drulenium_settings_' . $type]['settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
     //dsm($export);
   }*/
+  // TODO: Remove hardcoded unused plugin type
   $type = 'drulenium_facepile';
   $id = 'drulenium-settings-' . $type;
   $wrapper_id = $id . '-wrapper';
@@ -238,11 +240,12 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       '#tree' => TRUE
   );
   // drupal settings
-  $form['drulenium_settings_' . $type]['settings_' . $type] = array(
+  /*$form['drulenium_settings_' . $type]['settings_' . $type] = array(
       '#type' => 'fieldset',
-      '#collapsible' => TRUE
+      '#collapsible1' => TRUE
   );
-  $form['drulenium_settings_' . $type]['settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
+  $form['drulenium_settings_' . $type]['settings_' . $type] += _drulenium_presets_ui_create_block_form($export);*/
+  $form['drulenium_settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
   $form['#attached']['js'] = array(
       drupal_get_path('module', 'drulenium') . '/js/drulenium_preset_form.js',
   );

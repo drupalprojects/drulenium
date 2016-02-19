@@ -898,18 +898,24 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $driver->get($url);
       if(!empty($preset_cid)){
         drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url']);
-      }
-      $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver);
+        // Delete step_num: 0 entry in drulenium_vr_runs as above tasks might include snapshot.
+        db_delete('drulenium_vr_runs')
+          ->condition('rid', $run['rid'])
+          ->condition('step_num', 0)
+          ->execute();
+      }else{
+        $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver);
 
-      // Update database.
-      db_update('drulenium_vr_runs')
-      ->fields(array(
-        'snapshot' => $full_screenshot,
-      ))
-      ->condition('re_id', $re_id)
-      ->condition('url', $run['url'])
-      ->condition('step_num', 0)
-      ->execute();
+        // Update database.
+        db_update('drulenium_vr_runs')
+        ->fields(array(
+          'snapshot' => $full_screenshot,
+        ))
+        ->condition('re_id', $re_id)
+        ->condition('url', $run['url'])
+        ->condition('step_num', 0)
+        ->execute();
+      }
     }
     // Close the Firefox.
     $driver->quit();
@@ -983,15 +989,16 @@ function drulenium_visual_regression_selenium_task_click_button_do($driver, $plu
 
 function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs = FALSE) {
   $element_css_locator = $plugin_arr['description']['locator'];
+  $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
+  $exclude_element = FALSE;
+  if($snapshot_mode == "exclude"){
+    $exclude_element = TRUE;
+  }
   if($saucelabs) {
     $output = '';
     return $output;
   }
-  $element = null;
-  if(!empty($element_css_locator)){
-    $element = $driver->findElement(WebDriverBy::cssSelector($element_css_locator));
-  }
-  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element, "_$step_num");
+  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator, "_$step_num", $exclude_element);
 
   $fields = array(
       're_id' => $re_id,
@@ -1002,8 +1009,7 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
   db_insert('drulenium_vr_runs')->fields($fields)->execute();
 }
 
-function _drulenium_visual_regression_TakeScreenshot($driver, $element = null, $file_id = "") {
-
+function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator = '', $file_id = "", $exclude_element = FALSE) {
   // Change the Path to your own settings.
   $mydir = file_default_scheme() . '://drulenium';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
@@ -1017,29 +1023,47 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element = null, $
     throw new Exception('Could not save screenshot');
   }
 
-  if(!(bool)$element){
+  if(empty($element_css_locator)){
     return $relative_file_path;
   }
+  $multiple_elements = explode(",", $element_css_locator);
 
   // Continue to crop out a specific element.
 
   $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id; // Change the path here as well
 
   //dsm($relative_file_path);
-  $element_width = $element->getSize()->getWidth();
-  $element_height = $element->getSize()->getHeight();
-
-  $element_src_x = $element->getLocation()->getX();
-  $element_src_y = $element->getLocation()->getY();
 
   // Create image instances
   $src = imagecreatefrompng($screenshot);
-  $dest = imagecreatetruecolor($element_width, $element_height);
+  if($exclude_element) {
+    $red = imagecolorallocate($src, 255, 0, 0);
+    foreach ($multiple_elements as $single_element_css_locator){
+      $element = $driver->findElement(WebDriverBy::cssSelector($single_element_css_locator));
+      $element_width = $element->getSize()->getWidth();
+      $element_height = $element->getSize()->getHeight();
 
-  // Copy
-  imagecopy($dest, $src, 0, 0, $element_src_x, $element_src_y, $element_width, $element_height);
+      $element_src_x = $element->getLocation()->getX();
+      $element_src_y = $element->getLocation()->getY();
+      // Draw a red rectangle
+      imagefilledrectangle($src, $element_src_x, $element_src_y, $element_src_x + $element_width, $element_src_y + $element_height, $red);
+    }
+    imagepng($src, $screenshot);
+  } else {
+    // If include element, include the first element.
+    $element = $driver->findElement(WebDriverBy::cssSelector($multiple_elements[0]));
+    $element_width = $element->getSize()->getWidth();
+    $element_height = $element->getSize()->getHeight();
 
-  imagepng($dest, $screenshot);
+    $element_src_x = $element->getLocation()->getX();
+    $element_src_y = $element->getLocation()->getY();
+    $dest = imagecreatetruecolor($element_width, $element_height);
+
+    // Copy
+    imagecopy($dest, $src, 0, 0, $element_src_x, $element_src_y, $element_width, $element_height);
+
+    imagepng($dest, $screenshot);
+  }
 
   // unlink($screenshot); // unlink function might be restricted in mac os x.
 
