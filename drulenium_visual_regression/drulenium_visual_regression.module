@@ -946,6 +946,9 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
       case PLUGIN_HOVER_OVER:
         $output .= drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs);
         break;
+      case PLUGIN_WAIT:
+        $output .= drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr, $saucelabs);
+        break;
       case PLUGIN_TAKE_SCREENSHOT:
         $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs);
         break;
@@ -964,6 +967,21 @@ function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plu
     return $output;
   }
   $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->sendKeys($value);
+}
+
+function drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr, $saucelabs = FALSE) {
+  // https://github.com/facebook/php-webdriver/wiki/HowTo-Wait
+  // http://facebook.github.io/php-webdriver/classes/WebDriverExpectedCondition.html#method_visibilityOfElementLocated
+  $element_css_locator = $plugin_arr['description']['locator'];
+  if($saucelabs) {
+    $output = '';
+    return $output;
+  }
+  // wait for at most 10s for the specified Element to be present on the DOM of a page and visible.
+  // sleep for 500ms and retries if it the title is not correct.
+  $driver->wait(10, 500)->until(
+    WebDriverExpectedCondition::visibilityOfElementLocated(WebDriverBy::cssSelector($element_css_locator))
+  );
 }
 
 function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs = FALSE) {

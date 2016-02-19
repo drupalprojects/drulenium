@@ -4,6 +4,7 @@ define('PLUGIN_FILL_TEXTBOX', 'drulenium_filltextbox');
 define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_takescreenshot');
 define('PLUGIN_CLICK_BUTTON', 'drulenium_clickbutton');
 define('PLUGIN_HOVER_OVER', 'drulenium_mouseover');
+define('PLUGIN_WAIT', 'drulenium_wait');
 
 /**
  * Implementation of hook_perm().
