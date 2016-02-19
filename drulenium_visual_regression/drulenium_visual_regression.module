@@ -1388,7 +1388,7 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
   $output .= "</div>\n";
-  $output .= "<div class='sharelink'>" . l(t('Secure share link'), "vr/compare/$old_re_id/$new_re_id/" . _drulenium_secure_link_token($old_re_id, $new_re_id));
+  $output .= "<div class='sharelink'>" . l(t('Secure share link'), _drulenium_secure_compare_link($old_re_id, $new_re_id));
   $output .= "</div>\n";
 
   $output2 = drulenium_visual_regression_releases_compare($old_re_id, $new_re_id);
@@ -2290,4 +2290,8 @@ function _drulenium_visual_regression_access_vr_compare($from, $to, $token = NUL
  */
 function _drulenium_secure_link_token($from, $to) {
   return sha1($from . $to . drupal_get_private_key());
+}
+
+function _drulenium_secure_compare_link($from, $to) {
+  return "vr/compare/$from/$to/" . _drulenium_secure_link_token($from, $to);
 }
