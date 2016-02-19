@@ -113,8 +113,12 @@ function drush_drulenium_visual_regression_update($release_name = "") {
     ->fetchField();
 
   // Wipe the current snapshot's to trigger a refresh.
-  $num_pages = db_update('drulenium_vr_runs')
+  db_update('drulenium_vr_runs')
     ->fields(array('snapshot' => ''))
+    ->condition('re_id', $release_id, '=')
+    ->execute();
+
+  $num_pages = db_select('drulenium_vr_runs')
     ->condition('re_id', $release_id, '=')
     ->execute();
 
