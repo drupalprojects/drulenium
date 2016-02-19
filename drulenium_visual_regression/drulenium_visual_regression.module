@@ -145,7 +145,8 @@ function drulenium_visual_regression_menu() {
   $items['vr/twenty-twenty/%/%'] = array(
     'page callback' => 'drulenium_visual_regression_compare_snapshots_twenty_twenty',
     'page arguments' => array(2,3),
-    'access arguments' => array('access_visual_test_reports'),
+    'access callback' => '_drulenium_visual_regression_access_vr_compare',
+    'access arguments' => array(2, 3, 4),
     'type' => MENU_CALLBACK,
   );
   $items['vr/compare/%/%'] = array(
@@ -1278,7 +1279,12 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     }
     $diff_20_20_link = "";
     if($cmp_result['diff_percent'] > 0){
-      $diff_20_20_link = l('20-20 Diff', "/vr/twenty-twenty/".$cmp_result['run_base_id']."/".$cmp_result['run_cmp_id'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
+      $url = "/vr/twenty-twenty/" . $cmp_result['run_base_id'] . "/" . $cmp_result['run_cmp_id'];
+      // Propagate an access token.
+      if (user_is_anonymous()) {
+        $url .= '/' . _drulenium_secure_link_token($cmp_result['run_base_id'], $cmp_result['run_cmp_id']);
+      }
+      $diff_20_20_link = l('20-20 Diff', $url, array('attributes' => array('target' => '_blank'), 'html' => TRUE));
     }
     $rows[] = array(
       $cmp_result['result_id'],
@@ -2272,7 +2278,7 @@ function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTol
  */
 function _drulenium_visual_regression_access_vr_compare($from, $to, $token = NULL) {
   $token_access = isset($token) && $token == _drulenium_secure_link_token($from, $to);
-  return $token_access || user_access('run_visual_tests');
+  return $token_access || user_access('access_visual_test_reports');
 }
 
 /**
