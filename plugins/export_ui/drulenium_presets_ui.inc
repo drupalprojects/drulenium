@@ -125,7 +125,7 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
               '#type' => 'weight',
               '#title' => t('Weight'),
               '#default_value' => $plugin_weight,
-              '#delta' => 10,
+              '#delta' => 30,
               '#attributes' => array(
                   'class' => array(
                       'plugin-item-weight',
