@@ -742,7 +742,7 @@ class WebTest extends Sauce\Sausage\WebDriverTestCase
         ->execute();
     }
   }
-  
+
   // update progress for message
   $progress = $progress + $limit;
   // update message during each run so you know where you are in the process

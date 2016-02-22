@@ -94,9 +94,14 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
       }
     }
   }
+  else {
+    $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
+
+    drulenium_visual_regression_release_setup_batch($re_id);
+  }
 
   drush_backend_batch_process();
-  
+
   drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => count($drulenium_vr_path_custom))), 'success');
 }
 
@@ -193,7 +198,7 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
       ->execute();
   }
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
- 
+
   // Process the queue using Batch API.
   $batch = array(
     'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module',
@@ -203,7 +208,7 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
   );
   $progress = 0; // where to start
   $limit = 1; // how many to process for each run
-  
+
   // Get unprocessed runs of specified compare
   // where snapshot is empty.
   $query = db_select('drulenium_vr_results', 'vr_re');
@@ -221,6 +226,6 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
     $batch['operations'][] = array('drulenium_visual_regression_compare_batch_op', array($old_re_id, $new_re_id, $progress, $limit));
     $progress = $progress + $limit;
   }
-  
+
   batch_set($batch);
 }
