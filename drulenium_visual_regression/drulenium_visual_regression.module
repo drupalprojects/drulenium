@@ -1740,6 +1740,7 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
     '#description' => t('Email to Notify on completion.'),
     '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
   );
+  drulenium_visual_regression_drulenium_browser_settings_form($form);
 
   $form['drulenium_vr_config']['drulenium_vr_config_image_server'] = array(
       '#type' => 'fieldset',
@@ -1764,6 +1765,85 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
 
   $form = system_settings_form($form);
   return $form;
+}
+
+function drulenium_visual_regression_drulenium_browser_settings_form(&$form) {
+  $cache_bin = "cache";
+  $cid = "drulenium_drulenium_browsers";
+  if ($cache = cache_get($cid, $cache_bin)) {
+    $cache_data = $cache->data;
+    $all_browsers = drupal_json_decode($cache_data);
+  } else {
+    $browsers_api_url = "http://www.drulenium.org/api/browsers.json";
+    $resp = drupal_http_request($browsers_api_url);
+    $cache_data = $resp->data;
+    if(($resp->code == 200) && !empty($cache_data)) {
+      $all_browsers = drupal_json_decode($cache_data);
+      cache_set($cid, $cache_data, $cache_bin, SAUCE_CACHE_EXPIRE_TIME);
+    }
+  }
+  if(!empty($all_browsers)) {
+    $os_options = array();
+    $browser_options = array();
+    $browser_version_options = array();
+    foreach ($all_browsers as $browser_array) {
+      $short_version = $browser_array['browser_version'];
+      $browser_api_name = $browser_array['browser'];
+      $os = "{$browser_array['os']} -> {$browser_array['os_version']}";
+
+      $os_options[$os] = $os;
+      $browser_options[$os][$browser_api_name] = $browser_api_name;
+      $browser_version_options[$os][$browser_api_name][$short_version] = $short_version;
+    }
+    asort($os_options);
+    $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_drulenium_browsers'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Browsers'),
+        '#description' => t('Configuration for taking screenshots using drulenium.'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+    );
+    $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_drulenium_browsers']['drulenium_vr_drulenium_os'] = array(
+        '#type' => 'select',
+        '#title' => t('OS'),
+        '#options' => $os_options,
+        '#default_value' => variable_get('drulenium_vr_drulenium_os', ''),
+        '#description' => t('Pick an operating system for the device to test. Mac for iPad, Linux for Android...'),
+    );
+    foreach ($os_options as $os) {
+      asort($browser_options[$os]);
+      $os_id = drulenium_visual_regression_name_to_id($os);
+      $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_drulenium_browsers']['drulenium_vr_drulenium_browser_'.$os_id] = array(
+          '#type' => 'select',
+          '#title' => t('Browser'),
+          '#options' => $browser_options[$os],
+          '#default_value' => variable_get('drulenium_vr_drulenium_browser_'.$os_id, ''),
+          '#description' => t('Pick a browser.'),
+          '#states' => array(
+              'visible' => array(
+                  ':input[name="drulenium_vr_drulenium_os"]' => array('value' => $os),
+              ),
+          ),
+      );
+      foreach ($browser_options[$os] as $browser) {
+        asort($browser_version_options[$os][$browser]);
+        $browser_id = drulenium_visual_regression_name_to_id($browser);
+        $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_drulenium_browsers']['drulenium_vr_drulenium_browser_version_'."{$os_id}_{$browser_id}"] = array(
+            '#type' => 'select',
+            '#title' => t('Version'),
+            '#options' => $browser_version_options[$os][$browser],
+            '#default_value' => variable_get('drulenium_vr_drulenium_browser_version_'."{$os_id}_{$browser_id}", ''),
+            '#description' => t('Pick a version.'),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="drulenium_vr_drulenium_os"]' => array('value' => $os),
+                    ':input[name="drulenium_vr_drulenium_browser_'.$os_id.'"]' => array('value' => $browser),
+                ),
+            ),
+        );
+      }
+    }
+  }
 }
 
 function drulenium_visual_regression_name_to_id($name) {
@@ -2125,8 +2205,23 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     global $base_url;
     $site_email = variable_get('site_mail', '');
     $notify_email = variable_get('drulenium_vr_release_notify_email', $site_email);
+    $drulenium_browser_platform = variable_get('drulenium_vr_drulenium_os', '');
+    $drulenium_browser_platform_os_version_seperator_index = strpos($drulenium_browser_platform, " -> ");
+    $drulenium_browser_platform_os = substr($drulenium_browser_platform, 0, $drulenium_browser_platform_os_version_seperator_index);
+    $drulenium_browser_platform_os_version = substr($drulenium_browser_platform, $drulenium_browser_platform_os_version_seperator_index+4);
+    $drulenium_browser_platform_id = drulenium_visual_regression_name_to_id($drulenium_browser_platform);
+    $drulenium_browser_name = variable_get('drulenium_vr_drulenium_browser_'.$drulenium_browser_platform_id, '');
+    $drulenium_browser_name_id = drulenium_visual_regression_name_to_id($drulenium_browser_name);
+    $drulenium_browser_version = variable_get('drulenium_vr_drulenium_browser_version_'."{$drulenium_browser_platform_id}_{$drulenium_browser_name_id}", '');
+
+    $browser_array = array(
+        "browser" => $drulenium_browser_name,
+        "browser_version" => $drulenium_browser_version,
+        "os" => $drulenium_browser_platform_os,
+        "os_version" => $drulenium_browser_platform_os_version,
+    );
     $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
-        'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url, $test_user_name, $test_user_pass),
+        'drulenium.api_create_release' => array($release_id, $secureid, $vr_base_url, $pages_array, $notify_email, $base_url, $test_user_name, $test_user_pass, $browser_array),
     ));
     drupal_set_message($result);
     drupal_goto("admin/structure/drulenium/vr/release/".$release_id);
