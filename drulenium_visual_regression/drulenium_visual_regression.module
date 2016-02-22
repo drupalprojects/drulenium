@@ -1317,7 +1317,12 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     }
     $task_html = $cmp_result['step_num'];
     if(!empty($preset_cid)) {
-      $task_html .= drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $cmp_result['step_num']);
+      $prev_task_html = drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $cmp_result['step_num']);
+      if(!empty($prev_task_html)){
+        $task_html = drulenium_visual_regression_snapshot_plugin_to_text($preset_obj, $cmp_result['step_num']) . " taken after " . $prev_task_html . "<br/>";
+      }else{
+        $task_html = drulenium_visual_regression_snapshot_plugin_to_text($preset_obj, $cmp_result['step_num']) . "<br/>";
+      }
     }
     $diff_20_20_link = "";
     if($cmp_result['diff_percent'] > 0){
@@ -1352,9 +1357,11 @@ function drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step
   $output = "";
   $plugins = $preset_obj->settings['plugins'];
   $allPluginKeys = array_keys($plugins);
+  if(!isset($allPluginKeys[$step_num-2])) {
+    return $output;
+  }
   $prev_plugin_key = $allPluginKeys[$step_num-2];
   $prev_plugin_arr = $plugins[$prev_plugin_key];
-  $output .= " -> Snapshot taken after ";
   // Removing suffix number from drulenium_filltextbox_1
   $prev_plugin_key = substr($prev_plugin_key, 0, strrpos($prev_plugin_key, "_"));
   switch ($prev_plugin_key) {
@@ -1367,6 +1374,10 @@ function drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step
     case PLUGIN_HOVER_OVER:
       $output .= drulenium_visual_regression_hover_over_plugin_to_text($prev_plugin_arr);
       break;
+    case PLUGIN_WAIT:
+      $output .= drulenium_visual_regression_wait_plugin_to_text($prev_plugin_arr);
+      $output .= ", after " . drulenium_visual_regression_get_preset_snapshot_text($preset_obj, $step_num - 1);
+      break;
     case PLUGIN_TAKE_SCREENSHOT:
       break;
   }
@@ -1377,6 +1388,35 @@ function drulenium_visual_regression_fill_textbox_plugin_to_text($prev_plugin_ar
   $element_id = $prev_plugin_arr['description']['locator'];
   $value = $prev_plugin_arr['description']['text'];
   $output = "filling textbox[CSS: \"$element_id\"] with value \"$value\"";
+  return $output;
+}
+
+function drulenium_visual_regression_snapshot_plugin_to_text($preset_obj, $step_num) {
+  $output = "";
+  $plugins = $preset_obj->settings['plugins'];
+  $allPluginKeys = array_keys($plugins);
+  if(!isset($allPluginKeys[$step_num-1])) {
+    return $output;
+  }
+  $plugin_key = $allPluginKeys[$step_num-1];
+  $plugin_arr = $plugins[$plugin_key];
+  $element_id = $plugin_arr['description']['locator'];
+  $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
+  if(!empty($element_id)) {
+    if($snapshot_mode == "exclude"){
+      $output = "Snapshot excluding elements[CSS: \"$element_id\"]";
+    }elseif($snapshot_mode == "include"){
+      $output = "Snapshot including element[CSS: \"$element_id\"]";
+    }
+  }else{
+    $output = "Whole page snapshot";
+  }
+  return $output;
+}
+
+function drulenium_visual_regression_wait_plugin_to_text($prev_plugin_arr) {
+  $element_id = $prev_plugin_arr['description']['locator'];
+  $output = "waiting for the element[CSS: \"$element_id\"] to be visible";
   return $output;
 }
 
