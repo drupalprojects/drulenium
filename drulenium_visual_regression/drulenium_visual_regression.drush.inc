@@ -94,6 +94,11 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
       }
     }
   }
+  else {
+    $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
+
+    drulenium_visual_regression_release_setup_batch($re_id);
+  }
 
   drush_backend_batch_process();
 
