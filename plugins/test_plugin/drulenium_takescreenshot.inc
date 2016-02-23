@@ -15,6 +15,8 @@ function drulenium_takescreenshot_defaults() {
   return array(
     'locator' => '',
     'snapshot_mode' => 'include',
+    'width' => '0',
+    'height' => '0',
     'offset_width' => '0',
     'offset_height' => '0',
   );
@@ -35,6 +37,16 @@ function drulenium_takescreenshot_fb_settings($options) {
     '#type' => 'textfield',
     '#title' => t('Element Locator'),
     '#description' => t('The Locator of the element you want to include or exclude in the screenshot. CSS selector like {#food span.dairy}.<br/>Multiple selectors can be coma seperated for exclusion.')
+  );
+  $form['width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Width'),
+    '#description' => t('Width for the element. To override the automatically calculated width of the element.')
+  );
+  $form['height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Height'),
+    '#description' => t('Height for the element. To override the automatically calculated height of the element.')
   );
   $form['offset_width'] = array(
     '#type' => 'textfield',

@@ -1009,6 +1009,8 @@ function drulenium_visual_regression_selenium_task_click_button_do($driver, $plu
 function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs = FALSE) {
   $element_css_locator = $plugin_arr['description']['locator'];
   $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
+  $width = $plugin_arr['description']['width'];
+  $height = $plugin_arr['description']['height'];
   $offset_width = $plugin_arr['description']['offset_width'];
   $offset_height = $plugin_arr['description']['offset_height'];
   $exclude_element = FALSE;
@@ -1019,7 +1021,7 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
     $output = '';
     return $output;
   }
-  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator, "_$step_num", $exclude_element, $offset_width, $offset_height);
+  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator, "_$step_num", $exclude_element, $width, $height, $offset_width, $offset_height);
 
   $fields = array(
       're_id' => $re_id,
@@ -1030,7 +1032,7 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
   db_insert('drulenium_vr_runs')->fields($fields)->execute();
 }
 
-function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator = '', $file_id = "", $exclude_element = FALSE, $offset_width = 0, $offset_height = 0) {
+function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator = '', $file_id = "", $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0) {
   // Change the Path to your own settings.
   $mydir = file_default_scheme() . '://drulenium';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
@@ -1061,8 +1063,12 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locat
     $red = imagecolorallocate($src, 255, 0, 0);
     foreach ($multiple_elements as $single_element_css_locator){
       $element = $driver->findElement(WebDriverBy::cssSelector($single_element_css_locator));
-      $element_width = $element->getSize()->getWidth() + $offset_width;
-      $element_height = $element->getSize()->getHeight() + $offset_height;
+      if($element_width == 0){
+        $element_width = $element->getSize()->getWidth() + $offset_width;
+      }
+      if($element_height == 0){
+        $element_height = $element->getSize()->getHeight() + $offset_height;
+      }
 
       $element_src_x = $element->getLocation()->getX();
       $element_src_y = $element->getLocation()->getY();
@@ -1073,8 +1079,12 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locat
   } else {
     // If include element, include the first element.
     $element = $driver->findElement(WebDriverBy::cssSelector($multiple_elements[0]));
-    $element_width = $element->getSize()->getWidth() + $offset_width;
-    $element_height = $element->getSize()->getHeight() + $offset_height;
+    if($element_width == 0){
+      $element_width = $element->getSize()->getWidth() + $offset_width;
+    }
+    if($element_height == 0){
+      $element_height = $element->getSize()->getHeight() + $offset_height;
+    }
 
     $element_src_x = $element->getLocation()->getX();
     $element_src_y = $element->getLocation()->getY();
