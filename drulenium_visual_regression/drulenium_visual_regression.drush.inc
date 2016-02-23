@@ -101,8 +101,8 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   }
 
   drush_backend_batch_process();
-
-  drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => count($drulenium_vr_path_custom))), 'success');
+  $url = $base_url . '/admin/structure/drulenium/vr/release/' . $re_id;
+  drush_log(t('Took snapshots of @vrpages pages, view on @url', array('@vrpages' => count($drulenium_vr_path_custom), '@url' => $url)), 'success');
 }
 
 /**
