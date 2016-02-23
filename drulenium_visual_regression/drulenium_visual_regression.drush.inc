@@ -204,12 +204,11 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
 function _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id) {
 
   // Wipe the current comparison's to trigger a refresh.
-  if ($reset) {
-    $or = db_or()->condition('release_base_id', $old_re_id)->condition('release_cmp_id', $new_re_id);
-    $num_pages = db_delete('drulenium_vr_results')
-      ->condition($or)
-      ->execute();
-  }
+  $or = db_or()->condition('release_base_id', $old_re_id)->condition('release_cmp_id', $new_re_id);
+  $num_pages = db_delete('drulenium_vr_results')
+    ->condition($or)
+    ->execute();
+
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
 
   // Process the queue using Batch API.
