@@ -33,7 +33,7 @@ function drulenium_visual_regression_drush_command() {
     'aliases' => array('vru'),
   );
   $items['vr-diff'] = array(
-    'callback' => 'drush_drulenium_visual_regression_category_diff',
+    'callback' => 'drush_drulenium_visual_regression_diff',
     'description' => 'Generate comparision report for 2 releases.',
     'drupal dependencies' => array('drulenium_visual_regression'),
     'arguments' => array(
@@ -136,49 +136,22 @@ function drush_drulenium_visual_regression_update($release_name = "") {
 }
 
 /**
- * Command callback. Generate comparision report of releases per category if exists.
+ * Command callback. Generate comparision report of releases..
+ *
+ * Optionally one per category if the preset_category is used.
  */
-function drush_drulenium_visual_regression_category_diff($old_re_id = null, $new_re_id = null, $reset = FALSE) {
+function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null) {
   $preset_category = drush_get_option('preset_category', '');
-  if(!empty($preset_category)) {
-    $presets = drulenium_preset_load();
-    foreach ($presets as $preset_cid => $value) {
-      $category = $value->category;
-      if(empty($category))  $category = 'Miscellaneous';
-      if($category == $preset_category){
-        // Get last two releases of this preset.
-        $result = db_select('drulenium_vr_releases', 'vr_re')
-          ->fields('vr_re', array('rid'))
-          ->condition('vr_re.preset_cid', $preset_cid)
-          ->orderBy('rid', 'DESC')
-          ->range(0,2)
-          ->execute();
-        $row1 = $result->fetchAssoc();
-        $new_re_id = $row1['rid'];
-        $row2 = $result->fetchAssoc();
-        $old_re_id = $row2['rid'];
-        drush_drulenium_visual_regression_diff($old_re_id, $new_re_id, $reset);
-      }
-    }
-  } else {
-    drush_drulenium_visual_regression_diff($old_re_id, $new_re_id, $reset);
+  if (!empty($preset_category)) {
+    return _drush_drulenium_visual_regression_loop_categories($preset_category);
   }
-  drush_backend_batch_process();
-  global $base_url;
 
-  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
-}
-
-/**
- * Generate comparision report for 2 releases.
- */
-function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null, $reset = FALSE) {
   if ($old_re_id == null || $new_re_id == null) {
     // Get the last two releases.
     $result = db_select('drulenium_vr_releases', 'vr_re')
       ->fields('vr_re', array('rid'))
       ->orderBy('rid', 'DESC')
-      ->range(0,2)
+      ->range(0, 2)
       ->execute();
   }
   if ($new_re_id == null) {
@@ -189,6 +162,46 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
     $row2 = $result->fetchAssoc();
     $old_re_id = $row2['rid'];
   }
+  _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
+  drush_backend_batch_process();
+  global $base_url;
+  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
+}
+
+/**
+ * Start a diff of the selected preset categories.
+ *
+ * @param string $preset_category
+ */
+function _drush_drulenium_visual_regression_loop_categories($preset_category) {
+  $presets = drulenium_preset_load();
+  foreach ($presets as $preset_cid => $value) {
+    $category = $value->category;
+    if (empty($category)) {
+      $category = 'Miscellaneous';
+    }
+    if ($category == $preset_category) {
+      // Get last two releases of this preset.
+      $result = db_select('drulenium_vr_releases', 'vr_re')
+        ->fields('vr_re', array('rid'))
+        ->condition('vr_re.preset_cid', $preset_cid)
+        ->orderBy('rid', 'DESC')
+        ->range(0, 2)
+        ->execute();
+      $row1 = $result->fetchAssoc();
+      $new_re_id = $row1['rid'];
+      $row2 = $result->fetchAssoc();
+      $old_re_id = $row2['rid'];
+      _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
+    }
+  }
+  drush_backend_batch_process();
+}
+
+/**
+ * Generate comparision report for 2 releases.
+ */
+function _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id) {
 
   // Wipe the current comparison's to trigger a refresh.
   if ($reset) {
