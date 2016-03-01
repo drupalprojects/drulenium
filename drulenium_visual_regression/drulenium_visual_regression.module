@@ -1876,6 +1876,8 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
   if ($form_state['values']['drulenium_vr_config_server_opt'] != "drulenium") {
     if (!module_exists('libraries')) {
       form_set_error('drulenium_vr_config_server_opt', 'Enable libraries module. https://www.drupal.org/project/libraries');
+      // After this below libraries_load function gets called and throws fatal error if the return statement doesn't exist.
+      return 0;
     }
   }
   // If Image magick, check version
