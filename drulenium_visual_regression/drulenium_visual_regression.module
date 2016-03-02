@@ -955,6 +955,11 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
         break;
     }
   }
+  /*
+  $entity = entity_get_controller('drulenium')->create();
+$entity->item_description = "456";
+$entity = drulenium_save($entity);
+*/
   return $output;
 }
 
@@ -1651,19 +1656,19 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
   }
   $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
     '#type' => 'fieldset',
-    '#title' => t('User Configuration'),
-    '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
+    '#title' => t('Drupal User Configuration'),
+    '#description' => t('Test as specified logged in Drupal user. Leave empty if the test has to be Anonymous.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
-    '#title' => t('User name'),
+    '#title' => t('Drupal user name'),
     '#type' => 'textfield',
     '#description' => t('User name of the user to test as.'),
     '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
-    '#title' => t('Password'),
+    '#title' => t('Drupal user Password'),
     '#type' => 'password',
     '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
     '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),

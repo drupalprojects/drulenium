@@ -235,6 +235,8 @@ function _drulenium_installed_instances() {
  */
 function drulenium_uninstall() {
 
+  field_attach_delete_bundle('drulenium', 'drulenium_test_run');
+
   // delete system variables
   variable_del('drulenium_appid');
   variable_del('drulenium_secret');
@@ -290,6 +292,44 @@ function drulenium_uninstall() {
  */
 function drulenium_schema() {
   $schema = array();
+
+  // Schema for entity
+  $schema['drulenium'] = array(
+    'description' => 'The base table for our drulenium entity.',
+    'fields' => array(
+      'drulenium_id' => array(
+        'description' => 'Primary key of the drulenium entity.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // If we allow multiple bundles, then the schema must handle that;
+      // We'll put it in the 'bundle_type' field to avoid confusion with the
+      // entity type.
+      'bundle_type' => array(
+        'description' => 'The bundle type',
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+      ),
+      // Additional properties are just things that are common to all
+      // entities and don't require field storage.
+      'item_description' => array(
+        'description' => 'A description of the item',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp of the entity creation time.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('drulenium_id'),
+  );
 
   $schema['drulenium_preset'] = array(
       'description' => 'Storage for user-defined drulenium plugins templates.',
