@@ -116,7 +116,7 @@ function drulenium_menu() {
   $items = array();
 
   $items['drulenium/tests/list'] = array(
-      'title' => 'Tests',
+      'title' => 'Drulenium Tests',
       'page callback' => 'drulenium_tests_table_list',
       'access callback' => 'user_access',
       'access arguments' => array(
@@ -126,6 +126,7 @@ function drulenium_menu() {
 
   $items['drulenium/tests/output'] = array(
       'title' => 'Output',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_tests_catch_output',
       'access callback' => 'user_access',
       'access arguments' => array(
@@ -134,7 +135,7 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/%'] = array(
-      'title' => '',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_tests_formatter',
       'page arguments' => array(2),
       'access callback' => 'user_access',
@@ -144,7 +145,6 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/category/%'] = array(
-      /* 'title' => '', */
       'page callback' => 'drulenium_category_tests_formatter',
       'page arguments' => array(3),
       'access callback' => 'user_access',
@@ -156,7 +156,7 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/case/%'] = array(
-      'title' => '',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_tests_case_formatter',
       'page arguments' => array(3),
       'access callback' => 'user_access',
@@ -166,7 +166,7 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/category/cases/%'] = array(
-      'title' => '',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_category_tests_case_formatter',
       'page arguments' => array(4),
       'access callback' => 'user_access',
