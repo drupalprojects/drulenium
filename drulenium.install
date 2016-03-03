@@ -303,6 +303,13 @@ function drulenium_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'test_id' => array(
+        'description' => 'The ID of the test.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
       // If we allow multiple bundles, then the schema must handle that;
       // We'll put it in the 'bundle_type' field to avoid confusion with the
       // entity type.
@@ -312,17 +319,33 @@ function drulenium_schema() {
         'size' => 'medium',
         'not null' => TRUE,
       ),
-      // Additional properties are just things that are common to all
-      // entities and don't require field storage.
-      'item_description' => array(
-        'description' => 'A description of the item',
+      'console_log' => array(
+        'description' => 'A complete log of the test',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the test has passed or failed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
       'created' => array(
-        'description' => 'The Unix timestamp of the entity creation time.',
+        'description' => 'The Unix timestamp of the test creation time.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'started' => array(
+        'description' => 'The Unix timestamp of the test starting time.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => 'The Unix timestamp of the test completion time.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,

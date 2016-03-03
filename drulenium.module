@@ -5,6 +5,7 @@ define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_takescreenshot');
 define('PLUGIN_CLICK_BUTTON', 'drulenium_clickbutton');
 define('PLUGIN_HOVER_OVER', 'drulenium_mouseover');
 define('PLUGIN_WAIT', 'drulenium_wait');
+define('PLUGIN_VERIFY_TEXT', 'drulenium_facepile');
 
 /**
  * Implements hook_entity_info().
@@ -143,8 +144,8 @@ function drulenium_list_entities() {
       $rows[] = array(
         'data' => array(
           'id' => $entity->drulenium_id,
-          'item_description' => l($entity->item_description, 'examples/drulenium/basic/' . $entity->drulenium_id),
-          'bundle' => $entity->bundle_type,
+          'console_log' => l($entity->console_log, 'examples/drulenium/basic/' . $entity->drulenium_id),
+          'status' => $entity->status,
         ),
       );
     }
@@ -152,7 +153,7 @@ function drulenium_list_entities() {
     $content['entity_table'] = array(
       '#theme' => 'table',
       '#rows' => $rows,
-      '#header' => array(t('ID'), t('Item Description'), t('Bundle')),
+      '#header' => array(t('ID'), t('Console Log'), t('Status')),
     );
   }
   else {
@@ -219,7 +220,7 @@ class DruleniumEntityController
     $entity->type = 'drulenium';
     $entity->drulenium_id = 0;
     $entity->bundle_type = 'drulenium_test_run';
-    $entity->item_description = '';
+    $entity->console_log = '';
     return $entity;
   }
 
@@ -1136,9 +1137,9 @@ function drulenium_field_extra_fields() {
     }
   }
   
-  $form_elements['item_description'] = array(
-    'label' => t('Item Description'),
-    'description' => t('Item Description (an extra form field)'),
+  $form_elements['console_log'] = array(
+    'label' => t('Console Log'),
+    'description' => t('Console Log (an extra form field)'),
     'weight' => -5,
   );
   $display_elements['created'] = array(
@@ -1146,8 +1147,8 @@ function drulenium_field_extra_fields() {
     'description' => t('Creation date (an extra display field)'),
     'weight' => 0,
   );
-  $display_elements['item_description'] = array(
-    'label' => t('Item Description'),
+  $display_elements['console_log'] = array(
+    'label' => t('Console Log'),
     'description' => t('Just like title, but trying to point out that it is a separate property'),
     'weight' => 0,
   );
