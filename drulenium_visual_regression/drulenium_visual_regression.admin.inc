@@ -126,7 +126,7 @@ function drulenium_visual_regression_browserstack_settings_form($form, &$form_st
         '#title' => t('OS'),
         '#options' => $os_options,
         '#default_value' => variable_get('drulenium_vr_browserstack_os', ''),
-        '#description' => t('Pick an operating system for the device to test. Mac for iPad, Linux for Android...'),
+        '#description' => t('Pick an operating system for the device to test.'),
     );
     foreach ($os_options as $os) {
       asort($browser_options[$os]);
