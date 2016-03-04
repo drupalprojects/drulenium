@@ -5,6 +5,311 @@ define('PLUGIN_TAKE_SCREENSHOT', 'drulenium_takescreenshot');
 define('PLUGIN_CLICK_BUTTON', 'drulenium_clickbutton');
 define('PLUGIN_HOVER_OVER', 'drulenium_mouseover');
 define('PLUGIN_WAIT', 'drulenium_wait');
+define('PLUGIN_VERIFY_TEXT', 'drulenium_facepile');
+
+/**
+ * Implements hook_entity_info().
+ *
+ * This is the fundamental description of the entity.
+ *
+ * It provides a single entity with a single bundle and without revision
+ * support.
+ */
+function drulenium_entity_info() {
+  $info['drulenium'] = array(
+    // A human readable label to identify our entity.
+    'label' => t('Drulenium'),
+
+    // The controller for our Entity, extending the Drupal core controller.
+    'controller class' => 'DruleniumEntityController',
+
+    // The table for this entity defined in hook_schema()
+    'base table' => 'drulenium',
+
+    // Returns the uri elements of an entity.
+    'uri callback' => 'drulenium_uri',
+
+    // IF fieldable == FALSE, we can't attach fields.
+    'fieldable' => TRUE,
+
+    // entity_keys tells the controller what database fields are used for key
+    // functions. It is not required if we don't have bundles or revisions.
+    // Here we do not support a revision, so that entity key is omitted.
+    'entity keys' => array(
+      // The 'id' (drulenium_id here) is the unique id.
+      'id' => 'drulenium_id' ,
+      // Bundle will be determined by the 'bundle_type' field.
+      'bundle' => 'bundle_type',
+    ),
+    'bundle keys' => array(
+      'bundle' => 'bundle_type',
+    ),
+
+    // FALSE disables caching. Caching functionality is handled by Drupal core.
+    'static cache' => TRUE,
+
+    // Bundles are alternative groups of fields or configuration
+    // associated with a base entity type.
+    'bundles' => array(
+      'drulenium_test_run' => array(
+        'label' => 'First example bundle',
+        // 'admin' key is used by the Field UI to provide field and
+        // display UI pages.
+        'admin' => array(
+          'path' => 'admin/structure/drulenium/results/manage',
+          'access arguments' => array('administer drulenium entities'),
+        ),
+      ),
+    ),
+    // View modes allow entities to be displayed differently based on context.
+    // As a demonstration we'll support "Tweaky", but we could have and support
+    // multiple display modes.
+    'view modes' => array(
+      'tweaky' => array(
+        'label' => t('Tweaky'),
+        'custom settings' => FALSE,
+      ),
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Fetch a basic object.
+ *
+ * This function ends up being a shim between the menu system and
+ * drulenium_load_multiple().
+ *
+ * This function gets its name from the menu system's wildcard
+ * naming conventions. For example, /path/%wildcard would end
+ * up calling wildcard_load(%wildcard value). In our case defining
+ * the path: examples/drulenium/basic/%drulenium in
+ * hook_menu() tells Drupal to call drulenium_load().
+ *
+ * @param int $drulenium_id
+ *   Integer specifying the basic entity id.
+ * @param bool $reset
+ *   A boolean indicating that the internal cache should be reset.
+ *
+ * @return object
+ *   A fully-loaded $basic object or FALSE if it cannot be loaded.
+ *
+ * @see drulenium_load_multiple()
+ * @see drulenium_menu()
+ */
+function drulenium_load($drulenium_id = NULL, $reset = FALSE) {
+  $drulenium_ids = (isset($drulenium_id) ? array($drulenium_id) : array());
+  $basic = drulenium_load_multiple($drulenium_ids, array(), $reset);
+  return $basic ? reset($basic) : FALSE;
+}
+
+/**
+ * Loads multiple basic entities.
+ *
+ * We only need to pass this request along to entity_load(), which
+ * will in turn call the load() method of our entity controller class.
+ */
+function drulenium_load_multiple($drulenium_ids = FALSE, $conditions = array(), $reset = FALSE) {
+  return entity_load('drulenium', $drulenium_ids, $conditions, $reset);
+}
+
+/**
+ * Implements the uri callback.
+ */
+function drulenium_uri($basic) {
+  return array(
+    'path' => 'examples/drulenium/basic/' . $basic->drulenium_id,
+  );
+}
+
+/**
+ * Returns a render array with all drulenium entities.
+ *
+ * In this basic example we know that there won't be many entities,
+ * so we'll just load them all for display. See pager_example.module
+ * to implement a pager. Most implementations would probably do this
+ * with the contrib Entity API module, or a view using views module,
+ * but we avoid using non-core features in the Examples project.
+ *
+ * @see pager_example.module
+ */
+function drulenium_list_entities() {
+  $content = array();
+  // Load all of our entities.
+  $entities = drulenium_load_multiple();
+  if (!empty($entities)) {
+    foreach ($entities as $entity) {
+      // Create tabular rows for our entities.
+      $rows[] = array(
+        'data' => array(
+          'id' => $entity->drulenium_id,
+          'console_log' => l($entity->console_log, 'examples/drulenium/basic/' . $entity->drulenium_id),
+          'status' => $entity->status,
+        ),
+      );
+    }
+    // Put our entities into a themed table. See theme_table() for details.
+    $content['entity_table'] = array(
+      '#theme' => 'table',
+      '#rows' => $rows,
+      '#header' => array(t('ID'), t('Console Log'), t('Status')),
+    );
+  }
+  else {
+    // There were no entities. Tell the user.
+    $content[] = array(
+      '#type' => 'item',
+      '#markup' => t('No drulenium entities currently exist.'),
+    );
+  }
+  return $content;
+}
+
+/**
+ * DruleniumEntityControllerInterface definition.
+ *
+ * We create an interface here because anyone could come along and
+ * use hook_entity_info_alter() to change our controller class.
+ * We want to let them know what methods our class needs in order
+ * to function with the rest of the module, so here's a handy list.
+ *
+ * @see hook_entity_info_alter()
+ */
+interface DruleniumEntityControllerInterface
+  extends DrupalEntityControllerInterface {
+
+  /**
+   * Create an entity.
+   */
+  public function create();
+
+  /**
+   * Save an entity.
+   *
+   * @param object $entity
+   *   The entity to save.
+   */
+  public function save($entity);
+
+  /**
+   * Delete an entity.
+   *
+   * @param object $entity
+   *   The entity to delete.
+   */
+  public function delete($entity);
+
+}
+
+/**
+ * DruleniumEntityController extends DrupalDefaultEntityController.
+ *
+ * Our subclass of DrupalDefaultEntityController lets us add a few
+ * important create, update, and delete methods.
+ */
+class DruleniumEntityController
+  extends DrupalDefaultEntityController
+  implements DruleniumEntityControllerInterface {
+
+  /**
+   * Create and return a new drulenium entity.
+   */
+  public function create() {
+    $entity = new stdClass();
+    $entity->type = 'drulenium';
+    $entity->drulenium_id = 0;
+    $entity->bundle_type = 'drulenium_test_run';
+    $entity->console_log = '';
+    return $entity;
+  }
+
+  /**
+   * Saves the custom fields using drupal_write_record().
+   */
+  public function save($entity) {
+    // If our entity has no drulenium_id, then we need to give it a
+    // time of creation.
+    if (empty($entity->drulenium_id)) {
+      $entity->created = time();
+    }
+    // Invoke hook_entity_presave().
+    module_invoke_all('entity_presave', $entity, 'drulenium');
+    // The 'primary_keys' argument determines whether this will be an insert
+    // or an update. So if the entity already has an ID, we'll specify
+    // drulenium_id as the key.
+    $primary_keys = $entity->drulenium_id ? 'drulenium_id' : array();
+    // Write out the entity record.
+    drupal_write_record('drulenium', $entity, $primary_keys);
+    // We're going to invoke either hook_entity_update() or
+    // hook_entity_insert(), depending on whether or not this is a
+    // new entity. We'll just store the name of hook_entity_insert()
+    // and change it if we need to.
+    $invocation = 'entity_insert';
+    // Now we need to either insert or update the fields which are
+    // attached to this entity. We use the same primary_keys logic
+    // to determine whether to update or insert, and which hook we
+    // need to invoke.
+    if (empty($primary_keys)) {
+      field_attach_insert('drulenium', $entity);
+    }
+    else {
+      field_attach_update('drulenium', $entity);
+      $invocation = 'entity_update';
+    }
+    // Invoke either hook_entity_update() or hook_entity_insert().
+    module_invoke_all($invocation, $entity, 'drulenium');
+    return $entity;
+  }
+
+  /**
+   * Delete a single entity.
+   *
+   * Really a convenience function for deleteMultiple().
+   */
+  public function delete($entity) {
+    $this->deleteMultiple(array($entity));
+  }
+
+  /**
+   * Delete one or more drulenium entities.
+   *
+   * Deletion is unfortunately not supported in the base
+   * DrupalDefaultEntityController class.
+   *
+   * @param array $entities
+   *   An array of entity IDs or a single numeric ID.
+   */
+  public function deleteMultiple($entities) {
+    $drulenium_ids = array();
+    if (!empty($entities)) {
+      $transaction = db_transaction();
+      try {
+        foreach ($entities as $entity) {
+          // Invoke hook_entity_delete().
+          module_invoke_all('entity_delete', $entity, 'drulenium');
+          field_attach_delete('drulenium', $entity);
+          $drulenium_ids[] = $entity->drulenium_id;
+        }
+        db_delete('drulenium')
+          ->condition('drulenium_id', $drulenium_ids, 'IN')
+          ->execute();
+      }
+      catch (Exception $e) {
+        $transaction->rollback();
+        watchdog_exception('drulenium', $e);
+        throw $e;
+      }
+    }
+  }
+}
+
+/**
+ * We save the entity by calling the controller.
+ */
+function drulenium_save(&$entity) {
+  return entity_get_controller('drulenium')->save($entity);
+}
 
 /**
  * Implementation of hook_perm().
@@ -116,7 +421,7 @@ function drulenium_menu() {
   $items = array();
 
   $items['drulenium/tests/list'] = array(
-      'title' => 'Tests',
+      'title' => 'Drulenium Tests',
       'page callback' => 'drulenium_tests_table_list',
       'access callback' => 'user_access',
       'access arguments' => array(
@@ -126,6 +431,7 @@ function drulenium_menu() {
 
   $items['drulenium/tests/output'] = array(
       'title' => 'Output',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_tests_catch_output',
       'access callback' => 'user_access',
       'access arguments' => array(
@@ -134,7 +440,7 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/%'] = array(
-      'title' => '',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_tests_formatter',
       'page arguments' => array(2),
       'access callback' => 'user_access',
@@ -144,7 +450,6 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/category/%'] = array(
-      /* 'title' => '', */
       'page callback' => 'drulenium_category_tests_formatter',
       'page arguments' => array(3),
       'access callback' => 'user_access',
@@ -156,7 +461,7 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/case/%'] = array(
-      'title' => '',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_tests_case_formatter',
       'page arguments' => array(3),
       'access callback' => 'user_access',
@@ -166,7 +471,7 @@ function drulenium_menu() {
   );
 
   $items['drulenium/tests/category/cases/%'] = array(
-      'title' => '',
+      'type' => MENU_CALLBACK,
       'page callback' => 'drulenium_category_tests_case_formatter',
       'page arguments' => array(4),
       'access callback' => 'user_access',
@@ -211,6 +516,23 @@ function drulenium_menu() {
           'run_test_cases'
       ),
       'type' => MENU_LOCAL_TASK
+  );
+  
+  // This provides a place for Field API to hang its own
+  // interface and has to be the same as what was defined
+  // in basic_entity_info() above.
+  $items['admin/structure/drulenium/results'] = array(
+    'title' => 'Results',
+    'weight' => 100,
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drulenium_list_entities',
+    'access arguments' => array('administer drulenium entities'),
+  );
+  
+  // List of all drulenium entities.
+  $items['admin/structure/drulenium/results/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
   return $items;
@@ -814,6 +1136,28 @@ function drulenium_field_extra_fields() {
       }
     }
   }
+  
+  $form_elements['console_log'] = array(
+    'label' => t('Console Log'),
+    'description' => t('Console Log (an extra form field)'),
+    'weight' => -5,
+  );
+  $display_elements['created'] = array(
+    'label' => t('Creation date'),
+    'description' => t('Creation date (an extra display field)'),
+    'weight' => 0,
+  );
+  $display_elements['console_log'] = array(
+    'label' => t('Console Log'),
+    'description' => t('Just like title, but trying to point out that it is a separate property'),
+    'weight' => 0,
+  );
+
+  // Since we have only one bundle type, we'll just provide the extra_fields
+  // for it here.
+  $extras['drulenium']['drulenium_test_run']['form'] = $form_elements;
+  $extras['drulenium']['drulenium_test_run']['display'] = $display_elements;
+
   return $extras;
 }
 
