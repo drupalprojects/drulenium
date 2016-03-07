@@ -935,7 +935,16 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
   $step_num = 0;
   $output = "";
   $result_entity = entity_get_controller('drulenium')->create();
+  // Get oid from drulenium_preset table.
+  $preset_numeric_id = db_select('drulenium_preset', 'p')
+  ->fields('p', array('oid'))
+  ->condition('p.name', $preset_cid)
+  ->execute()
+  ->fetchfield();
   $result_entity->status = 1;
+  $result_entity->test_id = $preset_numeric_id;
+  $result_entity->created = REQUEST_TIME;
+  $result_entity->started = REQUEST_TIME;
   foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
     $step_num++;
     $plugin_type = $plugin_arr["type"];
@@ -960,6 +969,7 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
         break;
     }
   }
+  $result_entity->completed = REQUEST_TIME;
   drulenium_save($result_entity);
   return $output;
 }

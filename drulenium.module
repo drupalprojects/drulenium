@@ -141,11 +141,18 @@ function drulenium_list_entities() {
   if (!empty($entities)) {
     foreach ($entities as $entity) {
       // Create tabular rows for our entities.
+      $test_name = db_select('drulenium_preset', 'p')
+      ->fields('p', array('name'))
+      ->condition('p.oid', $entity->test_id)
+      ->execute()
+      ->fetchfield();
       $rows[] = array(
         'data' => array(
           'id' => $entity->drulenium_id,
-          'console_log' => l($entity->console_log, 'examples/drulenium/basic/' . $entity->drulenium_id),
+          'test_id' => $test_name,
           'status' => $entity->status,
+            'started' => format_date($entity->started),
+            'completed' => format_date($entity->completed),
         ),
       );
     }
@@ -153,7 +160,7 @@ function drulenium_list_entities() {
     $content['entity_table'] = array(
       '#theme' => 'table',
       '#rows' => $rows,
-      '#header' => array(t('ID'), t('Console Log'), t('Status')),
+      '#header' => array(t('ID'), t('Test'), t('Status'), t('Started'), t('Completed')),
     );
   }
   else {
