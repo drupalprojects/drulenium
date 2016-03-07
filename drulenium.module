@@ -27,6 +27,37 @@ function drulenium_permission() {
 }
 
 /**
+ * Implements hook_libraries_info().
+ *
+ * For defining external libraries.
+ */
+function drulenium_libraries_info() {
+  $libraries['blockly'] = array(
+      'name' => 'Blockly',
+      'vendor url' => 'https://github.com/google/blockly/',
+      'download url' => 'https://github.com/google/blockly/zipball/master',
+      'versions' => array(
+        '1.0.0' => array(
+          'variants' => array(
+            'minified' => array(
+              'files' => array(
+                'js' => array('blockly_compressed.js'),
+              ),
+            ),
+            'source' => array(
+              'files' => array(
+                'js' => array('blockly_uncompressed.js'),
+              ),
+            ),
+          ),
+        ),
+      ),
+  );
+  
+  return $libraries;
+}
+
+/**
  * Implementation of drulenium_default_presets().
  *
  * Provide a couple of default presets.

@@ -155,6 +155,35 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
         $form['test_plugin_type']['plugin_items'][$type_and_num]['description'][$ele_id]['#attributes']['class'] = array("plugin-type-$plugin_type", "plugin-num-$plugin_ctr", "plugin-setting-$ele_id");
       }
     }
+    if (($library = libraries_load("blockly")) && !empty($library['library path'])) {
+      dsm($library);
+      $path = $library['library path'];
+      $form['#attached']['js'][] = $path . '/blockly_compressed.js';
+      $form['#attached']['js'][] = $path . '/blocks_compressed.js';
+      $form['test_plugin_type']['blockly_mkup'] = array(
+          '#markup' => '<div id="blocklyDiv" style="height: 480px; width: 600px;">test</div>
+          <xml id="toolbox" style="display: none">
+    <block type="controls_if"></block>
+    <block type="logic_compare"></block>
+    <block type="controls_repeat_ext"></block>
+    <block type="math_number"></block>
+    <block type="math_arithmetic"></block>
+    <block type="text"></block>
+    <block type="text_print"></block>
+  </xml>
+          ',
+      );
+      $js = <<<EOF
+Drupal.behaviors.druleniumBlockly = {
+    attach: function(context, settings) {
+          var workspace = Blockly.inject('blocklyDiv',
+        {media: 'sites/all/libraries/blockly/media/',
+         toolbox: document.getElementById('toolbox')});
+      },
+    }      
+EOF;
+      drupal_add_js($js, array('type' => 'inline'));
+    }
     $form['test_plugin_type']['mkup'] = array(
         '#markup' => drulenium_presets_ui_form_table_theme($form),
     );
@@ -246,12 +275,8 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
   );
   $form['drulenium_settings_' . $type]['settings_' . $type] += _drulenium_presets_ui_create_block_form($export);*/
   $form['drulenium_settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
-  $form['#attached']['js'] = array(
-      drupal_get_path('module', 'drulenium') . '/js/drulenium_preset_form.js',
-  );
-  $form['#attached']['css'] = array(
-      drupal_get_path('module', 'drulenium') . '/css/drulenium_preset_form.css',
-  );
+  $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/drulenium_preset_form.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'drulenium') . '/css/drulenium_preset_form.css';
 }
 
 /**
