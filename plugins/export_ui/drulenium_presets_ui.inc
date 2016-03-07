@@ -156,10 +156,10 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       }
     }
     if (($library = libraries_load("blockly")) && !empty($library['library path'])) {
-      dsm($library);
       $path = $library['library path'];
       $form['#attached']['js'][] = $path . '/blockly_compressed.js';
       $form['#attached']['js'][] = $path . '/blocks_compressed.js';
+      $form['#attached']['js'][] = $path . '/msg/js/en.js';
       $form['test_plugin_type']['blockly_mkup'] = array(
           '#markup' => '<div id="blocklyDiv" style="height: 480px; width: 600px;">test</div>
           <xml id="toolbox" style="display: none">
