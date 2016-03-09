@@ -31,6 +31,8 @@ $plugin = array(
  * submit handler
 */
 function drulenium_presets_ui_form_submit(&$form, &$form_state) {
+dsm($form_state['values']);
+
   $type = 'drulenium_facepile';
   //$type = $form_state['values']['test_plugin_type']['plugin_type'];
   $form_state['item']->plugin_type = $type;
@@ -42,6 +44,8 @@ function drulenium_presets_ui_form_submit(&$form, &$form_state) {
     uasort($form_state['values']['test_plugin_type']['plugin_items'], "drulenium_sort_plugin_items_by_weight");
     $form_state['item']->settings["plugins"] = $form_state['values']['test_plugin_type']['plugin_items'];
   }
+  $blockly_workspace_data = $form_state['values']['blockly_workspace_data'];
+  $form_state['item']->settings["blockly"]["data"] = $blockly_workspace_data;
 }
 
 /**
@@ -157,35 +161,45 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
     }
     if (($library = libraries_load("blockly")) && !empty($library['library path'])) {
       $path = $library['library path'];
+      $form['#attached']['js'][] = $path . '/appengine/storage.js';
       $form['#attached']['js'][] = $path . '/blockly_compressed.js';
       $form['#attached']['js'][] = $path . '/blocks_compressed.js';
+      $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/blockly/blocks/actions.js';
       $form['#attached']['js'][] = $path . '/msg/js/en.js';
+      $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/blockly/drulenium_blockly.js';
+      
       $form['test_plugin_type']['blockly_mkup'] = array(
-          '#markup' => '<div id="blocklyDiv" style="height: 480px; width: 600px;">test</div>
+          '#markup' => '<a onclick="Drupal.behaviors.druleniumBlockly.save();">Save Blocks</a><div id="blocklyDiv" style="height: 480px; width: 600px;">test</div>
           <xml id="toolbox" style="display: none">
-    <block type="controls_if"></block>
-    <block type="logic_compare"></block>
-    <block type="controls_repeat_ext"></block>
-    <block type="math_number"></block>
-    <block type="math_arithmetic"></block>
-    <block type="text"></block>
+          <block type="actions_fill_textbox"></block>
     <block type="text_print"></block>
   </xml>
           ',
       );
-      $js = <<<EOF
-Drupal.behaviors.druleniumBlockly = {
+      /*
+          
+          $js = <<<EOF
+Drupal.behaviors.druleniumBlockly1 = {
     attach: function(context, settings) {
-          var workspace = Blockly.inject('blocklyDiv',
-        {media: 'sites/all/libraries/blockly/media/',
-         toolbox: document.getElementById('toolbox')});
-      },
-    }      
+          console.log(Drupal.behaviors.druleniumBlockly);
+      },    
+    }
+    function drulenium_blockly_save1(opt_workspace){
+         	alert("Saving");
+         }
 EOF;
-      drupal_add_js($js, array('type' => 'inline'));
+      drupal_add_js($js, array('type' => 'inline'));*/
     }
     $form['test_plugin_type']['mkup'] = array(
         '#markup' => drulenium_presets_ui_form_table_theme($form),
+    );
+    $blockly_workspace_data = "";
+    if(isset($export->settings["blockly"]["data"])) {
+        $blockly_workspace_data = $export->settings["blockly"]["data"];
+    }
+    $form['blockly_workspace_data'] = array(
+      '#type' => 'hidden', 
+      '#default_value' => $blockly_workspace_data,
     );
   }
 
