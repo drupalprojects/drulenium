@@ -64,6 +64,11 @@ function drulenium_visual_regression_schema() {
               'not null' => TRUE,
               'default' => 0,
           ),
+          'settings' => array(
+              'type' => 'blob',
+              'size' => 'big',
+              'description' => 'Serialized array of settings.',
+          ),
       ),
       'primary key' => array('rid'),
   );
@@ -279,4 +284,16 @@ function drulenium_visual_regression_update_7005() {
     'not null' => TRUE,
     'default' => 0,
   ));
+}
+
+/**
+ * Add newcolumn settings to {drulenium_vr_releases} table.
+ */
+
+function drulenium_visual_regression_update_7006() {
+    db_add_field('drulenium_vr_releases', 'settings', array(
+        'type' => 'blob',
+        'size' => 'big',
+        'description' => 'Serialized array of settings.',
+    ));
 }

@@ -2054,7 +2054,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
   }
 }
 
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array()) {
   if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
@@ -2074,6 +2074,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       'user_name' => $vr_user_name,
   	  'user_pass' => $vr_user_pass,
       'created' => REQUEST_TIME,
+      'settings' => drupal_json_encode($settings_array),
   );
   $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();
 

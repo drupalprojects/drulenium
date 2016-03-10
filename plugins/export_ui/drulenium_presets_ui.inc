@@ -164,14 +164,14 @@ function drulenium_presets_ui_form(&$form, &$form_state) {
       $form['#attached']['js'][] = $path . '/appengine/storage.js';
       $form['#attached']['js'][] = $path . '/blockly_compressed.js';
       $form['#attached']['js'][] = $path . '/blocks_compressed.js';
-      $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/blockly/blocks/actions.js';
+      $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/blockly/blocks/fill_textbox.js';
       $form['#attached']['js'][] = $path . '/msg/js/en.js';
       $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/blockly/drulenium_blockly.js';
       
       $form['test_plugin_type']['blockly_mkup'] = array(
           '#markup' => '<a onclick="Drupal.behaviors.druleniumBlockly.save();">Save Blocks</a><div id="blocklyDiv" style="height: 480px; width: 600px;">test</div>
           <xml id="toolbox" style="display: none">
-          <block type="actions_fill_textbox"></block>
+          <block type="fill_textbox"></block>
     <block type="text_print"></block>
   </xml>
           ',
@@ -291,6 +291,49 @@ EOF;
   $form['drulenium_settings_' . $type] += _drulenium_presets_ui_create_block_form($export);
   $form['#attached']['js'][] = drupal_get_path('module', 'drulenium') . '/js/drulenium_preset_form.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'drulenium') . '/css/drulenium_preset_form.css';
+}
+
+function drulenium_blockly_to_plugins_recursive ($xml_block_node, &$plugins_array) {
+  $plugin_type = drulenium_blockly_get_plugin_type($xml_block_node);
+  $plugin_count = count($plugins_array);
+  $plugins_array[$plugin_type."_".$plugin_count] = array(
+    "type" => $plugin_type,
+    "weight" => $plugin_count,
+    "description" => drulenium_blockly_get_plugin_fields($xml_block_node),
+  );
+  if (empty($xml_block_node->next)) {
+    // Stop recursive if there is no <next> XML node
+    // The Base Case/Guard Clause that stops the
+    // function from running forever
+    return $plugins_array;
+    }
+    else {
+    //call function again with simpler args
+    drulenium_blockly_to_plugins_recursive($xml_block_node->next->block, $plugins_array);
+  }
+}
+
+function drulenium_blockly_get_plugin_fields($xml_block_node){
+  $fields_arr = array();
+  foreach($xml_block_node->field as $field) {
+    $field_name = (string)$field["name"];
+    $field_value = (string)$field;
+    $fields_arr[$field_name] = $field_value;
+  }
+  return $fields_arr;
+}
+
+function drulenium_blockly_get_plugin_type($xml_block_node){
+  $block_type = (string)$xml_block_node[0]["type"];
+  switch ($block_type) {
+    case BLOCKLY_FILL_TEXTBOX:
+      $plugin_type = PLUGIN_FILL_TEXTBOX;
+      break;
+    case BLOCKLY_TAKE_SCREENSHOT:
+      $plugin_type = PLUGIN_TAKE_SCREENSHOT;
+      break;
+  }
+  return $plugin_type;
 }
 
 /**

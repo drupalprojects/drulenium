@@ -19,23 +19,25 @@
  */
 
 /**
- * @fileoverview Action blocks for Selenium Blockly.
+ * @fileoverview fill_textbox block for Selenium Blockly.
  * @author info@technikh.com (TechNikh)
  */
 'use strict';
 
-goog.provide('Blockly.Blocks.actions');
+goog.provide('Blockly.Blocks.fill_textbox');
 
 goog.require('Blockly.Blocks');
 
-Blockly.Blocks['actions_fill_textbox'] = {
+Blockly.Blocks['fill_textbox'] = {
   init: function() {
     this.appendDummyInput()
+        .appendField("Fill TextBox");
+    this.appendDummyInput()
         .appendField("Element Locator")
-        .appendField(new Blockly.FieldTextInput(".change-my-textbox-class-name"), "LOCATOR");
+        .appendField(new Blockly.FieldTextInput(".change-me"), "locator");
     this.appendDummyInput()
         .appendField("Text")
-        .appendField(new Blockly.FieldTextInput("change-me"), "TEXT");
+        .appendField(new Blockly.FieldTextInput("change-me"), "text");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(210);
