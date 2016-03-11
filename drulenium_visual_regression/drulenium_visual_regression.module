@@ -837,6 +837,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       ->condition('vr_re.rid', $re_id)
       ->execute()
       ->fetchfield();
+    
 
     // Getting username, password & base url from release.
     $release_result = db_select('drulenium_vr_releases', 're')
@@ -844,6 +845,9 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       ->condition('rid', $re_id, '=')
       ->execute()
       ->fetchAssoc();
+    $preset_cid = $release_result['preset_cid'];
+    $release_settings = $release_result['settings'];
+    $release_settings_arr = drupal_json_decode($release_settings);
 
     $result = db_select('drulenium_vr_runs', 'ru')
       ->fields('ru')
@@ -897,8 +901,8 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     while($run = $result->fetchAssoc()) {
       $url = $test_base_url . $run['url'];
       $driver->get($url);
-      if(!empty($preset_cid)){
-        drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url']);
+      if(!empty($preset_cid) || !empty($plugins_list)){
+        drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url'], FALSE, $plugins_list = $release_settings_arr["plugins_list"]);
         // Delete step_num: 0 entry in drulenium_vr_runs as above tasks might include snapshot.
         db_delete('drulenium_vr_runs')
           ->condition('rid', $run['rid'])
@@ -929,11 +933,14 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
   }
 }
 
-function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $page_url, $saucelabs = FALSE) {
-  $preset_obj = drulenium_preset_load($preset_cid);
+function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $page_url, $saucelabs = FALSE, $plugins_list = array()) {
+  if(!empty($preset_cid)){
+    $preset_obj = drulenium_preset_load($preset_cid);
+    $plugins_list = $preset_obj->settings['plugins'];
+  }
   $step_num = 0;
   $output = "";
-  foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
+  foreach ($plugins_list as $type_and_num => $plugin_arr) {
     $step_num++;
     $plugin_type = $plugin_arr["type"];
     switch ($plugin_type) {
@@ -2054,7 +2061,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
   }
 }
 
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array()) {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array()) {
   if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
