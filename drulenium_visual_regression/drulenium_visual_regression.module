@@ -1,6 +1,7 @@
 <?php
 
 define("SAUCE_CACHE_EXPIRE_TIME", time() + 72*60*60); //in hours
+define("DRULENIUM_NODE_LIMIT", 3);
 
 /**
  * @file
@@ -933,6 +934,17 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
   $preset_obj = drulenium_preset_load($preset_cid);
   $step_num = 0;
   $output = "";
+  $result_entity = entity_get_controller('drulenium')->create();
+  // Get oid from drulenium_preset table.
+  $preset_numeric_id = db_select('drulenium_preset', 'p')
+  ->fields('p', array('oid'))
+  ->condition('p.name', $preset_cid)
+  ->execute()
+  ->fetchfield();
+  $result_entity->status = 1;
+  $result_entity->test_id = $preset_numeric_id;
+  $result_entity->created = REQUEST_TIME;
+  $result_entity->started = REQUEST_TIME;
   foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
     $step_num++;
     $plugin_type = $plugin_arr["type"];
@@ -949,12 +961,33 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
       case PLUGIN_WAIT:
         $output .= drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr, $saucelabs);
         break;
+      case PLUGIN_VERIFY_TEXT:
+        $output .= drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr, $saucelabs, $result_entity);
+        break;
       case PLUGIN_TAKE_SCREENSHOT:
         $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs);
         break;
     }
   }
+  $result_entity->completed = REQUEST_TIME;
+  drulenium_save($result_entity);
   return $output;
+}
+
+function drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr, $saucelabs = FALSE, $result_entity = NULL) {
+  $element_css_locator = $plugin_arr['description']['locator'];
+  $value = $plugin_arr['description']['text'];
+  if($saucelabs) {
+    $output = '';
+    return $output;
+  }
+  $page_element_text = $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->getText();
+  if (strpos($page_element_text, $value) !== false) {
+    // Text present
+  }else{
+    // Test failed.
+    $result_entity->status = 0;
+  }
 }
 
 function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs = FALSE) {
@@ -1593,6 +1626,31 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
         '#description' => t('Test on pages that display content of the given type(s).'),
         '#default_value' => variable_get('drulenium_vr_node_custom', array()),
     );
+    $form['drulenium_vr_config']['pages']['node']['drulenium_vr_node_custom_limit'] = array(
+        '#type' => 'textfield',
+        '#size' => 10,
+        '#title' => t('Limit'),
+        '#description' => t('Maximum number of random pages to test for each of these type(s)'),
+        '#default_value' => variable_get('drulenium_vr_node_custom_limit', DRULENIUM_NODE_LIMIT),
+    );
+    
+    // Per-menu pages.
+    $form['drulenium_vr_config']['pages']['menu'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Menus'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#group' => 'pages',
+        '#weight' => 1,
+    );
+    $menu_types = menu_get_menus();
+    $form['drulenium_vr_config']['pages']['menu']['drulenium_vr_menu_custom'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Test for specific menu pages'),
+        '#options' => $menu_types,
+        '#description' => t('Test on menu pages of the given menu type(s).'),
+        '#default_value' => variable_get('drulenium_vr_menu_custom', array()),
+    );
 
     // Per-term-type testing.
     $form['drulenium_vr_config']['pages']['term'] = array(
@@ -1615,22 +1673,29 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
         '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
         '#default_value' => variable_get('drulenium_vr_term_custom', array()),
     );
+    $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom_limit'] = array(
+        '#type' => 'textfield',
+        '#size' => 10,
+        '#title' => t('Limit'),
+        '#description' => t('Maximum number of random pages to test for each of these type(s)'),
+        '#default_value' => variable_get('drulenium_vr_term_custom_limit', DRULENIUM_NODE_LIMIT),
+    );
   }
   $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
     '#type' => 'fieldset',
-    '#title' => t('User Configuration'),
-    '#description' => t('Test as specified user. Leave empty if the test has to be Anonymous.'),
+    '#title' => t('Drupal User Configuration'),
+    '#description' => t('Test as specified logged in Drupal user. Leave empty if the test has to be Anonymous.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_name'] = array(
-    '#title' => t('User name'),
+    '#title' => t('Drupal user name'),
     '#type' => 'textfield',
     '#description' => t('User name of the user to test as.'),
     '#default_value' => variable_get('drulenium_vr_release_user_name', ""),
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_pass'] = array(
-    '#title' => t('Password'),
+    '#title' => t('Drupal user Password'),
     '#type' => 'password',
     '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
     '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
@@ -1876,6 +1941,8 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
   if ($form_state['values']['drulenium_vr_config_server_opt'] != "drulenium") {
     if (!module_exists('libraries')) {
       form_set_error('drulenium_vr_config_server_opt', 'Enable libraries module. https://www.drupal.org/project/libraries');
+      // After this below libraries_load function gets called and throws fatal error if the return statement doesn't exist.
+      return 0;
     }
   }
   // If Image magick, check version
@@ -1975,45 +2042,62 @@ function drulenium_visual_regression_admin_settings_form_validate($form, &$form_
   // TODO: Test saucelabs, github, local server settings for appropriate user choice
 }
 
-function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
-  $selected_node_types_array = array();
-  $specific_node_types_pages_array = array();
+function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "" ) {
+  // Get limit 
+  $node_limit = variable_get('drulenium_vr_node_custom_limit', DRULENIUM_NODE_LIMIT);
   foreach ($specific_node_types as $node_type) {
     if(!empty($node_type)){
-      $selected_node_types_array[] = $node_type;
+      // Select few random nodes from each content type.
+      $result = db_select('node', 'n')
+  		->fields('n', array('nid'))
+  		->condition('n.status', 1)
+  		->condition('n.type', $node_type)
+  		->orderRandom()
+  		->range(0, $node_limit)
+  		->execute();
+  	  while($row = $result->fetchObject()) {
+  	  	$nid = $row->nid;
+      	$link_path = "node/$nid";
+      	$pages_array[] = $link_path;
+  	  }
     }
   }
-  if (!empty($selected_node_types_array)) {
-    // Select an example node of each type.
-    $result = db_query(
-        'SELECT nid, type FROM {node} n WHERE status = 1 AND type IN (:types)',
-        array(':types' => $selected_node_types_array)
-    );
-    foreach ($result as $row) {
-      $nid = $row->nid;
-      $link_path = "node/$nid";
+
+  $selected_menu_types_array = array();
+  foreach ($specific_menu_types as $menu_type) {
+    if(!empty($menu_type)) {
+      $selected_menu_types_array[] = $menu_type;
+    }
+  }
+  if (!empty($selected_menu_types_array)) {
+    // Select all static menu links from each menu type.
+    $result = db_select('menu_links', 'ml')
+  		->fields('ml', array('link_path'))
+  		->condition('ml.link_path', '%' . db_like("%") . '%', 'NOT LIKE')
+  		->condition('ml.menu_name', $selected_menu_types_array, "IN")
+  		->execute();
+    while($row = $result->fetchObject()) {
+      $link_path = $row->link_path;
       $pages_array[] = $link_path;
     }
   }
 
-
-  $selected_term_types_array = array();
-  $specific_term_types_pages_array = array();
+  // Get limit 
+  $term_limit = variable_get('drulenium_vr_term_custom_limit', DRULENIUM_NODE_LIMIT);
   foreach ($specific_term_types as $term_type) {
-    if(!empty($term_type)) {
-      $selected_term_types_array[] = $term_type;
-    }
-  }
-  if (!empty($selected_term_types_array)) {
-    // Select an example term of each vocabulary.
-    $result = db_query(
-        'SELECT vid, tid FROM {taxonomy_term_data} ttd WHERE vid IN (:types)',
-        array(':types' => $selected_term_types_array)
-    );
-    foreach ($result as $row) {
-      $tid = $row->tid;
-      $link_path = "taxonomy/term/$tid";
-      $pages_array[] = $link_path;
+    if(!empty($term_type)){
+      // Select few random terms from each vocabulary.
+      $result = db_select('taxonomy_term_data', 't')
+  		->fields('t', array('tid'))
+  		->condition('t.vid', $term_type)
+  		->orderRandom()
+  		->range(0, $term_limit)
+  		->execute();
+  	  while($row = $result->fetchObject()) {
+  	  	$tid = $row->tid;
+        $link_path = "taxonomy/term/$tid";
+        $pages_array[] = $link_path;
+  	  }
     }
   }
 
@@ -2052,15 +2136,18 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
       }
     }
   }
+
+  //Removing duplicate paths
+  $pages_array = array_unique($pages_array);
 }
 
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array()) {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array()) {
   if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
   }
 
-  drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_term_types, $specific_pages);
+  drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_menu_types, $specific_term_types, $specific_pages);
 
   if (empty($pages_array)) {
     drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
@@ -2099,8 +2186,8 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   return $release_id;
 }
 
-function drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
-  drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_term_types, $specific_pages);
+function drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
+  drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_menu_types, $specific_term_types, $specific_pages);
 
   if (empty($pages_array)) {
     drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
@@ -2171,13 +2258,17 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
       $release_id = $form_state['drulenium_visual_regression']['release_id'];
     } else {
       $specific_node_types = $form_state['values']['drulenium_vr_node_custom'];
+      $specific_menu_types = $form_state['values']['drulenium_vr_menu_custom'];
       $specific_term_types = $form_state['values']['drulenium_vr_term_custom'];
     }
 
     // Store some values globally as default for the next time.
     variable_set('drulenium_vr_path_custom', $specific_pages);
     variable_set('drulenium_vr_node_custom', $specific_node_types);
+    variable_set('drulenium_vr_node_custom_limit', $form_state['values']['drulenium_vr_node_custom_limit']);
+    variable_set('drulenium_vr_menu_custom', $specific_menu_types);
     variable_set('drulenium_vr_term_custom', $specific_term_types);
+    variable_set('drulenium_vr_term_custom_limit', $form_state['values']['drulenium_vr_term_custom_limit']);
 
     variable_set('drulenium_vr_release_user_name', $test_user_name);
     variable_set('drulenium_vr_release_user_pass', $test_user_pass);
@@ -2199,11 +2290,11 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
   if (empty($release_id)) {
     // New.
-    $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages, $preset_cid);
+    $release_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_menu_types, $specific_term_types, $specific_pages, $preset_cid);
   }
   else {
     // Update.
-    $release_id = drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_term_types, $specific_pages, $preset_cid);
+    $release_id = drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, $pages_array, $test_user_name, $test_user_pass, $specific_node_types, $specific_menu_types, $specific_term_types, $specific_pages, $preset_cid);
   }
 
   // No need to continue with processing if only asked to save the settings.
