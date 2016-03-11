@@ -123,13 +123,13 @@ function drush_drulenium_visual_regression_update($release_name = "") {
     ->condition('re_id', $release_id, '=')
     ->execute();
 
-  $num_pages = db_select('drulenium_vr_runs')
-    ->condition('re_id', $release_id, '=')
-    ->execute();
-
   drulenium_visual_regression_release_setup_batch($release_id);
 
   drush_backend_batch_process();
+
+  $num_pages = db_select('drulenium_vr_runs', 'r')
+    ->condition('re_id', $release_id, '=')
+    ->countQuery()->execute()->fetchField();
 
   drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => $num_pages)), 'success');
 
