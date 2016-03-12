@@ -829,17 +829,6 @@ function drulenium_visual_regression_release_batch_finished($success, $results, 
 // progress and limit and is updated during each run
 function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
   if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
-    /*
-     * Get preset cid from release id
-     * get preset object & thus get drulenium test plugins & tasks todo
-     */
-    $preset_cid = db_select('drulenium_vr_releases', 'vr_re')
-      ->fields('vr_re', array('preset_cid'))
-      ->condition('vr_re.rid', $re_id)
-      ->execute()
-      ->fetchfield();
-    
-
     // Getting username, password & base url from release.
     $release_result = db_select('drulenium_vr_releases', 're')
       ->fields('re')
@@ -849,6 +838,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $preset_cid = $release_result['preset_cid'];
     $release_settings = $release_result['settings'];
     $release_settings_arr = drupal_json_decode($release_settings);
+    $plugins_list = isset($release_settings_arr["plugins_list"]) ? $release_settings_arr["plugins_list"] : array();
 
     $result = db_select('drulenium_vr_runs', 'ru')
       ->fields('ru')
@@ -903,7 +893,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $url = $test_base_url . $run['url'];
       $driver->get($url);
       if(!empty($preset_cid) || !empty($plugins_list)){
-        drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url'], FALSE, $plugins_list = $release_settings_arr["plugins_list"]);
+        drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url'], FALSE, $plugins_list);
         // Delete step_num: 0 entry in drulenium_vr_runs as above tasks might include snapshot.
         db_delete('drulenium_vr_runs')
           ->condition('rid', $run['rid'])

@@ -329,6 +329,9 @@ function drulenium_blockly_get_plugin_type($xml_block_node){
     case BLOCKLY_FILL_TEXTBOX:
       $plugin_type = PLUGIN_FILL_TEXTBOX;
       break;
+    case BLOCKLY_CLICK_BUTTON:
+      $plugin_type = PLUGIN_CLICK_BUTTON;
+      break;
     case BLOCKLY_TAKE_SCREENSHOT:
       $plugin_type = PLUGIN_TAKE_SCREENSHOT;
       break;

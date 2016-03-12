@@ -7,6 +7,10 @@ define('PLUGIN_HOVER_OVER', 'drulenium_mouseover');
 define('PLUGIN_WAIT', 'drulenium_wait');
 define('PLUGIN_VERIFY_TEXT', 'drulenium_facepile');
 
+define('BLOCKLY_FILL_TEXTBOX', 'fill_textbox');
+define('BLOCKLY_CLICK_BUTTON', 'click_button');
+define('BLOCKLY_TAKE_SCREENSHOT', 'take_screenshot');
+
 /**
  * Implements hook_entity_info().
  *
@@ -317,9 +321,6 @@ class DruleniumEntityController
 function drulenium_save(&$entity) {
   return entity_get_controller('drulenium')->save($entity);
 }
-
-define('BLOCKLY_FILL_TEXTBOX', 'fill_textbox');
-define('BLOCKLY_TAKE_SCREENSHOT', 'take_screenshot');
 
 /**
  * Implementation of hook_perm().
