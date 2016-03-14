@@ -972,13 +972,15 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re
 }
 
 function drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr, $saucelabs = FALSE, $result_entity = NULL) {
-  $element_css_locator = $plugin_arr['description']['locator'];
+  $element_locator_type = $plugin_arr['description']['locator_type'];
+  $element_locator = $plugin_arr['description']['locator'];
   $value = $plugin_arr['description']['text'];
   if($saucelabs) {
     $output = '';
     return $output;
   }
-  $page_element_text = $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->getText();
+  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+  $page_element_text = $element->getText();
   if (strpos($page_element_text, $value) !== false) {
     // Text present
   }else{
@@ -988,15 +990,17 @@ function drulenium_visual_regression_selenium_task_verify_text_do($driver, $plug
 }
 
 function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs = FALSE) {
-  $element_css_locator = $plugin_arr['description']['locator'];
+  $element_locator_type = $plugin_arr['description']['locator_type'];
+  $element_locator = $plugin_arr['description']['locator'];
   $value = $plugin_arr['description']['text'];
   if($saucelabs) {
     $output = '
-        $this->byCss("'.$element_css_locator.'")->value("'.$value.'");
+        $this->byCss("'.$element_locator.'")->value("'.$value.'");
     ';
     return $output;
   }
-  $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->sendKeys($value);
+  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+  $element->sendKeys($value);
 }
 
 function drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr, $saucelabs = FALSE) {
@@ -1015,34 +1019,63 @@ function drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr,
       WebDriverExpectedCondition::visibilityOfElementLocated(WebDriverBy::cssSelector($element_css_locator))
     );
   }else{
-    $driver->manage()->timeouts()->implicitlyWait($time_seconds);
+    //Look for a non-existing element, timeout after specified time. Error will be thrown & caught as element doesn't exist.
+    try{
+      $driver->wait($time_seconds, 500)->until(
+        WebDriverExpectedCondition::visibilityOfElementLocated(WebDriverBy::cssSelector("#non-existing-element-id"))
+      );
+    }catch(Exception $e) {
+    }
   }
 }
 
 function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs = FALSE) {
   // https://github.com/facebook/php-webdriver/wiki/Example-command-reference
-  $element_css_locator = $plugin_arr['description']['locator'];
+  $element_locator_type = $plugin_arr['description']['locator_type'];
+  $element_locator = $plugin_arr['description']['locator'];
   if($saucelabs) {
     $output = '';
     return $output;
   }
-  $element = $driver->findElement(WebDriverBy::cssSelector($element_css_locator));
+  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
   $driver->getMouse()->mouseMove( $element->getCoordinates() );
 }
 
+function drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type = "css") {
+  $element = null;
+  switch ($element_locator_type) {
+    case 'id':
+      $element = $driver->findElement(WebDriverBy::id($element_locator));
+      break;
+    case 'name':
+      $element = $driver->findElement(WebDriverBy::name($element_locator));
+      break;
+    case 'css':
+      $element = $driver->findElement(WebDriverBy::cssSelector($element_locator));
+      break;
+    case 'xpath':
+      $element = $driver->findElement(WebDriverBy::xpath($element_locator));
+      break;
+  }
+  return $element;
+}
+
 function drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr, $saucelabs = FALSE) {
-  $element_css_locator = $plugin_arr['description']['locator'];
+  $element_locator_type = $plugin_arr['description']['locator_type'];
+  $element_locator = $plugin_arr['description']['locator'];
   if($saucelabs) {
     $output = '
-        $this->byCss("'.$element_css_locator.'")->click();
+        $this->byCss("'.$element_locator.'")->click();
     ';
     return $output;
   }
-  $driver->findElement(WebDriverBy::cssSelector($element_css_locator))->click();
+  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+  $element->click();
 }
 
 function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs = FALSE) {
-  $element_css_locator = $plugin_arr['description']['locator'];
+  $element_locator_type = $plugin_arr['description']['locator_type'];
+  $element_locator = $plugin_arr['description']['locator'];
   $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
   $width = $plugin_arr['description']['width'];
   $height = $plugin_arr['description']['height'];
@@ -1056,7 +1089,7 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
     $output = '';
     return $output;
   }
-  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator, "_$step_num", $exclude_element, $width, $height, $offset_width, $offset_height);
+  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_locator, "_$step_num", $exclude_element, $width, $height, $offset_width, $offset_height, $element_locator_type);
 
   $fields = array(
       're_id' => $re_id,
@@ -1067,7 +1100,7 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
   db_insert('drulenium_vr_runs')->fields($fields)->execute();
 }
 
-function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locator = '', $file_id = "", $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0) {
+function _drulenium_visual_regression_TakeScreenshot($driver, $element_locator = '', $file_id = "", $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0, $element_locator_type = "css") {
   // Change the Path to your own settings.
   $mydir = file_default_scheme() . '://drulenium';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
@@ -1081,10 +1114,10 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locat
     throw new Exception('Could not save screenshot');
   }
 
-  if(empty($element_css_locator)){
+  if(empty($element_locator)){
     return $relative_file_path;
   }
-  $multiple_elements = explode(",", $element_css_locator);
+  $multiple_elements = explode(",", $element_locator);
 
   // Continue to crop out a specific element.
 
@@ -1096,8 +1129,8 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locat
   $src = imagecreatefrompng($screenshot);
   if($exclude_element) {
     $red = imagecolorallocate($src, 255, 0, 0);
-    foreach ($multiple_elements as $single_element_css_locator){
-      $element = $driver->findElement(WebDriverBy::cssSelector($single_element_css_locator));
+    foreach ($multiple_elements as $single_element_locator){
+      $element = drulenium_visual_regression_selenium_find_element($driver, $single_element_locator, $element_locator_type);
       if($element_width == 0){
         $element_width = $element->getSize()->getWidth() + $offset_width;
       }
@@ -1113,7 +1146,7 @@ function _drulenium_visual_regression_TakeScreenshot($driver, $element_css_locat
     imagepng($src, $screenshot);
   } else {
     // If include element, include the first element.
-    $element = $driver->findElement(WebDriverBy::cssSelector($multiple_elements[0]));
+    $element = drulenium_visual_regression_selenium_find_element($driver, $multiple_elements[0], $element_locator_type);
     if($element_width == 0){
       $element_width = $element->getSize()->getWidth() + $offset_width;
     }

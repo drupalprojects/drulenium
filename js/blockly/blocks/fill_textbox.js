@@ -33,6 +33,9 @@ Blockly.Blocks['fill_textbox'] = {
     this.appendDummyInput()
         .appendField("Fill TextBox");
     this.appendDummyInput()
+        .appendField("Element Locator Type")
+        .appendField(new Blockly.FieldDropdown([["ID", "id"], ["Name", "name"], ["CSS", "css"], ["XPath", "xpath"]]), "locator_type");
+    this.appendDummyInput()
         .appendField("Element Locator")
         .appendField(new Blockly.FieldTextInput(".change-me"), "locator");
     this.appendDummyInput()

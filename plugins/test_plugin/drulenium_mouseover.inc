@@ -14,15 +14,27 @@ $plugin = array(
 function drulenium_mouseover_defaults() {
   return array(
     'locator' => '',
+    'locator_type' => 'css',
   );
 }
 
 function drulenium_mouseover_fb_settings($options) {
   $form = array();
+  $form['locator_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Locator Type'),
+    '#options' => array(
+      'id' => t('ID'),
+      'name' => t('Name'),
+      'css' => t('CSS'),
+      'xpath' => t('XPath'),
+    ),
+    '#description' => t('Type of the Locator of the element you want to hover.<br/> Example CSS selector like {#food span.dairy}'),
+  );
   $form['locator'] = array(
     '#type' => 'textfield',
     '#title' => t('Element Locator'),
-    '#description' => t('The Locator of the element you want to hover. CSS selector like {#food span.dairy}')
+    '#description' => t('The Locator of the element you want to hover.')
   );
 
   $defaults = drulenium_mouseover_defaults();

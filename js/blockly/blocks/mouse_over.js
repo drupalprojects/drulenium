@@ -33,6 +33,9 @@ Blockly.Blocks['mouse_over'] = {
     this.appendDummyInput()
         .appendField("Mouse Over");
     this.appendDummyInput()
+        .appendField("Element Locator Type")
+        .appendField(new Blockly.FieldDropdown([["ID", "id"], ["Name", "name"], ["CSS", "css"], ["XPath", "xpath"]]), "locator_type");
+    this.appendDummyInput()
         .appendField("Element Locator")
         .appendField(new Blockly.FieldTextInput(".change-me"), "locator");
     this.setPreviousStatement(true);

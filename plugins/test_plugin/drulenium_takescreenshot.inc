@@ -14,6 +14,7 @@ $plugin = array(
 function drulenium_takescreenshot_defaults() {
   return array(
     'locator' => '',
+    'locator_type' => 'css',
     'snapshot_mode' => 'include',
     'width' => '0',
     'height' => '0',
@@ -26,17 +27,28 @@ function drulenium_takescreenshot_fb_settings($options) {
   $form = array();
   $form['snapshot_mode'] = array(
     '#type' => 'select',
-    '#title' => t('Type'),
+    '#title' => t('Snapshot Type'),
     '#options' => array(
       'include' => t('Include'),
       'exclude' => t('Exclude'),
     ),
     '#description' => t('Choose "Include" to take the snapshot of only the specified HTML element.<br/>Choose "Exclude" to take snapshot of the whole page except the specified HTML elements.'),
   );
+  $form['locator_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Locator Type'),
+    '#options' => array(
+      'id' => t('ID'),
+      'name' => t('Name'),
+      'css' => t('CSS'),
+      'xpath' => t('XPath'),
+    ),
+    '#description' => t('Type of the Locator of the element you want to include or exclude in the screenshot.<br/> Example CSS selector like {#food span.dairy}'),
+  );
   $form['locator'] = array(
     '#type' => 'textfield',
     '#title' => t('Element Locator'),
-    '#description' => t('The Locator of the element you want to include or exclude in the screenshot. CSS selector like {#food span.dairy}.<br/>Multiple selectors can be coma seperated for exclusion.')
+    '#description' => t('The Locator(s).<br/>Multiple selectors can be coma seperated for exclusion.')
   );
   $form['width'] = array(
     '#type' => 'textfield',

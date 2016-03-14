@@ -33,8 +33,11 @@ Blockly.Blocks['click_button'] = {
     this.appendDummyInput()
         .appendField("Click button");
     this.appendDummyInput()
+        .appendField("Element Locator Type")
+        .appendField(new Blockly.FieldDropdown([["ID", "id"], ["Name", "name"], ["CSS", "css"], ["XPath", "xpath"]]), "locator_type");
+    this.appendDummyInput()
         .appendField("Element Locator")
-        .appendField(new Blockly.FieldTextInput(".change-me"), "locator");
+        .appendField(new Blockly.FieldTextInput("#change-me"), "locator");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(210);

@@ -33,15 +33,18 @@ Blockly.Blocks['take_screenshot'] = {
     this.appendDummyInput()
         .appendField("Take Screenshot");
     this.appendDummyInput()
-        .appendField("Type")
+        .appendField("Snapshot Type")
         .appendField(new Blockly.FieldDropdown([["Include", "include"], ["Exclude", "exclude"]]), "snapshot_mode");
     this.appendDummyInput()
+        .appendField("Element Locator Type")
+        .appendField(new Blockly.FieldDropdown([["ID", "id"], ["Name", "name"], ["CSS", "css"], ["XPath", "xpath"]]), "locator_type");
+    this.appendDummyInput()
         .appendField("Element Locator")
-        .appendField(new Blockly.FieldTextInput(".change-me"), "locator");
+        .appendField(new Blockly.FieldTextInput("#change-me"), "locator");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(210);
-    this.setTooltip('');
+    this.setTooltip('Choose "Include" to take the snapshot of only the specified HTML element. Choose "Exclude" to take snapshot of the whole page except the specified HTML elements. Multiple selectors can be coma separated for exclusion.');
     this.setHelpUrl('http://www.example.com/');
   }
 };
