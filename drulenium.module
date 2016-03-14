@@ -10,6 +10,8 @@ define('PLUGIN_VERIFY_TEXT', 'drulenium_facepile');
 define('BLOCKLY_FILL_TEXTBOX', 'fill_textbox');
 define('BLOCKLY_CLICK_BUTTON', 'click_button');
 define('BLOCKLY_TAKE_SCREENSHOT', 'take_screenshot');
+define('BLOCKLY_HOVER_OVER', 'mouse_over');
+define('BLOCKLY_WAIT', 'wait');
 
 /**
  * Implements hook_entity_info().

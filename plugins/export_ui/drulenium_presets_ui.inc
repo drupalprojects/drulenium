@@ -335,6 +335,12 @@ function drulenium_blockly_get_plugin_type($xml_block_node){
     case BLOCKLY_TAKE_SCREENSHOT:
       $plugin_type = PLUGIN_TAKE_SCREENSHOT;
       break;
+    case BLOCKLY_HOVER_OVER:
+      $plugin_type = PLUGIN_HOVER_OVER;
+      break;
+    case BLOCKLY_WAIT:
+      $plugin_type = PLUGIN_WAIT;
+      break;
   }
   return $plugin_type;
 }
