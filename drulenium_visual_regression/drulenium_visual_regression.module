@@ -391,7 +391,7 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
 }
 
 // this is what runs multiple times per batch
-// progress and limit and is updated during each run
+// progress and limit are updated during each run
 function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $progress, $limit, &$context) {
   $query = db_select('drulenium_vr_results', 'vr_re');
   $query->fields('vr_re');
@@ -901,14 +901,15 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     while($run = $result->fetchAssoc()) {
       $url = $test_base_url . $run['url'];
       $driver->get($url);
-      if(!empty($preset_cid)){
+      if(!empty($preset_cid)) {
         drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url']);
         // Delete step_num: 0 entry in drulenium_vr_runs as above tasks might include snapshot.
         db_delete('drulenium_vr_runs')
           ->condition('rid', $run['rid'])
           ->condition('step_num', 0)
           ->execute();
-      }else{
+      }
+      else {
         $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver);
 
         // Update database.
@@ -928,6 +929,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $progress = $progress + $limit;
     // update message during each run so you know where you are in the process
     $context['message'] = 'Now processing snapshot ' . $progress . ' - URL: '. $url;
+
   } elseif ($progress == 0) {
     drupal_set_message('Didn\'t find the required selenium_webdriver library. Follow the installation instructions at <a target="_blank" href="http://drulenium.org/installation">http://drulenium.org/installation</a> ');
   }
@@ -1050,10 +1052,11 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
   $offset_width = $plugin_arr['description']['offset_width'];
   $offset_height = $plugin_arr['description']['offset_height'];
   $exclude_element = FALSE;
-  if($snapshot_mode == "exclude"){
+
+  if ($snapshot_mode == "exclude") {
     $exclude_element = TRUE;
   }
-  if($saucelabs) {
+  if ($saucelabs) {
     $output = '';
     return $output;
   }
@@ -1504,16 +1507,16 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   $release = $result->fetchAssoc();
   $cmp_release_secure_id = $release['secure_id'];
 
-
   $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';
   $github_username = variable_get('github_username', '');
-  if((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'local')){
+
+  if ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'local')) {
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
-  } elseif((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username)) {
+  } elseif ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username)) {
     $output .= ' <span class="process-locally">(' . l(t('Process via GitHub'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
-  } elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
+  } elseif (variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
