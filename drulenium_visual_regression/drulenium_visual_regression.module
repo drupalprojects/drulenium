@@ -413,7 +413,10 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
     $image1 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image1);
     $image2 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image2);
     $m = array();
-    _drulenium_vr_open_images($image1, $image2, $m);
+    if (!_drulenium_vr_open_images($image1, $image2, $m)) {
+      // Error opening images, no use to continue...
+      continue;
+    }
 
     $maxheight = max($m['height1'], $m['height2']);
     $maxwidth = max($m['width1'], $m['width2']);
@@ -2488,6 +2491,7 @@ function _drulenium_vr_open_images($image1, $image2, &$meta)
   $meta['im1'] = $im;
   $meta['im2'] = $im2;
 
+  return TRUE;
 }
 
 function _drulenium_vr_image_compare(&$meta, $RTolerance=0, $GTolerance=0, $BTolerance=0, $WarningTolerance=1, $ErrorTolerance=5) {
