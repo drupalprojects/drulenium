@@ -52,6 +52,8 @@ function drulenium_visual_regression_drush_command() {
  * Command callback. Create a release & generate snapshots.
  */
 function drush_drulenium_visual_regression_create($vr_base_url = "", $release_name = "") {
+  global $base_url;
+
   // Option
   $preset_cid = drush_get_option('preset_cid', ''); // Default to empty string
   $preset_category = drush_get_option('preset_category', '');
@@ -74,7 +76,6 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   // Default to the current site if no $vr_base_url is provided.
   if (empty($vr_base_url)) {
-    global $base_url;
     $vr_base_url = $base_url . "/?q=";
   }
 
