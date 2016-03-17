@@ -295,12 +295,14 @@ EOF;
 
 function drulenium_blockly_to_plugins_recursive ($xml_block_node, &$plugins_array) {
   $plugin_type = drulenium_blockly_get_plugin_type($xml_block_node);
-  $plugin_count = count($plugins_array);
-  $plugins_array[$plugin_type."_".$plugin_count] = array(
-    "type" => $plugin_type,
-    "weight" => $plugin_count,
-    "description" => drulenium_blockly_get_plugin_fields($xml_block_node),
-  );
+  if(!empty($plugin_type)){
+    $plugin_count = count($plugins_array);
+    $plugins_array[$plugin_type."_".$plugin_count] = array(
+      "type" => $plugin_type,
+      "weight" => $plugin_count,
+      "description" => drulenium_blockly_get_plugin_fields($xml_block_node),
+    );
+  }
   if (empty($xml_block_node->next)) {
     // Stop recursive if there is no <next> XML node
     // The Base Case/Guard Clause that stops the
@@ -325,6 +327,7 @@ function drulenium_blockly_get_plugin_fields($xml_block_node){
 
 function drulenium_blockly_get_plugin_type($xml_block_node){
   $block_type = (string)$xml_block_node[0]["type"];
+  $plugin_type = "";
   switch ($block_type) {
     case BLOCKLY_FILL_TEXTBOX:
       $plugin_type = PLUGIN_FILL_TEXTBOX;
