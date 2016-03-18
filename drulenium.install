@@ -429,3 +429,71 @@ function drulenium_schema() {
   return $schema;
 
 }
+
+/**
+ * Add new table {drulenium}.
+ */
+function drulenium_update_7000() {
+  $schema = array();
+
+  $schema['drulenium'] = array(
+    'description' => 'The base table for our drulenium entity.',
+    'fields' => array(
+      'drulenium_id' => array(
+        'description' => 'Primary key of the drulenium entity.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'test_id' => array(
+        'description' => 'The ID of the test.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      // If we allow multiple bundles, then the schema must handle that;
+      // We'll put it in the 'bundle_type' field to avoid confusion with the
+      // entity type.
+      'bundle_type' => array(
+        'description' => 'The bundle type',
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+      ),
+      'console_log' => array(
+        'description' => 'A complete log of the test',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the test has passed or failed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp of the test creation time.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'started' => array(
+        'description' => 'The Unix timestamp of the test starting time.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => 'The Unix timestamp of the test completion time.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('drulenium_id'),
+  );
+  db_create_table('drulenium', $schema['drulenium']);
+}
