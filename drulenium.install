@@ -72,75 +72,60 @@ function drulenium_schema() {
   );
 
   $schema['drulenium_preset'] = array(
-      'description' => 'Storage for user-defined drulenium plugins templates.',
-      'export' => array(
-          'key' => 'name',
-          'key name' => 'Name',
-          'primary key' => 'oid',
-          'identifier' => 'drulenium_preset',
-          'default hook' => 'default_drulenium_preset', // Function hook name.
-          'api' => array(
-              'owner' => 'drulenium',
-              'api' => 'drulenium', // Base name for api include files.
-              'minimum_version' => 1,
-              'current_version' => 1,
-          ),
-          'load callback' => 'drulenium_preset_load',
+    'description' => 'Storage for user-defined drulenium plugins templates.',
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Name',
+      'primary key' => 'oid',
+      'identifier' => 'drulenium_preset',
+      'default hook' => 'default_drulenium_preset', // Function hook name.
+      'api' => array(
+        'owner' => 'drulenium',
+        'api' => 'drulenium', // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
       ),
-      'fields' => array(
-          'oid' => array(
-              'type' => 'serial',
-              'unsigned' => TRUE,
-              'not null' => TRUE,
-              'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
-              'no export' => TRUE, // Do not export database-only keys.
-          ),
-          'name' => array(
-              'description' => 'The primary identifier for a plugin preset.',
-              'type' => 'varchar',
-              'length' => 255,
-              'not null' => TRUE,
-              'default' => '',
-          ),
-          'description' => array(
-              'description' => 'Description for this plugin preset.',
-              'type' => 'varchar',
-              'length' => 255,
-              'not null' => TRUE,
-              'default' => '',
-          ),
-          'category' => array(
-              'description' => 'Category for this plugin preset.',
-              'type' => 'varchar',
-              'length' => 255,
-              'not null' => TRUE,
-              'default' => '',
-          ),
-          'plugin_type' => array(
-              'description' => 'Type of this preset.',
-              'type' => 'varchar',
-              'length' => 255,
-              'not null' => TRUE,
-              'default' => '',
-          ),
-          'settings' => array(
-              'description' => 'Serialized storage of drupal related plugin settings.',
-              'type' => 'text',
-              'serialize' => TRUE,
-          ),
-          'drulenium_attrs' => array(
-              'description' => 'Serialized storage of drulenium related plugin settings',
-              'type' => 'text',
-              'serialize' => TRUE,
-          ),
+      'load callback' => 'drulenium_preset_load',
+    ),
+    'fields' => array(
+      'oid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
+        'no export' => TRUE, // Do not export database-only keys.
       ),
-      'primary key' => array('oid'),
-      'unique keys' => array(
-          'name' => array('name'),
+      'name' => array(
+        'description' => 'The primary identifier for a plugin preset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
       ),
-      'indexes' => array(
-          'type' => array('plugin_type'),
+      'description' => array(
+        'description' => 'Description for this plugin preset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
       ),
+      'category' => array(
+        'description' => 'Category for this plugin preset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'description' => 'Serialized storage of drupal related plugin settings.',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('oid'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
   );
 
   return $schema;

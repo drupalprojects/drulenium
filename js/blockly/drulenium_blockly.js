@@ -22,7 +22,7 @@
 			var xml = Blockly.Xml.workspaceToDom(workspace);
 			var data = Blockly.Xml.domToText(xml);
 			$('input[name=blockly_workspace_data]').val(data);
-			alert($('input[name=blockly_workspace_data]').val());
+			alert('Workspace saved!');
 	     }
 	};
 	
