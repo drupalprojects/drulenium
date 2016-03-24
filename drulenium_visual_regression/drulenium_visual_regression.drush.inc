@@ -73,9 +73,8 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass", '');
   $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name", '');
-  //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
-  //$drulenium_vr_path_custom = str_replace("&gt;",">",$drulenium_vr_path_custom);
   $secureid = drupal_hash_base64(drupal_random_bytes(55));
+
   if (empty($release_name)) {
     $release_name = format_date(REQUEST_TIME);
   }
@@ -87,7 +86,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
 
-  if(!empty($preset_category)) {
+  if (!empty($preset_category)) {
     $presets = drulenium_preset_load();
     foreach ($presets as $preset_cid => $value) {
       $category = $value->category;

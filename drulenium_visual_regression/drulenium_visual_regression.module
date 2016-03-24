@@ -1530,10 +1530,11 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
-    if((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'local')||((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username))){
+    if ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'local')
+      || ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username))) {
       drupal_goto("admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id");
     }
-    elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
+    elseif (variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
       //If local table is empty, make a rpc call to create entries
       $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
         'drulenium.api_create_compare_request' => array($base_release_secure_id, $cmp_release_secure_id),
@@ -1607,7 +1608,7 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     $form['drulenium_vr_config']['pages']['path']['drulenium_vr_path_custom'] = array(
         '#type' => 'textarea',
         '#title' => t('Test on specific pages'),
-        '#description' => "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. Use <front> for home page.",
+        '#description' => "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. Use &lt;front&gt; for home page.",
         '#default_value' => variable_get('drulenium_vr_path_custom', '<front>'),
     );
 
@@ -2088,8 +2089,9 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
     }
   }
 
-  // Get limit 
+  // Get limit.
   $term_limit = variable_get('drulenium_vr_term_custom_limit', DRULENIUM_NODE_LIMIT);
+
   foreach ($specific_term_types as $term_type) {
     if(!empty($term_type)){
       // Select few random terms from each vocabulary.
@@ -2143,7 +2145,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
     }
   }
 
-  //Removing duplicate paths
+  // Removing duplicate paths.
   $pages_array = array_unique($pages_array);
 }
 
