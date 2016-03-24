@@ -20,6 +20,7 @@ function drulenium_visual_regression_drush_command() {
     'options' => array(
       'preset_cid' => 'Test Preset cid to base the test on.', // drush vrc --preset_cid=anonymous_permissions_test_case
       'preset_category' => 'Test Preset category of all tests to run.',
+      'pages' => 'List of pages to use on the base_url',
     ),
     'aliases' => array('vrc'),
   );
@@ -60,10 +61,16 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   if(empty($preset_cid)) {
     $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
+    $pages_array = drush_get_option_list('pages');
+    if (empty($pages_array)) {
+      $pages_array = array('<front>');
+    }
   } else {
     $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
     $drulenium_vr_path_custom = $config_array['specific_pages'];
   }
+
+
   $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass", '');
   $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name", '');
   //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
@@ -72,7 +79,6 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   if (empty($release_name)) {
     $release_name = format_date(REQUEST_TIME);
   }
-  $pages_array = array('<front>');
 
   // Default to the current site if no $vr_base_url is provided.
   if (empty($vr_base_url)) {
