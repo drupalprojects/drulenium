@@ -2239,10 +2239,12 @@ function drulenium_visual_regression_get_preset_config($preset_cid) {
   $preset_obj = drulenium_preset_load($preset_cid);
   $specific_pages = $preset_obj->settings['pages']['path']['custom'];
   $specific_node_types = $preset_obj->settings['pages']['node']['custom'];
+  $specific_menu_types = array();
   $specific_term_types = $preset_obj->settings['pages']['term']['custom'];
   $config = array(
       'specific_pages' => $specific_pages,
       'specific_node_types' => $specific_node_types,
+      'specific_menu_types' => $specific_menu_types,
       'specific_term_types' => $specific_term_types,
   );
   return $config;
@@ -2285,6 +2287,7 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
     $specific_pages = $config_array['specific_pages'];
     $specific_node_types = $config_array['specific_node_types'];
+    $specific_menu_types = $config_array['specific_menu_types'];
     $specific_term_types = $config_array['specific_term_types'];
   }
   $vr_base_url = $form_state['values']['drulenium_vr_release_base_url'];
