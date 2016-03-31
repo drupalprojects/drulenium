@@ -20,6 +20,27 @@ function drulenium_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'title' => array(
+        'description' => 'The bundle label/name',
+        'type' => 'varchar',
+        'length' => 555,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'secure_id' => array(
+        'description' => 'Secure ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'base_url' => array(
+        'description' => 'Base URL.',
+        'type' => 'varchar',
+        'length' => 200,
+        'default' => '',
+        'not null' => TRUE,
+      ),
       'test_id' => array(
         'description' => 'The ID of the test.',
         'type' => 'int',
@@ -32,16 +53,15 @@ function drulenium_schema() {
       // entity type.
       'bundle_type' => array(
         'description' => 'The bundle type',
-        'type' => 'text',
-        'size' => 'medium',
-        'not null' => TRUE,
-      ),
-      'console_log' => array(
-        'description' => 'A complete log of the test',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
+      ),
+      'console_log' => array(
+        'description' => 'A complete log of the test',
+        'type' => 'text',
+        'size' => 'medium',
       ),
       'status' => array(
         'description' => 'Boolean indicating whether the test has passed or failed.',
@@ -66,6 +86,11 @@ function drulenium_schema() {
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
+      ),
+      'settings' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'description' => 'Serialized array of settings.',
       ),
     ),
     'primary key' => array('drulenium_id'),
@@ -141,59 +166,84 @@ function drulenium_update_7000() {
   $schema['drulenium'] = array(
     'description' => 'The base table for our drulenium entity.',
     'fields' => array(
-      'drulenium_id' => array(
-        'description' => 'Primary key of the drulenium entity.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'test_id' => array(
-        'description' => 'The ID of the test.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-        'default' => NULL,
-      ),
-      // If we allow multiple bundles, then the schema must handle that;
-      // We'll put it in the 'bundle_type' field to avoid confusion with the
-      // entity type.
-      'bundle_type' => array(
-        'description' => 'The bundle type',
-        'type' => 'text',
-        'size' => 'medium',
-        'not null' => TRUE,
-      ),
-      'console_log' => array(
-        'description' => 'A complete log of the test',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'status' => array(
-        'description' => 'Boolean indicating whether the test has passed or failed.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 1,
-      ),
-      'created' => array(
-        'description' => 'The Unix timestamp of the test creation time.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'started' => array(
-        'description' => 'The Unix timestamp of the test starting time.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'completed' => array(
-        'description' => 'The Unix timestamp of the test completion time.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
+        'drulenium_id' => array(
+            'description' => 'Primary key of the drulenium entity.',
+            'type' => 'serial',
+            'unsigned' => TRUE,
+            'not null' => TRUE,
+        ),
+        'title' => array(
+            'description' => 'The bundle label/name',
+            'type' => 'varchar',
+            'length' => 555,
+            'not null' => TRUE,
+            'default' => '',
+        ),
+        'secure_id' => array(
+            'description' => 'Secure ID.',
+            'type' => 'varchar',
+            'length' => 255,
+            'default' => '',
+            'not null' => TRUE,
+        ),
+        'base_url' => array(
+            'description' => 'Base URL.',
+            'type' => 'varchar',
+            'length' => 200,
+            'default' => '',
+            'not null' => TRUE,
+        ),
+        'test_id' => array(
+            'description' => 'The ID of the test.',
+            'type' => 'int',
+            'unsigned' => TRUE,
+            'not null' => FALSE,
+            'default' => NULL,
+        ),
+        // If we allow multiple bundles, then the schema must handle that;
+        // We'll put it in the 'bundle_type' field to avoid confusion with the
+        // entity type.
+        'bundle_type' => array(
+            'description' => 'The bundle type',
+            'type' => 'varchar',
+            'length' => 255,
+            'not null' => TRUE,
+            'default' => '',
+        ),
+        'console_log' => array(
+            'description' => 'A complete log of the test',
+            'type' => 'text',
+            'size' => 'medium',
+        ),
+        'status' => array(
+            'description' => 'Boolean indicating whether the test has passed or failed.',
+            'type' => 'int',
+            'not null' => TRUE,
+            'default' => 1,
+        ),
+        'created' => array(
+            'description' => 'The Unix timestamp of the test creation time.',
+            'type' => 'int',
+            'not null' => TRUE,
+            'default' => 0,
+        ),
+        'started' => array(
+            'description' => 'The Unix timestamp of the test starting time.',
+            'type' => 'int',
+            'not null' => TRUE,
+            'default' => 0,
+        ),
+        'completed' => array(
+            'description' => 'The Unix timestamp of the test completion time.',
+            'type' => 'int',
+            'not null' => TRUE,
+            'default' => 0,
+        ),
+        'settings' => array(
+            'type' => 'blob',
+            'size' => 'big',
+            'description' => 'Serialized array of settings.',
+        ),
     ),
     'primary key' => array('drulenium_id'),
   );

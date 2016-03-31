@@ -347,6 +347,38 @@ function drulenium_visual_regression_theme() {
   );
 }
 
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function drulenium_visual_regression_theme_registry_alter(&$theme_registry) {
+  // Defined path to the current module.
+  $module_path = drupal_get_path('module', 'drulenium_visual_regression');
+  // Find all .tpl.php files in this module's folder recursively.
+  $template_file_objects = drupal_find_theme_templates($theme_registry, '.tpl.php', $module_path);
+  // Iterate through all found template file objects.
+  foreach ($template_file_objects as $key => $template_file_object) {
+    // If the template has not already been overridden by a theme.
+    if (!isset($theme_registry[$key]['theme path']) || !preg_match('#/themes/#', $theme_registry[$key]['theme path'])) {
+      // Alter the theme path and template elements.
+      $theme_registry[$key]['theme path'] = $module_path;
+      $theme_registry[$key] = array_merge($theme_registry[$key], $template_file_object);
+      $theme_registry[$key]['type'] = 'module';
+    }
+  }
+}
+
+function drulenium_visual_regression_format_task_output($task_type, $output){
+  switch ($task_type) {
+    case TASK_GOTO_URL:
+      break;
+    case TASK_TAKE_SCREENSHOT:
+      $snapshot_img = "<img src='" . $output . "' width=200 />";
+      $output = l($snapshot_img, $output, array('attributes' => array('target' => '_blank'), 'html' => TRUE));
+      break;
+  }
+  return $output;
+}
+
 function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_id) {
   if ($new_re_id < $old_re_id) {
     $tmp = $new_re_id;
@@ -608,148 +640,6 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
   drupal_goto("admin/structure/drulenium/vr/compare/$base_release_id/$cmp_release_id");
 }
 
-function drulenium_visual_regression_release_process_saucelabs($re_id) {
-  drulenium_visual_regression_release_setup_batch($re_id);
-
-  // Start processing, pass the page to return to after completing.
-  batch_process("admin/structure/drulenium/vr/release/" . $re_id);
-}
-
-function drulenium_visual_regression_saucelabs_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
-  $saucelabs_username = variable_get('saucelabs_username', '');
-  $saucelabs_access_key = variable_get('saucelabs_api', '');
-  $sauce_host = "{$saucelabs_username}:{$saucelabs_access_key}@ondemand.saucelabs.com";
-  $sauce_browser_platform = variable_get('drulenium_vr_saucelabs_os', '');
-  $sauce_browser_platform_id = drulenium_visual_regression_name_to_id($sauce_browser_platform);
-  $sauce_browser_name = variable_get('drulenium_vr_saucelabs_browser_'.$sauce_browser_platform_id, '');
-  $sauce_browser_name_id = drulenium_visual_regression_name_to_id($sauce_browser_name);
-  $sauce_browser_version = variable_get('drulenium_vr_saucelabs_browser_version_'."{$sauce_browser_platform_id}_{$sauce_browser_name_id}", '');
-  //  /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/all/libraries/sausage
-  $sausage_library_path = realpath(".") . "/" . libraries_get_path("sausage");
-
-  /*
-   * Get preset cid from release id
-  * get preset object & thus get drulenium test plugins & tasks todo
-  */
-  $preset_cid = db_select('drulenium_vr_releases', 'vr_re')
-  ->fields('vr_re', array('preset_cid'))
-  ->condition('vr_re.rid', $re_id)
-  ->execute()
-  ->fetchfield();
-
-  // Getting username, password & base url from release.
-  $release_result = db_select('drulenium_vr_releases', 're')
-  ->fields('re')
-  ->condition('rid', $re_id, '=')
-  ->execute()
-  ->fetchAssoc();
-
-  $result = db_select('drulenium_vr_runs', 'ru')
-  ->fields('ru')
-  ->condition('re_id', $re_id, '=')
-  ->condition('snapshot', '', '=')
-  ->range(0, $limit)
-  ->execute();
-  $take_screenshot_code = '';
-
-  //Image directory preperations
-  $imageDir = file_default_scheme() . '://drulenium/saucelabs/snapshots';
-  file_prepare_directory($imageDir, FILE_CREATE_DIRECTORY);
-
-  // Logging in as specified user
-  $test_user_name = $release_result['user_name'];
-  $test_user_pass = $release_result['user_pass'];
-  if(!empty($test_user_name) && !empty($test_user_pass)){
-    $take_screenshot_code .= '
-        $this->url("'.$test_base_url.'user/login");
-        $this->byCss("#edit-name")->value("'.$test_user_name.'");
-        $this->byCss("#edit-pass")->value("'.$test_user_pass.'");
-        $this->byCss("#edit-submit")->click();
-        ';
-  }
-  $snapshot_array = array();
-  while($run = $result->fetchAssoc()) {
-    $url = $test_base_url . $run['url'];
-    $file_id = $run['step_num'];
-    $unique_id = "drulenium/saucelabs/snapshots/" . microtime(TRUE) . "_{$file_id}.png";
-    //    /Users/TechNikh/Sites/devdesktop/drupal-7.34/sites/default/files/drulenium/saucelabs/snapshots/1454015491.2882_1.png
-    $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
-    $relative_file_path = file_create_url(file_default_scheme() . '://').$unique_id;
-    $snapshot_array[$run['rid']] = array("image_path" => $screenshot, "image_url" => $relative_file_path);
-    $take_screenshot_code .= '
-        $this->url("'.$url.'");
-    ';
-    if(!empty($preset_cid)){
-      $take_screenshot_code .= drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url'], $saucelabs = TRUE);
-    }
-    $take_screenshot_code .= '
-        $imageData = $this->currentScreenshot();
-        file_put_contents("'.$screenshot.'", $imageData);
-    ';
-  }
-
-  //Create .inc file for phpunit
-  $mydir = file_default_scheme() . '://drulenium/saucelabs/phpunit';
-  file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
-  $unique_id = "drulenium/saucelabs/phpunit/" . time() . ".inc";
-  $Selenium2TestCaseFilePath = drupal_realpath(file_default_scheme() . '://')."/".$unique_id;
-  $data = '<?php
-
-require_once "'.$sausage_library_path.'/vendor/autoload.php";
-
-class WebTest extends Sauce\Sausage\WebDriverTestCase
-{
-
-   public static $browsers = array(
-        array(
-            "browserName" => "'.$sauce_browser_name.'",
-            "host" => "'.$sauce_host.'",
-            "port" => 80,
-            "desiredCapabilities" => array(
-                "version" => "'.$sauce_browser_version.'",
-                "platform" => "'.$sauce_browser_platform.'",
-                "record-screenshots" => FALSE,
-                "record-video" => FALSE
-            )
-        )
-    );
-
-    public function testScreenshot()
-    {
-        '.$take_screenshot_code.'
-    }
-}
-  ';
-  file_unmanaged_save_data($data, $destination = $Selenium2TestCaseFilePath, $replace = FILE_EXISTS_REPLACE);
-  //dsm($Selenium2TestCaseFilePath);
-  $command = 'export SAUCE_USERNAME="'.$saucelabs_username.'" 2>&1';
-  exec($command);
-  $command = 'export SAUCE_ACCESS_KEY="'.$saucelabs_access_key.'" 2>&1';
-  exec($command);
-  $command = "cd {$sausage_library_path} && vendor/bin/phpunit {$Selenium2TestCaseFilePath} 2>&1";
-  $exec_error = exec($command);
-  drupal_set_message($exec_error);
-
-  foreach ($snapshot_array as $run_rid => $value){
-    // Update database if screenshot file exists.
-    $image_path = $value["image_path"];
-    if(file_exists($image_path)){
-      $image_url = $value["image_url"];
-      db_update('drulenium_vr_runs')
-        ->fields(array(
-        'snapshot' => $image_url,
-        ))
-        ->condition('rid', $run_rid)
-        ->execute();
-    }
-  }
-
-  // update progress for message
-  $progress = $progress + $limit;
-  // update message during each run so you know where you are in the process
-  $context['message'] = 'Now processing snapshot ' . $progress . ' - URL: '. $url;
-}
-
 function drulenium_visual_regression_release_process_local($re_id) {
 
   drulenium_visual_regression_release_setup_batch($re_id);
@@ -773,38 +663,70 @@ function drulenium_visual_regression_release_setup_batch($re_id) {
     'error_message' => t('Import has encountered an error.'),
   );
   $progress = 0; // where to start
-  $limit = 3; // how many to process for each run
+  $batch_limit = 3; // how many to process for each run
   $max = 1000; // how many records to process until stop - can do query here to get max times to run
 
   //get unprocessed runs of specified release
   //where snapshot is empty
-  $query = db_select('drulenium_vr_releases', 'vr_re');
+  $result = db_select('drulenium', 're')
+    ->fields('re', array('secure_id','title', 'base_url'))
+    ->condition('re.drulenium_id', $re_id)
+    ->execute();
+  /*$query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
     ->fields('vr_re', array('secure_id','name', 'base_url'))
     ->condition('vr_re.rid', $re_id)
-    ->execute();
+    ->execute();*/
   $release = $result->fetchAssoc();
   $secure_id = $release['secure_id'];
   $test_base_url = $release['base_url'];
 
-  $query = db_select('drulenium_vr_runs', 'ru')
+  $query = new EntityFieldQuery();
+
+  /*$query->entityCondition('entity_type', 'drulenium_test_task')
+    ->fieldCondition('field_dr_task_release', 'target_id', $re_id, '=')
+    ->addTag('dr_pending_tasks');
+  $result = $query->execute();
+  if (isset($result['drulenium_test_task'])) {
+    $max = count($result['drulenium_test_task']);
+  }*/
+  /*
+   * Limit array
+   * Get ids of all go to url tasks
+   * max is the last go to url task ID
+   */
+  $query->entityCondition('entity_type', 'drulenium_test_task')
+    ->fieldCondition('field_dr_task_release', 'target_id', $re_id, '=')
+    ->entityCondition('bundle', 'goto_task')
+    ->addTag('dr_pending_tasks');
+  $result = $query->execute();
+  $goto_tasks_items_ids = array();
+  if (isset($result['drulenium_test_task'])) {
+    $goto_tasks_items_ids = array_keys($result['drulenium_test_task']);
+  }
+  /*$query = db_select('drulenium_vr_runs', 'ru')
     ->fields('ru')
     ->condition('re_id', $re_id, '=')
     ->condition('snapshot', '', '=');
   $query->addExpression('COUNT(rid)', 'run_count');
   $result = $query->execute();
   $run = $result->fetchAssoc();
-  $max = $run['run_count'];
+  $max = $run['run_count'];*/
 
-  while($progress <= $max) {
-    if((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local')||(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'browserstack')){
-      $batch['operations'][] = array('drulenium_visual_regression_release_batch_op', array($test_base_url, $re_id, $progress, $limit));
-    }elseif(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'saucelabs'){
-      $batch['operations'][] = array('drulenium_visual_regression_saucelabs_batch_op', array($test_base_url, $re_id, $progress, $limit));
+  //while($progress <= $max) {
+  foreach ($goto_tasks_items_ids as $key => $goto_task_item_id) {
+    if($key % $batch_limit == 0) {
+      $progress_task_id = $goto_task_item_id;
+      $limit_task_id = isset($goto_tasks_items_ids[$key + $batch_limit]) ? $goto_tasks_items_ids[$key + $batch_limit] : 0;
+      if ((variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local') || (variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'browserstack')) {
+        $batch['operations'][] = array(
+          'drulenium_visual_regression_release_batch_op',
+          array($test_base_url, $re_id, $progress_task_id, $limit_task_id)
+        );
+      }
+      //$progress = $progress + $limit;
     }
-    $progress = $progress + $limit;
   }
-
   batch_set($batch);
 }
 
@@ -827,10 +749,19 @@ function drulenium_visual_regression_release_batch_finished($success, $results, 
 
 // this is what runs multiple times per batch
 // progress and limit and is updated during each run
-function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $progress, $limit, &$context) {
+function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $progress_task_id, $limit_task_id, &$context) {
   if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
     // Getting username, password & base url from release.
-    $release_result = db_select('drulenium_vr_releases', 're')
+    $release_result = db_select('drulenium', 're')
+      ->fields('re', array('base_url', 'settings'))
+      ->condition('drulenium_id', $re_id, '=')
+      ->execute()
+      ->fetchAssoc();
+    $release_settings_encoded = $release_result['settings'];
+    $release_settings = drupal_json_decode($release_settings_encoded);
+    $test_user_name = $release_settings['user_name'];
+    $test_user_pass = $release_settings['user_pass'];
+    /*$release_result = db_select('drulenium_vr_releases', 're')
       ->fields('re')
       ->condition('rid', $re_id, '=')
       ->execute()
@@ -839,21 +770,41 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $release_settings = $release_result['settings'];
     $release_settings_arr = drupal_json_decode($release_settings);
     $plugins_list = isset($release_settings_arr["plugins_list"]) ? $release_settings_arr["plugins_list"] : array();
+*/
+    /*
+     * Get all tasks corresponding to this release
+     */
+    $query = new EntityFieldQuery();
 
-    $result = db_select('drulenium_vr_runs', 'ru')
+    /*
+     * get all pending tasks starting from go to URL type task & ending with go to URL task
+     */
+    $query->entityCondition('entity_type', 'drulenium_test_task')
+      ->fieldCondition('field_dr_task_release', 'target_id', $re_id, '=')
+      ->entityCondition('entity_id', $progress_task_id, ">=");
+    if (!empty($limit_task_id)) {
+      $query->entityCondition('entity_id', $limit_task_id, "<");
+    }
+    $query->addTag('dr_pending_tasks');
+    $result = $query->execute();
+    if (isset($result['drulenium_test_task'])) {
+      $tasks_items_ids = array_keys($result['drulenium_test_task']);
+      $tasks_items = entity_load('drulenium_test_task', $tasks_items_ids);
+    }
+    /*$result = db_select('drulenium_vr_runs', 'ru')
       ->fields('ru')
       ->condition('re_id', $re_id, '=')
       ->condition('snapshot', '', '=')
       ->range(0, $limit)
-      ->execute();
+      ->execute();*/
 
     // Start Firefox with 5 second timeout.
-    if(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local') {
+    if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'local') {
       $host = variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"); // this is the default
       $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
       $capabilities = DesiredCapabilities::$browser();
     }
-    elseif(variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'browserstack'){
+    elseif (variable_get('drulenium_vr_config_server_opt', 'drulenium') == 'browserstack') {
       $browser_stack_username = variable_get('browserstack_username', "");
       $browser_stack_access_key = variable_get('browserstack_access_key', "");
       $host = "http://{$browser_stack_username}:{$browser_stack_access_key}@hub.browserstack.com/wd/hub";
@@ -861,113 +812,93 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $browserstack_browser_platform = variable_get('drulenium_vr_browserstack_os', '');
       $browserstack_browser_platform_os_version_seperator_index = strpos($browserstack_browser_platform, " -> ");
       $browserstack_browser_platform_os = substr($browserstack_browser_platform, 0, $browserstack_browser_platform_os_version_seperator_index);
-      $browserstack_browser_platform_os_version = substr($browserstack_browser_platform, $browserstack_browser_platform_os_version_seperator_index+4);
+      $browserstack_browser_platform_os_version = substr($browserstack_browser_platform, $browserstack_browser_platform_os_version_seperator_index + 4);
       $browserstack_browser_platform_id = drulenium_visual_regression_name_to_id($browserstack_browser_platform);
-      $browserstack_browser_name = variable_get('drulenium_vr_browserstack_browser_'.$browserstack_browser_platform_id, '');
+      $browserstack_browser_name = variable_get('drulenium_vr_browserstack_browser_' . $browserstack_browser_platform_id, '');
       $browserstack_browser_name_id = drulenium_visual_regression_name_to_id($browserstack_browser_name);
-      $browserstack_browser_version = variable_get('drulenium_vr_browserstack_browser_version_'."{$browserstack_browser_platform_id}_{$browserstack_browser_name_id}", '');
+      $browserstack_browser_version = variable_get('drulenium_vr_browserstack_browser_version_' . "{$browserstack_browser_platform_id}_{$browserstack_browser_name_id}", '');
 
       $capabilities = array(
-          "browser" => $browserstack_browser_name,
-          "browser_version" => $browserstack_browser_version,
-          "os" => $browserstack_browser_platform_os,
-          "os_version" => $browserstack_browser_platform_os_version,
-          "browserstack.debug" => variable_get('browserstack_debugging', 'false'),
+        "browser" => $browserstack_browser_name,
+        "browser_version" => $browserstack_browser_version,
+        "os" => $browserstack_browser_platform_os,
+        "os_version" => $browserstack_browser_platform_os_version,
+        "browserstack.debug" => variable_get('browserstack_debugging', 'false'),
       );
     }
     $driver = RemoteWebDriver::create($host, $capabilities, 5000);
     $driver->manage()->window()->maximize();
 
     // Logging in as specified user
-    $test_user_name = $release_result['user_name'];
-    $test_user_pass = $release_result['user_pass'];
-    if(!empty($test_user_name) && !empty($test_user_pass)){
+    if (!empty($test_user_name) && !empty($test_user_pass)) {
       $driver->get($release_result['base_url'] . "user/login");
-      $driver->findElement(WebDriverBy::id("edit-name"))->sendKeys($test_user_name);
-      $driver->findElement(WebDriverBy::id("edit-pass"))->sendKeys($test_user_pass);
+      $driver->findElement(WebDriverBy::id("edit-name"))
+        ->sendKeys($test_user_name);
+      $driver->findElement(WebDriverBy::id("edit-pass"))
+        ->sendKeys($test_user_pass);
       $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
       $userSubmitElement->click();
     }
 
-    while($run = $result->fetchAssoc()) {
-      $url = $test_base_url . $run['url'];
-      $driver->get($url);
-      if(!empty($preset_cid) || !empty($plugins_list)){
-        drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $run['url'], FALSE, $plugins_list);
-        // Delete step_num: 0 entry in drulenium_vr_runs as above tasks might include snapshot.
-        db_delete('drulenium_vr_runs')
-          ->condition('rid', $run['rid'])
-          ->condition('step_num', 0)
-          ->execute();
-      }else{
-        $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver);
-
-        // Update database.
-        db_update('drulenium_vr_runs')
-        ->fields(array(
-          'snapshot' => $full_screenshot,
-        ))
-        ->condition('re_id', $re_id)
-        ->condition('url', $run['url'])
-        ->condition('step_num', 0)
-        ->execute();
-      }
+    foreach ($tasks_items as $task_entity) {
+      drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $test_base_url);
     }
     // Close the Firefox.
     $driver->quit();
     // update progress for message
-    $progress = $progress + $limit;
+    //$progress = $progress + $limit;
     // update message during each run so you know where you are in the process
-    $context['message'] = 'Now processing snapshot ' . $progress . ' - URL: '. $url;
-  } elseif ($progress == 0) {
+    // Get last task name
+    $context['message'] = 'Processing';
+    if (!empty($limit_task_id)) {
+      $last_tasks_items = entity_load('drulenium_test_task', array($limit_task_id));
+      $last_tasks_item = array_pop($last_tasks_items);
+      $context['message'] = 'Now processing task -> ' . $last_tasks_item->title;
+    }
+  } else {
     drupal_set_message('Didn\'t find the required selenium_webdriver library. Follow the installation instructions at <a target="_blank" href="http://drulenium.org/installation">http://drulenium.org/installation</a> ');
   }
 }
 
-function drulenium_visual_regression_selenium_tasks_do($driver, $preset_cid, $re_id, $page_url, $saucelabs = FALSE, $plugins_list = array()) {
-  if(!empty($preset_cid)){
-    $preset_obj = drulenium_preset_load($preset_cid);
-    $plugins_list = $preset_obj->settings['plugins'];
-  }
-  $step_num = 0;
+/**
+ * Implements hook_query_TAG_alter()
+ */
+function drulenium_visual_regression_query_dr_pending_tasks_alter(QueryAlterableInterface $query) {
+  // TODO: get rid of the zero suffix on field_data_field_dr_task_release0
+  // https://www.drupal.org/node/1157006#comment-5465034
+  $query->leftJoin('field_data_field_dr_task_status', 'o', 'field_data_field_dr_task_release0.entity_id = o.entity_id');
+  $query->isNull('o.field_dr_task_status_value');
+}
+
+function drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $test_base_url) {
   $output = "";
-  $result_entity = entity_get_controller('drulenium')->create();
-  // Get oid from drulenium_preset table.
-  $preset_numeric_id = db_select('drulenium_preset', 'p')
-  ->fields('p', array('oid'))
-  ->condition('p.name', $preset_cid)
-  ->execute()
-  ->fetchfield();
-  $result_entity->status = 1;
-  $result_entity->test_id = $preset_numeric_id;
-  $result_entity->created = REQUEST_TIME;
-  $result_entity->started = REQUEST_TIME;
-  foreach ($plugins_list as $type_and_num => $plugin_arr) {
-    $step_num++;
-    $plugin_type = $plugin_arr["type"];
-    switch ($plugin_type) {
-      case PLUGIN_FILL_TEXTBOX:
-        $output .= drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs);
-        break;
-      case PLUGIN_CLICK_BUTTON:
-        $output .= drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr, $saucelabs);
-        break;
-      case PLUGIN_HOVER_OVER:
-        $output .= drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs);
-        break;
-      case PLUGIN_WAIT:
-        $output .= drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr, $saucelabs);
-        break;
-      case PLUGIN_VERIFY_TEXT:
-        $output .= drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr, $saucelabs, $result_entity);
-        break;
-      case PLUGIN_TAKE_SCREENSHOT:
-        $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs);
-        break;
-    }
+  $task_entity_wrapper = entity_metadata_wrapper('drulenium_test_task', $task_entity);
+  $plugin_type = $task_entity->type;
+  $plugin_arr_encoded = $task_entity_wrapper->field_dr_task_settings->value();
+  $plugin_arr = drupal_json_decode($plugin_arr_encoded);
+  switch ($plugin_type) {
+    case TASK_GOTO_URL:
+      $output .= drulenium_visual_regression_selenium_task_goto_url_do($driver, $task_entity_wrapper, $plugin_arr, $test_base_url);
+      break;
+    case TASK_FILL_TEXTBOX:
+      $output .= drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr);
+      break;
+    case TASK_CLICK_BUTTON:
+      $output .= drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr);
+      break;
+    case TASK_HOVER_OVER:
+      $output .= drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr);
+      break;
+    case TASK_WAIT:
+      $output .= drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr);
+      break;
+    case TASK_VERIFY_TEXT:
+      $output .= drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr);
+      break;
+    case TASK_TAKE_SCREENSHOT:
+      $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr);
+      break;
   }
-  $result_entity->completed = REQUEST_TIME;
-  drulenium_save($result_entity);
   return $output;
 }
 
@@ -987,6 +918,18 @@ function drulenium_visual_regression_selenium_task_verify_text_do($driver, $plug
     // Test failed.
     $result_entity->status = 0;
   }
+}
+
+function drulenium_visual_regression_selenium_task_goto_url_do($driver, $task_wrapper, $plugin_arr, $test_base_url) {
+  $url = $test_base_url . $plugin_arr['description']['url'];
+  try{
+    $driver->get($url);
+    $task_wrapper->field_dr_task_status = 1;
+  }catch(Exception $e) {
+    $task_wrapper->field_dr_task_status = 0;
+  }
+  $task_wrapper->changed = REQUEST_TIME;
+  $task_wrapper->save();
 }
 
 function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs = FALSE) {
@@ -1073,7 +1016,7 @@ function drulenium_visual_regression_selenium_task_click_button_do($driver, $plu
   $element->click();
 }
 
-function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $plugin_arr, $step_num, $re_id, $page_url, $saucelabs = FALSE) {
+function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr) {
   $element_locator_type = $plugin_arr['description']['locator_type'];
   $element_locator = $plugin_arr['description']['locator'];
   $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
@@ -1085,26 +1028,33 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
   if($snapshot_mode == "exclude"){
     $exclude_element = TRUE;
   }
-  if($saucelabs) {
-    $output = '';
-    return $output;
+  try{
+    $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_locator, $exclude_element, $width, $height, $offset_width, $offset_height, $element_locator_type);
+    $task_entity_wrapper->field_dr_task_output = $full_screenshot;
+    $task_entity_wrapper->field_dr_task_status = 1;
+  }catch(Exception $e) {
+    $task_entity_wrapper->field_dr_task_status = 0;
   }
-  $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_locator, "_$step_num", $exclude_element, $width, $height, $offset_width, $offset_height, $element_locator_type);
-
-  $fields = array(
+  $task_entity_wrapper->changed = REQUEST_TIME;
+  $task_entity_wrapper->save();
+  /*$fields = array(
       're_id' => $re_id,
       'snapshot' => $full_screenshot,
       'url' => $page_url,
       'step_num' => $step_num,
   );
-  db_insert('drulenium_vr_runs')->fields($fields)->execute();
+  db_insert('drulenium_vr_runs')->fields($fields)->execute();*/
 }
 
-function _drulenium_visual_regression_TakeScreenshot($driver, $element_locator = '', $file_id = "", $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0, $element_locator_type = "css") {
+function drulenium_visual_regression_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  dsm($entity);
+}
+
+function _drulenium_visual_regression_TakeScreenshot($driver, $element_locator = '', $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0, $element_locator_type = "css") {
   // Change the Path to your own settings.
   $mydir = file_default_scheme() . '://drulenium';
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
-  $unique_id = "drulenium/" . microtime(TRUE) . "{$file_id}.png";
+  $unique_id = "drulenium/" . microtime(TRUE) . ".png";
   $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
   $relative_file_path = file_create_url(file_default_scheme() . '://').$unique_id;
 
@@ -1232,15 +1182,19 @@ function drulenium_visual_regression_release_detail($re_id) {
   // If Local, check if there is anything pending.
   variable_get('drulenium_vr_config_server_opt', 'drulenium');
 
-  $query = db_select('drulenium_vr_releases', 'vr_re');
+  $result = db_select('drulenium', 're')
+    ->fields('re', array('title', 'secure_id'))
+    ->condition('re.drulenium_id', $re_id)
+    ->execute();
+  /*$query = db_select('drulenium_vr_releases', 'vr_re');
   $result = $query
     ->fields('vr_re', array('secure_id','name', 'base_url'))
     ->condition('vr_re.rid', $re_id)
-    ->execute();
+    ->execute();*/
   $release = $result->fetchAssoc();
   $secure_id = $release['secure_id'];
-  $test_base_url = $release['base_url'];
-  drupal_set_title("Release: " . $release['name']);
+  //$test_base_url = $release['base_url'];
+  drupal_set_title("Release: " . $release['title']);
 
   $last = variable_get("drulenium_vr_last_check" . $re_id);
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
@@ -1255,7 +1209,7 @@ function drulenium_visual_regression_release_detail($re_id) {
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/release/status/' . $secure_id) . ')</span>';
   }
   $output .= "</div>\n";
-  $header = array(t('Id'), t('URL'), t('Task'), t('Snapshot'));
+  /*$header = array(t('Id'), t('URL'), t('Task'), t('Snapshot'));
   $rows = array();
   $result = db_select('drulenium_vr_runs', 'ru')
     ->fields('ru')
@@ -1280,9 +1234,9 @@ function drulenium_visual_regression_release_detail($re_id) {
       $snapshot,
     );
   }
-  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  $output .= theme('table', array('header' => $header, 'rows' => $rows));*/
 
-
+  $output .= views_embed_view('drulenium_release_details', 'default', $re_id);
   $output .= '<h2>Edit release</h2>';
   $build_form = drupal_get_form('drulenium_visual_regression_create_release_form', $re_id);
   $output .= drupal_render($build_form);
@@ -1748,28 +1702,51 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
   if (!empty($release_id)) {
     $form_state['drulenium_visual_regression']['release_id'] = $release_id;
     // Prefill config.
-    $query = db_select('drulenium_vr_releases', 'vr_re');
+    $release = db_select('drulenium', 're')
+      ->fields('re', array('title', 'base_url', 'settings'))
+      ->condition('drulenium_id', $release_id, '=')
+      ->execute()
+      ->fetchAssoc();
+    $release_settings_encoded = $release['settings'];
+    $release_settings = drupal_json_decode($release_settings_encoded);
+    $test_user_name = $release_settings['user_name'];
+    $test_user_pass = $release_settings['user_pass'];
+    /*$query = db_select('drulenium_vr_releases', 'vr_re');
     $result = $query
       ->fields('vr_re', array('name', 'base_url', 'user_name', 'user_pass'))
       ->condition('vr_re.rid', $release_id)
       ->execute();
-    $release = $result->fetchAssoc();
-    $form['drulenium_vr_config']['drulenium_vr_release_name']['#default_value'] = $release['name'];
+    $release = $result->fetchAssoc();*/
+    $form['drulenium_vr_config']['drulenium_vr_release_name']['#default_value'] = $release['title'];
     $form['drulenium_vr_config']['drulenium_vr_release_base_url']['#default_value'] = $release['base_url'];
-    $form['drulenium_vr_config']['drulenium_vr_release_user_name']['#default_value'] = $release['user_name'];
-    $form['drulenium_vr_config']['drulenium_vr_release_user_pass']['#default_value'] = $release['user_pass'];
+    $form['drulenium_vr_config']['drulenium_vr_release_user_name']['#default_value'] = $test_user_name;
+    $form['drulenium_vr_config']['drulenium_vr_release_user_pass']['#default_value'] = $test_user_pass;
 
     // Prefill pages.
-    $query = db_select('drulenium_vr_runs', 'ru')
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'drulenium_test_task')
+      ->entityCondition('bundle', 'goto_task')
+      ->fieldCondition('field_dr_task_release', 'target_id', $release_id, '=');
+    $result = $query->execute();
+    if (isset($result['drulenium_test_task'])) {
+      $tasks_items_ids = array_keys($result['drulenium_test_task']);
+      $tasks_items = entity_load('drulenium_test_task', $tasks_items_ids);
+    }
+    /*$query = db_select('drulenium_vr_runs', 'ru')
       ->fields('ru', array('url'))
       ->condition('re_id', $release_id, '=');
-    $result = $query->execute();
+    $result = $query->execute();*/
     $path_list = '';
-    while($run = $result->fetchAssoc()) {
-      if (empty($run['url'])) {
-        $run['url'] = "<front>";
+    foreach ($tasks_items as $task_entity) {
+      $task_entity_wrapper = entity_metadata_wrapper('drulenium_test_task', $task_entity);
+      $plugin_arr_encoded = $task_entity_wrapper->field_dr_task_settings->value();
+      $plugin_arr = drupal_json_decode($plugin_arr_encoded);
+      $url = $plugin_arr['description']['url'];
+      if (empty($url)) {
+        $url = "<front>";
       }
-      $path_list .= $run['url'] . "\n";
+      $path_list .= $url . "\n";
     }
     $form['drulenium_vr_config']['pages']['path']['drulenium_vr_path_custom']['#default_value'] = $path_list;
 
@@ -2193,11 +2170,28 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
 
   drulenium_visual_regression_merge_pages_array($pages_array, $specific_node_types, $specific_menu_types, $specific_term_types, $specific_pages);
 
-  if (empty($pages_array)) {
+  /*if (empty($pages_array)) {
     drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
     return "";
-  }
-  $fields = array(
+  }*/
+  $settings_array["user_name"] = $vr_user_name;
+  $settings_array["user_pass"] = $vr_user_pass;
+
+  $release_entity = entity_get_controller('drulenium')->create();
+  $release_entity->title = $release_name;
+  $release_entity->secure_id = $secureid;
+  $preset_numeric_id = db_select('drulenium_preset', 'p')
+    ->fields('p', array('oid'))
+    ->condition('p.name', $preset_cid)
+    ->execute()
+    ->fetchfield();
+  $release_entity->test_id = $preset_numeric_id;
+  $release_entity->base_url = $vr_base_url;
+  $release_entity->settings = drupal_json_encode($settings_array);
+  drulenium_save($release_entity);
+  $release_id = $release_entity->drulenium_id;
+
+  /*$fields = array(
       'name' => $release_name,
       'secure_id' => $secureid,
       'preset_cid' => $preset_cid,
@@ -2207,7 +2201,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       'created' => REQUEST_TIME,
       'settings' => drupal_json_encode($settings_array),
   );
-  $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();
+  $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();*/
 
   // Create db records for the individual pages.
   foreach ($pages_array as $key => $page) {
@@ -2215,19 +2209,107 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       unset($pages_array[$key]);
     }
     else {
-      if($page == "<front>"){
+      if ($page == "<front>") {
         $page = "";
         $pages_array[$key] = $page;
       }
-      $fields = array(
+      /*$fields = array(
 	      're_id' => $release_id,
 	      'url' => $page,
-      );
-      $result = db_insert('drulenium_vr_runs')->fields($fields)->execute();
+      );*/
+      $plugin_arr = array();
+      $plugin_arr['description']['url'] = $page;
+      if (empty($page)) {
+        $page = "Homepage";
+      }
+      // Create goto_task
+      drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'goto_task', $release_id, $task_title = "Go to {$page}", $task_settings = $plugin_arr);
+      // Create snapshot_task if there's no pre defined preset
+      if (empty($preset_cid)) {
+        drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'snapshot_task', $release_id, $task_title = "Snapshot of {$page}", $task_settings = array());
+      }else{
+        $preset_obj = drulenium_preset_load($preset_cid);
+        foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
+          $plugin_type = $plugin_arr["type"];
+          $task_title = drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr);
+          switch ($plugin_type) {
+            case PLUGIN_FILL_TEXTBOX:
+              drulenium_visual_regression_update_create_task_entity('fill_textbox_task', $release_id, $task_title, $plugin_arr);
+              break;
+            case PLUGIN_CLICK_BUTTON:
+              drulenium_visual_regression_update_create_task_entity('click_button_task', $release_id, $task_title, $plugin_arr);
+              break;
+            case PLUGIN_HOVER_OVER:
+              drulenium_visual_regression_update_create_task_entity('hover_over_task', $release_id, $task_title, $plugin_arr);
+              break;
+            case PLUGIN_WAIT:
+              drulenium_visual_regression_update_create_task_entity('wait_task', $release_id, $task_title, $plugin_arr);
+              break;
+            case PLUGIN_VERIFY_TEXT:
+              drulenium_visual_regression_update_create_task_entity('verify_text_task', $release_id, $task_title, $plugin_arr);
+              break;
+            case PLUGIN_TAKE_SCREENSHOT:
+              drulenium_visual_regression_update_create_task_entity('snapshot_task', $release_id, $task_title, $plugin_arr);
+              break;
+          }
+        }
+      }
+      //$result = db_insert('drulenium_vr_runs')->fields($fields)->execute();
     }
   }
 
   return $release_id;
+}
+
+function drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr) {
+  $output = "";
+  switch ($plugin_type) {
+    case PLUGIN_FILL_TEXTBOX:
+      $output .= drulenium_visual_regression_fill_textbox_plugin_to_text($plugin_arr);
+      break;
+    case PLUGIN_CLICK_BUTTON:
+      $output .= drulenium_visual_regression_click_button_plugin_to_text($plugin_arr);
+      break;
+    case PLUGIN_HOVER_OVER:
+      $output .= drulenium_visual_regression_hover_over_plugin_to_text($plugin_arr);
+      break;
+    case PLUGIN_WAIT:
+      $output .= drulenium_visual_regression_wait_plugin_to_text($plugin_arr);
+      break;
+    case PLUGIN_TAKE_SCREENSHOT:
+      $output .= drulenium_visual_regression_screenshot_plugin_to_text($plugin_arr);
+      break;
+  }
+  return $output;
+}
+
+function drulenium_visual_regression_screenshot_plugin_to_text($plugin_arr) {
+  $output = "";
+  $element_id = $plugin_arr['description']['locator'];
+  $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
+  if(!empty($element_id)) {
+    if($snapshot_mode == "exclude"){
+      $output = "Snapshot excluding elements[CSS: \"$element_id\"]";
+    }elseif($snapshot_mode == "include"){
+      $output = "Snapshot including element[CSS: \"$element_id\"]";
+    }
+  }else{
+    $output = "Whole page snapshot";
+  }
+  return $output;
+}
+
+// Task is part of the $release_id
+function drulenium_visual_regression_update_create_task_entity($entity_bundle_type, $release_id, $task_title, $task_settings = array()){
+  $entity_type = 'drulenium_test_task';
+  $task_entity = entity_create($entity_type, array('type' => $entity_bundle_type));
+  $task_wrapper = entity_metadata_wrapper($entity_type, $task_entity);
+  $task_wrapper->field_dr_task_release = $release_id;
+  $task_wrapper->title = $task_title;
+  if(!empty($task_settings)){
+    $task_wrapper->field_dr_task_settings = drupal_json_encode($task_settings);
+  }
+  $task_wrapper->save();
 }
 
 function drulenium_visual_regression_update_release_in_db($release_id, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "" ) {
@@ -2384,19 +2466,20 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 }
 
 function drulenium_visual_regression_compare_releases_form($form, $form_state) {
-  $result = db_select('drulenium_vr_releases', 're')
-  ->fields('re', array('name', 'rid'))
+  $result = db_select('drulenium', 're')
+  ->fields('re', array('title', 'drulenium_id'))
+    ->condition('re.bundle_type', 'drulenium_test_run')
   ->execute();
   $release_ids = array();
   while($release = $result->fetchAssoc()) {
-    $release_ids[$release['rid']] = '';
-    $form['info'][$release['rid']] = array(
-        '#markup' => l($release['name'],"admin/structure/drulenium/vr/release/".$release['rid']),
+    $release_ids[$release['drulenium_id']] = '';
+    $form['info'][$release['drulenium_id']] = array(
+        '#markup' => l($release['title'],"admin/structure/drulenium/vr/release/".$release['drulenium_id']),
     );
     $operations = array(
-          '#markup' => l(t('Delete'), "admin/structure/drulenium/vr/delete-release/".$release['rid']),
+          '#markup' => l(t('Delete'), "admin/structure/drulenium/vr/delete-release/".$release['drulenium_id']),
     );
-    $form['operations'][$release['rid']][0] = $operations;
+    $form['operations'][$release['drulenium_id']][0] = $operations;
 
   }
   if(empty($release_ids)){

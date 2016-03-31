@@ -13,6 +13,14 @@ define('BLOCKLY_TAKE_SCREENSHOT', 'take_screenshot');
 define('BLOCKLY_HOVER_OVER', 'mouse_over');
 define('BLOCKLY_WAIT', 'wait');
 
+define('TASK_GOTO_URL', 'goto_task');
+define('TASK_TAKE_SCREENSHOT', 'snapshot_task');
+define('TASK_FILL_TEXTBOX', 'fill_textbox_task');
+define('TASK_CLICK_BUTTON', 'click_button_task');
+define('TASK_HOVER_OVER', 'hover_over_task');
+define('TASK_WAIT', 'wait_task');
+define('TASK_VERIFY_TEXT', 'verify_text_task');
+
 /**
  * Implements hook_entity_info().
  *
@@ -58,7 +66,7 @@ function drulenium_entity_info() {
     // associated with a base entity type.
     'bundles' => array(
       'drulenium_test_run' => array(
-        'label' => 'First example bundle',
+        'label' => 'Drulenium release',
         // 'admin' key is used by the Field UI to provide field and
         // display UI pages.
         'admin' => array(
@@ -157,8 +165,8 @@ function drulenium_list_entities() {
           'id' => $entity->drulenium_id,
           'test_id' => $test_name,
           'status' => $entity->status,
-          'started' => format_date($entity->started),
-          'completed' => format_date($entity->completed),
+          'started' => !empty($entity->started) ? format_date($entity->started) : '',
+          'completed' => !empty($entity->completed) ? format_date($entity->completed) : '',
         ),
       );
     }
@@ -232,8 +240,17 @@ class DruleniumEntityController
     $entity = new stdClass();
     $entity->type = 'drulenium';
     $entity->drulenium_id = 0;
-    $entity->bundle_type = 'drulenium_test_run';
+    $entity->created = REQUEST_TIME;
     $entity->console_log = '';
+
+    $entity->status = -1;
+    $entity->bundle_type = 'drulenium_test_run';
+    $entity->title = '';
+    $entity->secure_id = '';
+    $entity->test_id = '';
+    $entity->base_url = '';
+    $settings_array = array();
+    $entity->settings = drupal_json_encode($settings_array);
     return $entity;
   }
 
@@ -610,7 +627,7 @@ function drulenium_presets_ui_form_table_theme($orig_form) {
  * Implements hook_content_extra_fields.
  */
 function drulenium_field_extra_fields() {
-  $extras = array();
+  /*$extras = array();
   if ($presets = drulenium_get_presets()) {
 
     foreach ( $presets as $preset ) {
@@ -620,7 +637,7 @@ function drulenium_field_extra_fields() {
         $function($extras, $preset);
       }
     }
-  }
+  }*/
 
   $form_elements['console_log'] = array(
     'label' => t('Console Log'),

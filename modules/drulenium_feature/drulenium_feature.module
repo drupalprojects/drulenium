@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Drulenium feature feature.
+ */
+
+include_once 'drulenium_feature.features.inc';
