@@ -10,6 +10,398 @@
 function drulenium_feature_field_default_field_instances() {
   $field_instances = array();
 
+  // Exported field_instance:
+  // 'drulenium_test_task-click_button_task-field_dr_task_log'.
+  $field_instances['drulenium_test_task-click_button_task-field_dr_task_log'] = array(
+    'bundle' => 'click_button_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_log',
+    'label' => 'Log',
+    'required' => FALSE,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'text',
+      'settings' => array(
+        'rows' => 5,
+      ),
+      'type' => 'text_textarea',
+      'weight' => 6,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-click_button_task-field_dr_task_output'.
+  $field_instances['drulenium_test_task-click_button_task-field_dr_task_output'] = array(
+    'bundle' => 'click_button_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 3,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_output',
+    'label' => 'Output',
+    'required' => FALSE,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'text',
+      'settings' => array(
+        'rows' => 5,
+      ),
+      'type' => 'text_textarea',
+      'weight' => 8,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-click_button_task-field_dr_task_release'.
+  $field_instances['drulenium_test_task-click_button_task-field_dr_task_release'] = array(
+    'bundle' => 'click_button_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'entityreference',
+        'settings' => array(
+          'link' => FALSE,
+        ),
+        'type' => 'entityreference_label',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_release',
+    'label' => 'Test release',
+    'required' => FALSE,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => 4,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-click_button_task-field_dr_task_settings'.
+  $field_instances['drulenium_test_task-click_button_task-field_dr_task_settings'] = array(
+    'bundle' => 'click_button_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 4,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_settings',
+    'label' => 'Settings',
+    'required' => FALSE,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'text',
+      'settings' => array(
+        'rows' => 5,
+      ),
+      'type' => 'text_textarea',
+      'weight' => 10,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-click_button_task-field_dr_task_status'.
+  $field_instances['drulenium_test_task-click_button_task-field_dr_task_status'] = array(
+    'bundle' => 'click_button_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_status',
+    'label' => 'Status',
+    'required' => FALSE,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 2,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-fill_textbox_task-field_dr_task_log'.
+  $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_log'] = array(
+    'bundle' => 'fill_textbox_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_log',
+    'label' => 'Log',
+    'required' => FALSE,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'text',
+      'settings' => array(
+        'rows' => 5,
+      ),
+      'type' => 'text_textarea',
+      'weight' => 6,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-fill_textbox_task-field_dr_task_output'.
+  $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_output'] = array(
+    'bundle' => 'fill_textbox_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 3,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_output',
+    'label' => 'Output',
+    'required' => FALSE,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'text',
+      'settings' => array(
+        'rows' => 5,
+      ),
+      'type' => 'text_textarea',
+      'weight' => 8,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-fill_textbox_task-field_dr_task_release'.
+  $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_release'] = array(
+    'bundle' => 'fill_textbox_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'entityreference',
+        'settings' => array(
+          'link' => FALSE,
+        ),
+        'type' => 'entityreference_label',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_release',
+    'label' => 'Test release',
+    'required' => FALSE,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => 4,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-fill_textbox_task-field_dr_task_settings'.
+  $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_settings'] = array(
+    'bundle' => 'fill_textbox_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 4,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_settings',
+    'label' => 'Settings',
+    'required' => FALSE,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'text',
+      'settings' => array(
+        'rows' => 5,
+      ),
+      'type' => 'text_textarea',
+      'weight' => 10,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-fill_textbox_task-field_dr_task_status'.
+  $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_status'] = array(
+    'bundle' => 'fill_textbox_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_status',
+    'label' => 'Status',
+    'required' => FALSE,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 2,
+    ),
+  );
+
   // Exported field_instance: 'drulenium_test_task-goto_task-field_dr_task_log'.
   $field_instances['drulenium_test_task-goto_task-field_dr_task_log'] = array(
     'bundle' => 'goto_task',

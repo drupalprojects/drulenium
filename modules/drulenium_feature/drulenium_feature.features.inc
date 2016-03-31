@@ -16,6 +16,20 @@ function drulenium_feature_views_api($module = NULL, $api = NULL) {
  */
 function drulenium_feature_eck_bundle_info() {
   $items = array(
+    'drulenium_test_task_click_button_task' => array(
+      'machine_name' => 'drulenium_test_task_click_button_task',
+      'entity_type' => 'drulenium_test_task',
+      'name' => 'click_button_task',
+      'label' => 'Click Button Task',
+      'config' => array(),
+    ),
+    'drulenium_test_task_fill_textbox_task' => array(
+      'machine_name' => 'drulenium_test_task_fill_textbox_task',
+      'entity_type' => 'drulenium_test_task',
+      'name' => 'fill_textbox_task',
+      'label' => 'Fill Textbox Task',
+      'config' => array(),
+    ),
     'drulenium_test_task_goto_task' => array(
       'machine_name' => 'drulenium_test_task_goto_task',
       'entity_type' => 'drulenium_test_task',
@@ -23,11 +37,32 @@ function drulenium_feature_eck_bundle_info() {
       'label' => 'GoTo Task',
       'config' => array(),
     ),
+    'drulenium_test_task_hover_over_task' => array(
+      'machine_name' => 'drulenium_test_task_hover_over_task',
+      'entity_type' => 'drulenium_test_task',
+      'name' => 'hover_over_task',
+      'label' => 'Hover Over Task',
+      'config' => array(),
+    ),
     'drulenium_test_task_snapshot_task' => array(
       'machine_name' => 'drulenium_test_task_snapshot_task',
       'entity_type' => 'drulenium_test_task',
       'name' => 'snapshot_task',
       'label' => 'Snapshot Task',
+      'config' => array(),
+    ),
+    'drulenium_test_task_verify_text_task' => array(
+      'machine_name' => 'drulenium_test_task_verify_text_task',
+      'entity_type' => 'drulenium_test_task',
+      'name' => 'verify_text_task',
+      'label' => 'Verify Text Task',
+      'config' => array(),
+    ),
+    'drulenium_test_task_wait_task' => array(
+      'machine_name' => 'drulenium_test_task_wait_task',
+      'entity_type' => 'drulenium_test_task',
+      'name' => 'wait_task',
+      'label' => 'Wait Task',
       'config' => array(),
     ),
   );
