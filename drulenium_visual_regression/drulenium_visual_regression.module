@@ -1815,6 +1815,12 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
       ),
     ),
   );
+  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_release_upload_to_Drulenium_org'] = array(
+      '#title' => t('Upload diff results to Drulenium.org server for future reference.'),
+      '#description' => t('If you choose local server for taking screenshots, You can still upload the results to Drulenium.org using this option.'),
+      '#type' => 'checkbox',
+      '#default_value' => variable_get('drulenium_vr_release_upload_to_Drulenium_org', 0),
+  );
   $site_email = variable_get('site_mail', '');
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_release_notify_email'] = array(
     '#title' => t('Email'),
@@ -2322,6 +2328,31 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     drupal_goto("admin/structure/drulenium/vr/release/process-local/" . $release_id);
   }
 
+}
+
+function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id){
+  $query = db_select('drulenium_vr_results', 're');
+  $query->join('drulenium_vr_runs', 'b_ru', 're.run_base_id = b_ru.rid');
+  $query->join('drulenium_vr_runs', 'cmp_ru', 're.run_cmp_id = cmp_ru.rid');
+  $query->fields('re');
+  $query->fields('b_ru');
+  $query->addField('re', 'rid', 'result_id');
+  $query->addField('cmp_ru', 'snapshot', 'cmp_snapshot');
+  $query->condition('re.release_base_id', $old_re_id);
+  $query->condition('re.release_cmp_id', $new_re_id);
+  $query->condition('re.diff_percent', 0, '>');
+  $result = $query->execute();
+
+  $params = array();
+  while($cmp_result = $result->fetchAssoc()) {
+    $params[] = $cmp_result;
+  }
+  if(!empty($params)){
+    $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
+        'drulenium.api_update_result' => array($params),
+    ));
+    drupal_set_message($result);
+  }
 }
 
 function drulenium_visual_regression_create_release_in_drulenium_db($release_id, $secureid, $vr_base_url, $pages_array, $test_user_name, $test_user_pass){
