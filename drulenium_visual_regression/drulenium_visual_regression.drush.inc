@@ -86,6 +86,11 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
 
   drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
 
+  $drulenium_server = FALSE;
+  if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
+    $drulenium_server = TRUE;
+  }
+
   if (!empty($preset_category)) {
     $presets = drulenium_preset_load();
     foreach ($presets as $preset_cid => $value) {
@@ -96,17 +101,26 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
         $drulenium_vr_path_custom = $config_array['specific_pages'];
         $pages_array = array();
         $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid);
-        drulenium_visual_regression_release_setup_batch($re_id);
+        if($drulenium_server){
+          drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);
+        }else{
+          drulenium_visual_regression_release_setup_batch($re_id);
+        }
       }
     }
   }
   else {
     $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
-    drulenium_visual_regression_release_setup_batch($re_id);
+    if($drulenium_server){
+      drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);
+    }else{
+      drulenium_visual_regression_release_setup_batch($re_id);
+    }
   }
-
-  drush_backend_batch_process();
+  if(!$drulenium_server){
+    drush_backend_batch_process();
+  }
   $url = $base_url . '/admin/structure/drulenium/vr/release/' . $re_id;
   drush_log(t('Took snapshots of @vrpages pages, view on @url', array('@vrpages' => count($drulenium_vr_path_custom), '@url' => $url)), 'success');
 }
