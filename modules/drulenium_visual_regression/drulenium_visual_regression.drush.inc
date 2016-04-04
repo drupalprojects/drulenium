@@ -20,6 +20,7 @@ function drulenium_visual_regression_drush_command() {
     'options' => array(
       'preset_cid' => 'Test Preset cid to base the test on.', // drush vrc --preset_cid=anonymous_permissions_test_case
       'preset_category' => 'Test Preset category of all tests to run.',
+      'pages' => 'List of pages to use on the base_url',
     ),
     'aliases' => array('vrc'),
   );
@@ -45,42 +46,111 @@ function drulenium_visual_regression_drush_command() {
     ),
     'aliases' => array('vrd'),
   );
+  $items['vr-download-webdriver'] = array(
+    'callback'    => 'drush_drulenium_visual_regression_download_webdriver',
+    'description' => dt('This command used to download selenium php webdriver.'),
+    'aliases'     => array('vrdl'),
+  );
   return $items;
+}
+
+/**
+ * Helper function downloads selenium webdriver plugin.
+ */
+function drush_drulenium_visual_regression_download_webdriver() {
+
+  // Get the path from the argument, if site, or use the default.
+  $drush_context = drush_get_context('DRUSH_DRUPAL_ROOT');
+
+  // Can we use Libraries API?
+  if (module_exists('libraries') && function_exists('libraries_get_path')) {
+    $libraries_dir = libraries_get_path('selenium_webdriver');
+  }
+
+  // Load the path.
+  $path = $libraries_dir ? $drush_context . '/' . $libraries_dir : $drush_context . '/sites/all/libraries/selenium_webdriver';
+
+  drush_log(dt('Download destination path: "@path"', array('@path' => $path)), 'notice');
+
+  // Set the directory to the download location.
+  $olddir = getcwd();
+
+  $download_path = str_replace('/selenium_webdriver', '', $path);
+
+  chdir($download_path);
+
+  $download_uri = 'https://github.com/facebook/php-webdriver/archive/master.zip';
+
+  // Download the zip archive.
+  if ($filepath = drush_download_file($download_uri, $download_path . '/php-webdriver-master.zip')) {
+    $filename = basename($filepath);
+    $dirname = basename($filepath, '.zip');
+
+    // Decompress the zip archive.
+    drush_tarball_extract($filename);
+
+    // Change the directory name to "select2" if needed.
+    if ($dirname != 'selenium_webdriver') {
+      drush_move_dir($dirname, 'selenium_webdriver', TRUE);
+      $dirname = 'selenium_webdriver';
+    }
+  }
+
+  if (is_dir($dirname)) {
+    drush_log(dt('Selenium webdriver has been installed in @path', array('@path' => $path)), 'success');
+  }
+  else {
+    drush_log(dt('Drush was unable to install the Selenium webdriver to @path', array('@path' => $path)), 'error');
+  }
+
+  // Set working directory back to the previous working directory.
+  chdir($olddir);
+
 }
 
 /**
  * Command callback. Create a release & generate snapshots.
  */
 function drush_drulenium_visual_regression_create($vr_base_url = "", $release_name = "") {
+  global $base_url;
+
   // Option
   $preset_cid = drush_get_option('preset_cid', ''); // Default to empty string
   $preset_category = drush_get_option('preset_category', '');
 
   if(empty($preset_cid)) {
     $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
+    $pages_array = drush_get_option_list('pages');
+    if (empty($pages_array)) {
+      $pages_array = array('<front>');
+    }
   } else {
     $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
     $drulenium_vr_path_custom = $config_array['specific_pages'];
   }
+
+
   $drulenium_vr_user_pass = variable_get("drulenium_vr_release_user_pass", '');
   $drulenium_vr_user_name = variable_get("drulenium_vr_release_user_name", '');
-  //$drulenium_vr_path_custom = str_replace("&lt;","<",$drulenium_vr_path_custom);
-  //$drulenium_vr_path_custom = str_replace("&gt;",">",$drulenium_vr_path_custom);
   $secureid = drupal_hash_base64(drupal_random_bytes(55));
+
   if (empty($release_name)) {
     $release_name = format_date(REQUEST_TIME);
   }
-  $pages_array = array('<front>');
 
   // Default to the current site if no $vr_base_url is provided.
   if (empty($vr_base_url)) {
-    global $base_url;
     $vr_base_url = $base_url . "/?q=";
   }
 
   drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
 
-  if(!empty($preset_category)) {
+  $drulenium_server = FALSE;
+  if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
+    $drulenium_server = TRUE;
+  }
+
+  if (!empty($preset_category)) {
     $presets = drulenium_preset_load();
     foreach ($presets as $preset_cid => $value) {
       $category = $value->category;
@@ -90,17 +160,26 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
         $drulenium_vr_path_custom = $config_array['specific_pages'];
         $pages_array = array();
         $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid);
-        drulenium_visual_regression_release_setup_batch($re_id);
+        if($drulenium_server){
+          drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);
+        }else{
+          drulenium_visual_regression_release_setup_batch($re_id);
+        }
       }
     }
   }
   else {
     $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
 
-    drulenium_visual_regression_release_setup_batch($re_id);
+    if($drulenium_server){
+      drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);
+    }else{
+      drulenium_visual_regression_release_setup_batch($re_id);
+    }
   }
-
-  drush_backend_batch_process();
+  if(!$drulenium_server){
+    drush_backend_batch_process();
+  }
   $url = $base_url . '/admin/structure/drulenium/vr/release/' . $re_id;
   drush_log(t('Took snapshots of @vrpages pages, view on @url', array('@vrpages' => count($drulenium_vr_path_custom), '@url' => $url)), 'success');
 }
@@ -123,13 +202,13 @@ function drush_drulenium_visual_regression_update($release_name = "") {
     ->condition('re_id', $release_id, '=')
     ->execute();
 
-  $num_pages = db_select('drulenium_vr_runs')
-    ->condition('re_id', $release_id, '=')
-    ->execute();
-
   drulenium_visual_regression_release_setup_batch($release_id);
 
   drush_backend_batch_process();
+
+  $num_pages = db_select('drulenium_vr_runs', 'r')
+    ->condition('re_id', $release_id, '=')
+    ->countQuery()->execute()->fetchField();
 
   drush_log(t('Took snapshots of @vrpages pages.', array('@vrpages' => $num_pages)), 'success');
 
@@ -164,8 +243,11 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
   }
   _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
   drush_backend_batch_process();
+  if (variable_get('drulenium_vr_release_upload_to_Drulenium_org', 0) == 1) {
+    drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
+  }
   global $base_url;
-  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$new_re_id/$old_re_id", 'success');
+  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$old_re_id/$new_re_id", 'success');
 }
 
 /**
