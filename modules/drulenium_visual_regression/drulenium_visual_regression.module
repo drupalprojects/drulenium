@@ -400,13 +400,17 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
 
   // Get unprocessed runs of specified compare
   // where snapshot is empty
-  $query = db_select('drulenium_vr_results', 'vr_re');
-  $query
-    ->fields('vr_re')
-    ->condition('vr_re.release_base_id', $old_re_id)
-    ->condition('vr_re.release_cmp_id', $new_re_id)
-    ->isNull('vr_re.diff_percent');
-  $query->addExpression('COUNT(rid)', 'run_count');
+  $query = db_select('eck_drulenium_visual_diff', 'diff');
+  $query-> leftJoin('field_data_field_dr_diff_base_task', 'base_tsk', 'diff.id = base_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_cmp_task', 'cmp_tsk', 'diff.id = cmp_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'base_rel', 'base_tsk.field_dr_diff_base_task_target_id = base_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'cmp_rel', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_percentage', 'diff_percent', 'diff.id = diff_percent.entity_id');
+  $query->fields('diff', array('id'));
+  $query->condition('base_rel.field_dr_task_release_target_id', $old_re_id);
+  $query->condition('cmp_rel.field_dr_task_release_target_id', $new_re_id);
+  $query->isNull('diff_percent.field_dr_diff_percentage_value');
+  $query->addExpression('COUNT(id)', 'run_count');
   $result = $query->execute();
   $row = $result->fetchAssoc();
   $max = $row['run_count'];
@@ -425,23 +429,32 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
 // this is what runs multiple times per batch
 // progress and limit and is updated during each run
 function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $progress, $limit, &$context) {
-  $query = db_select('drulenium_vr_results', 'vr_re');
-  $query->fields('vr_re');
-  $query->fields('r_b', array('snapshot', 'url'));
-  $query->fields('r_c', array('snapshot'));
-  $query->join('drulenium_vr_runs', 'r_b', 'vr_re.run_base_id = r_b.rid');
-  $query->join('drulenium_vr_runs', 'r_c', 'vr_re.run_cmp_id = r_c.rid');
-  $query->condition('vr_re.release_base_id', $old_re_id);
-  $query->condition('vr_re.release_cmp_id', $new_re_id);
-  $query->isNull('vr_re.diff_percent');
-  $query->range(0,$limit);
+  /*
+   * Get diff entities with null diff_percent
+   */
+  $query = db_select('eck_drulenium_visual_diff', 'diff');
+  $query-> leftJoin('field_data_field_dr_diff_base_task', 'base_tsk', 'diff.id = base_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_cmp_task', 'cmp_tsk', 'diff.id = cmp_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_output', 'base_tsk_snap', 'base_tsk.field_dr_diff_base_task_target_id = base_tsk_snap.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_output', 'cmp_tsk_snap', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_tsk_snap.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'base_rel', 'base_tsk.field_dr_diff_base_task_target_id = base_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'cmp_rel', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_percentage', 'diff_percent', 'diff.id = diff_percent.entity_id');
+  $query->fields('diff', array('id'));
+  $query->addField('base_tsk_snap', 'field_dr_task_output_value', 'base_snapshot');
+  $query->addField('cmp_tsk_snap', 'field_dr_task_output_value', 'cmp_snapshot');
+  $query->condition('base_rel.field_dr_task_release_target_id', $old_re_id);
+  $query->condition('cmp_rel.field_dr_task_release_target_id', $new_re_id);
+  $query->isNull('diff_percent.field_dr_diff_percentage_value');
+  $query->range(0, $limit);
   $result = $query->execute();
   $image_magick_path = variable_get('drulenium_vr_release_imagemagick_path', "/opt/local/bin");
 
   while ($res = $result->fetchAssoc()) {
+    $diff_entity_id = $res['id'];
     //have to use proc_open http://cgit.drupalcode.org/imagemagick/tree/imagemagick.module#n478
-    $image1 = $res['snapshot'];
-    $image2 = $res['r_c_snapshot'];
+    $image1 = $res['base_snapshot'];
+    $image2 = $res['cmp_snapshot'];
     $image1 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image1);
     $image2 = str_replace(file_create_url(file_default_scheme() . '://'), drupal_realpath(file_default_scheme() . '://') . "/", $image2);
     $m = array();
@@ -501,19 +514,16 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
         // Release names in folder name, URL in file name
         // If step_num > 0 URL as folder name
         // URL in commit message
-        $base_release_name = db_select('drulenium_vr_releases', 'vr_re')
+        /*$base_release_name = db_select('drulenium_vr_releases', 'vr_re')
           ->fields('vr_re', array('name'))
           ->condition('vr_re.rid', $old_re_id)
           ->execute()->fetchfield();
         $cmp_release_name = db_select('drulenium_vr_releases', 'vr_re')
         ->fields('vr_re', array('name'))
         ->condition('vr_re.rid', $new_re_id)
-        ->execute()->fetchfield();
-        $link_url = $res['url'];
-        // Replace / with _
-        $underscored_link_url = str_replace("/", "_", $link_url);
-        $path = "Diff/{$base_release_name} -> {$cmp_release_name}/{$underscored_link_url}_{$res['rid']}.png";
-        $commitMessage = "Base version of {$link_url}";
+        ->execute()->fetchfield();*/
+        $path = "Diff/{$diff_entity_id}.png";
+        $commitMessage = "Base version -> id: {$diff_entity_id}";
         $fileExists = $client->api('repo')->contents()->exists($github_username, $github_repo, $path, $reference = null);
         if(!$fileExists){
           // File doesn't exist, create new
@@ -523,7 +533,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
           $oldFile = $client->api('repo')->contents()->show($github_username, $github_repo, $path, $branch);
           $fileInfo = $client->api('repo')->contents()->update($github_username, $github_repo, $path, $content = $image1_data, $commitMessage, $oldFile['sha'], $branch, $committer);
         }
-        $commitMessage = "Comparision version of {$link_url}";
+        $commitMessage = "Comparision version -> id: {$diff_entity_id}";
         $firstFile = $client->api('repo')->contents()->show($github_username, $github_repo, $path, $branch);
         $fileInfo2 = $client->api('repo')->contents()->update($github_username, $github_repo, $path, $content = $image2_data, $commitMessage, $firstFile['sha'], $branch, $committer);
         $commit_sha = $fileInfo2['commit']['sha'];
@@ -562,13 +572,22 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       }
     }
 
-    db_query("Update drulenium_vr_results res
+    $diff_items = entity_load('drulenium_visual_diff', array($diff_entity_id));
+    $diff_entity = array_pop($diff_items);
+    $diff_entity_wrapper = entity_metadata_wrapper('drulenium_visual_diff', $diff_entity);
+    $diff_entity_wrapper->field_dr_diff_percentage = $diff_percent;
+    $diff_entity_wrapper->field_diff_file_highlight = $highlighted_link;
+    $diff_entity_wrapper->field_diff_file_gif = $gif_link;
+    $diff_entity_wrapper->changed = REQUEST_TIME;
+    $diff_entity_wrapper->save();
+
+    /*db_query("Update drulenium_vr_results res
       LEFT JOIN drulenium_vr_runs run on res.run_base_id = run.rid
       LEFT JOIN drulenium_vr_releases rel on run.re_id = rel.rid
       SET  diff_percent = :diff_percent, diff_highlight = :diff_highlight, diff_gif = :diff_gif
       WHERE res.rid = :res_id",
       array(':res_id' => $res['rid'], ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
-
+*/
 
   }
   // Update progress for message.
@@ -1245,7 +1264,49 @@ function drulenium_visual_regression_release_detail($re_id) {
 }
 
 function drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id) {
-  $result = db_query("INSERT INTO drulenium_vr_results
+  /*
+   * Get all snapshot tasks of the base release $old_re_id
+   * get the corresponding task id from the cmp release $new_re_id based on task weight
+   * create diff entities accordingly
+   */
+  $query = new EntityFieldQuery();
+
+  $query->entityCondition('entity_type', 'drulenium_test_task')
+    ->entityCondition('bundle', 'snapshot_task')
+    ->fieldCondition('field_dr_task_release', 'target_id', $old_re_id, '=');
+  $result = $query->execute();
+  if (isset($result['drulenium_test_task'])) {
+    $tasks_items_ids = array_keys($result['drulenium_test_task']);
+    $tasks_items = entity_load('drulenium_test_task', $tasks_items_ids);
+    foreach ($tasks_items as $task_entity) {
+      // Get task weight
+      $task_entity_wrapper = entity_metadata_wrapper('drulenium_test_task', $task_entity);
+      $task_weight = $task_entity_wrapper->field_dr_task_weight->value();
+      $base_task_id = $task_entity_wrapper->id->value();
+      $base_task_title = $task_entity_wrapper->title->value();
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'drulenium_test_task')
+        ->entityCondition('bundle', 'snapshot_task')
+        ->fieldCondition('field_dr_task_weight', 'value', $task_weight, '=')
+        ->fieldCondition('field_dr_task_release', 'target_id', $new_re_id, '=')
+        ->range(0, 1);
+      $result = $query->execute();
+      // Create diff entity only if there's a cmp task id
+      if (isset($result['drulenium_test_task'])) {
+        reset($result['drulenium_test_task']);
+        $cmp_task_items_id = key($result['drulenium_test_task']);
+        $entity_type = 'drulenium_visual_diff';
+        $diff_entity = entity_create($entity_type, array('type' => 'drulenium_visual_diff'));
+        $diff_wrapper = entity_metadata_wrapper($entity_type, $diff_entity);
+        $diff_wrapper->field_dr_diff_base_task = $base_task_id;
+        $diff_wrapper->field_dr_diff_cmp_task = $cmp_task_items_id;
+        $diff_wrapper->title = $base_task_title;
+        $diff_wrapper->started = REQUEST_TIME;
+        $diff_wrapper->save();
+      }
+    }
+  }
+  /*$result = db_query("INSERT INTO drulenium_vr_results
     (run_base_id, run_cmp_id, release_base_id, release_cmp_id)
     SELECT substring_index(qids, ',', 1) AS base_qid,
       substring_index(qids, ',', -1) AS cmp_qid,
@@ -1264,7 +1325,7 @@ function drulenium_visual_regression_create_initial_comparision_report_in_db($ol
     ':release_base_id' => $old_re_id,
     ':release_cmp_id' => $new_re_id
     )
-  );
+  );*/
 }
 
 function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
@@ -1274,114 +1335,24 @@ function drulenium_visual_regression_releases_compare($old_re_id, $new_re_id) {
     $new_re_id = $old_re_id;
     $old_re_id = $tmp;
   }
+  /*
+   * Check if there's any diff entity for these releases
+   */
+  $query = db_select('eck_drulenium_visual_diff', 'diff');
+  $query->join('field_data_field_dr_diff_base_task', 'base_tsk', 'diff.id = base_tsk.entity_id');
+  $query->join('field_data_field_dr_diff_cmp_task', 'cmp_tsk', 'diff.id = cmp_tsk.entity_id');
+  $query->join('field_data_field_dr_task_release', 'base_rel', 'base_tsk.field_dr_diff_base_task_target_id = base_rel.entity_id');
+  $query->join('field_data_field_dr_task_release', 'cmp_rel', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_rel.entity_id');
+  $query->fields('diff', array('id'));
+  $query->condition('base_rel.field_dr_task_release_target_id', $old_re_id);
+  $query->condition('cmp_rel.field_dr_task_release_target_id', $new_re_id);
+  $query->range(0, 1);
+  $result = $query->execute()->fetchfield();
 
-  $query = db_select('drulenium_vr_releases', 'vr_re');
-  $result = $query
-    ->fields('vr_re', array('name', 'base_url', 'preset_cid'))
-    ->condition('vr_re.rid', $old_re_id)
-    ->execute();
-  $release = $result->fetchAssoc();
-  $base_release_name = $release['name'];
-  $test_base_url = $release['base_url'];
-  $preset_cid = $release['preset_cid'];
-  if(!empty($preset_cid)) {
-    $preset_obj = drulenium_preset_load($preset_cid);
-  }
-
-  $query = db_select('drulenium_vr_releases', 'vr_re');
-  $result = $query
-    ->fields('vr_re', array('name', 'base_url'))
-    ->condition('vr_re.rid', $new_re_id)
-    ->execute();
-  $release = $result->fetchAssoc();
-  $cmp_release_name = $release['name'];
-  $cmp_base_url = $release['base_url'];
-
-  drupal_set_title("Compare: " . $base_release_name . " & " . $cmp_release_name);
-
-  $header = array(t('Id'), t('URL'), t('Task'), t('Percentage Difference'), t('20-20 Slider Diff'), t('Diff Highlighted'), t('Animated GIF'));
-  $rows = array();
-
-  $query = db_select('drulenium_vr_results', 're');
-  $query->join('drulenium_vr_runs', 'b_ru', 're.run_base_id = b_ru.rid');
-  $query->join('drulenium_vr_runs', 'cmp_ru', 're.run_cmp_id = cmp_ru.rid');
-  $query->fields('re');
-  $query->fields('b_ru');
-  $query->addField('re', 'rid', 'result_id');
-  $query->addField('cmp_ru', 'snapshot', 'cmp_snapshot');
-  $query->condition('re.release_base_id', $old_re_id);
-  $query->condition('re.release_cmp_id', $new_re_id);
-  $result = $query->execute();
-
-  while($cmp_result = $result->fetchAssoc()) {
-    $gif_link = "";
-    $url_text = $cmp_result['url'];
-    if(empty($cmp_result['url'])){
-      $url_text = "Home Page";
-    }
-    if (!empty($cmp_result['diff_gif'])) {
-      $title = "<img src='" . $cmp_result['diff_gif'] . "' width=200 />";
-
-      $gif_link = l($title, $cmp_result['diff_gif'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-    }
-    $highlighted_link = "";
-    if (!empty($cmp_result['diff_highlight'])) {
-      // If it's github don't render image
-      if (strpos($cmp_result['diff_highlight'],'github.com') !== false) {
-        $highlighted_link = l("Diff on github", $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank')));
-      } else {
-        $title = "<img src='" . $cmp_result['diff_highlight'] . "' width=200 />";
-        $highlighted_link = l($title, $cmp_result['diff_highlight'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-        $highlighted_link .= '<br /> &nbsp;';
-      }
-    }
-
-    // When there is no difference, link to one screenshot.
-    if (empty($cmp_result['diff_gif']) && empty($cmp_result['diff_highlight'])) {
-      $highlighted_link = 'NO difference.';
-      $gif_link = l($highlighted_link, $cmp_result['snapshot'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-    }
-    else {
-      // When there os a difference link to both original screenshots.
-      $gif_link .= '<br />';
-      $gif_link .= l('Release A', $cmp_result['snapshot'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-      $gif_link .= ' - ';
-      $gif_link .= l('Release B', $cmp_result['cmp_snapshot'], array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-
-    }
-    $task_html = $cmp_result['step_num'];
-    if(!empty($preset_cid)) {
-      $plugins = $preset_obj->settings['plugins'];
-      $prev_task_html = drulenium_visual_regression_get_preset_snapshot_text($plugins, $cmp_result['step_num']);
-      if(!empty($prev_task_html)){
-        $task_html = drulenium_visual_regression_snapshot_plugin_to_text($plugins, $cmp_result['step_num']) . " taken after " . $prev_task_html . "<br/>";
-      }else{
-        $task_html = drulenium_visual_regression_snapshot_plugin_to_text($plugins, $cmp_result['step_num']) . "<br/>";
-      }
-    }
-    $diff_20_20_link = "";
-    if($cmp_result['diff_percent'] > 0){
-      $url = "/vr/twenty-twenty/" . $cmp_result['run_base_id'] . "/" . $cmp_result['run_cmp_id'];
-      // Propagate an access token.
-      if (user_is_anonymous()) {
-        $url .= '/' . _drulenium_secure_link_token($cmp_result['run_base_id'], $cmp_result['run_cmp_id']);
-      }
-      $diff_20_20_link = l('20-20 Diff', $url, array('attributes' => array('target' => '_blank'), 'html' => TRUE));
-    }
-    $rows[] = array(
-      $cmp_result['result_id'],
-      l($url_text, $test_base_url . $cmp_result['url']) . ' (' . l('B', $cmp_base_url . $cmp_result['url']) . ')',
-      $task_html,
-      $cmp_result['diff_percent'],
-      $diff_20_20_link,
-      $highlighted_link,
-      $gif_link,
-    );
-  }
-  if (count($rows)) {
-    $output = theme('table', array('header' => $header, 'rows' => $rows));
-  }
-  else {
+  if (!empty($result)) {
+    // Embed result table view
+    $output = views_embed_view('drulenium_diff_details', 'default', $old_re_id, $new_re_id);
+  } else {
     $output = t("Sorry no results yet.");
   }
   return $output;
@@ -1483,24 +1454,7 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     $old_re_id = $tmp;
   }
 
-  $query = db_select('drulenium_vr_releases', 'vr_re');
-  $result = $query
-    ->fields('vr_re', array('secure_id', 'name'))
-    ->condition('vr_re.rid', $old_re_id)
-    ->execute();
-  $release = $result->fetchAssoc();
-  $base_release_secure_id = $release['secure_id'];
 
-  $query = db_select('drulenium_vr_releases', 'vr_re');
-  $result = $query
-    ->fields('vr_re', array('secure_id'))
-    ->condition('vr_re.rid', $new_re_id)
-    ->execute();
-  $release = $result->fetchAssoc();
-  $cmp_release_secure_id = $release['secure_id'];
-
-
-  $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
   $output = l(t('Drulenium dashboard'), 'admin/structure/drulenium/vr');
   $output .= '<div class="update checked">';
   $github_username = variable_get('github_username', '');
@@ -1509,6 +1463,7 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   } elseif((variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'github') && !empty($github_username)) {
     $output .= ' <span class="process-locally">(' . l(t('Process via GitHub'), "admin/structure/drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
   } elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium') == 'drulenium') {
+    $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'admin/structure/drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
   }
@@ -2204,6 +2159,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   $release_id = db_insert('drulenium_vr_releases')->fields($fields)->execute();*/
 
   // Create db records for the individual pages.
+  $task_weight = 0;
   foreach ($pages_array as $key => $page) {
     if (empty($page)) {
       unset($pages_array[$key]);
@@ -2223,10 +2179,12 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
         $page = "Homepage";
       }
       // Create goto_task
-      drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'goto_task', $release_id, $task_title = "Go to {$page}", $task_settings = $plugin_arr);
+      drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'goto_task', $release_id, $task_title = "Go to {$page}", $task_settings = $plugin_arr, $task_weight);
+      $task_weight++;
       // Create snapshot_task if there's no pre defined preset
       if (empty($preset_cid)) {
-        drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'snapshot_task', $release_id, $task_title = "Snapshot of {$page}", $task_settings = array());
+        drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'snapshot_task', $release_id, $task_title = "Snapshot of {$page}", $task_settings = array(), $task_weight);
+        $task_weight++;
       }else{
         $preset_obj = drulenium_preset_load($preset_cid);
         foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
@@ -2234,24 +2192,25 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
           $task_title = drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr);
           switch ($plugin_type) {
             case PLUGIN_FILL_TEXTBOX:
-              drulenium_visual_regression_update_create_task_entity('fill_textbox_task', $release_id, $task_title, $plugin_arr);
+              drulenium_visual_regression_update_create_task_entity('fill_textbox_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
             case PLUGIN_CLICK_BUTTON:
-              drulenium_visual_regression_update_create_task_entity('click_button_task', $release_id, $task_title, $plugin_arr);
+              drulenium_visual_regression_update_create_task_entity('click_button_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
             case PLUGIN_HOVER_OVER:
-              drulenium_visual_regression_update_create_task_entity('hover_over_task', $release_id, $task_title, $plugin_arr);
+              drulenium_visual_regression_update_create_task_entity('hover_over_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
             case PLUGIN_WAIT:
-              drulenium_visual_regression_update_create_task_entity('wait_task', $release_id, $task_title, $plugin_arr);
+              drulenium_visual_regression_update_create_task_entity('wait_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
             case PLUGIN_VERIFY_TEXT:
-              drulenium_visual_regression_update_create_task_entity('verify_text_task', $release_id, $task_title, $plugin_arr);
+              drulenium_visual_regression_update_create_task_entity('verify_text_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
             case PLUGIN_TAKE_SCREENSHOT:
-              drulenium_visual_regression_update_create_task_entity('snapshot_task', $release_id, $task_title, $plugin_arr);
+              drulenium_visual_regression_update_create_task_entity('snapshot_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
           }
+          $task_weight++;
         }
       }
       //$result = db_insert('drulenium_vr_runs')->fields($fields)->execute();
@@ -2300,11 +2259,12 @@ function drulenium_visual_regression_screenshot_plugin_to_text($plugin_arr) {
 }
 
 // Task is part of the $release_id
-function drulenium_visual_regression_update_create_task_entity($entity_bundle_type, $release_id, $task_title, $task_settings = array()){
+function drulenium_visual_regression_update_create_task_entity($entity_bundle_type, $release_id, $task_title, $task_settings = array(), $task_weight = 0){
   $entity_type = 'drulenium_test_task';
   $task_entity = entity_create($entity_type, array('type' => $entity_bundle_type));
   $task_wrapper = entity_metadata_wrapper($entity_type, $task_entity);
   $task_wrapper->field_dr_task_release = $release_id;
+  $task_wrapper->field_dr_task_weight = $task_weight;
   $task_wrapper->title = $task_title;
   if(!empty($task_settings)){
     $task_wrapper->field_dr_task_settings = drupal_json_encode($task_settings);

@@ -207,6 +207,52 @@ function drulenium_feature_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'drulenium_test_task-click_button_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-click_button_task-field_dr_task_weight'] = array(
+    'bundle' => 'click_button_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => FALSE,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 12,
+    ),
+  );
+
+  // Exported field_instance:
   // 'drulenium_test_task-fill_textbox_task-field_dr_task_log'.
   $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_log'] = array(
     'bundle' => 'fill_textbox_task',
@@ -399,6 +445,52 @@ function drulenium_feature_field_default_field_instances() {
       'settings' => array(),
       'type' => 'options_buttons',
       'weight' => 2,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-fill_textbox_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-fill_textbox_task-field_dr_task_weight'] = array(
+    'bundle' => 'fill_textbox_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => FALSE,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 12,
     ),
   );
 
@@ -603,6 +695,53 @@ function drulenium_feature_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'drulenium_test_task-goto_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-goto_task-field_dr_task_weight'] = array(
+    'bundle' => 'goto_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => 0,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 6,
+    ),
+  );
+
+  // Exported field_instance:
   // 'drulenium_test_task-hover_over_task-field_dr_task_log'.
   $field_instances['drulenium_test_task-hover_over_task-field_dr_task_log'] = array(
     'bundle' => 'hover_over_task',
@@ -795,6 +934,52 @@ function drulenium_feature_field_default_field_instances() {
       'settings' => array(),
       'type' => 'options_buttons',
       'weight' => 2,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-hover_over_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-hover_over_task-field_dr_task_weight'] = array(
+    'bundle' => 'hover_over_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => FALSE,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 12,
     ),
   );
 
@@ -1000,6 +1185,52 @@ function drulenium_feature_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'drulenium_test_task-snapshot_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-snapshot_task-field_dr_task_weight'] = array(
+    'bundle' => 'snapshot_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => FALSE,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 7,
+    ),
+  );
+
+  // Exported field_instance:
   // 'drulenium_test_task-verify_text_task-field_dr_task_log'.
   $field_instances['drulenium_test_task-verify_text_task-field_dr_task_log'] = array(
     'bundle' => 'verify_text_task',
@@ -1192,6 +1423,52 @@ function drulenium_feature_field_default_field_instances() {
       'settings' => array(),
       'type' => 'options_buttons',
       'weight' => 2,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_test_task-verify_text_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-verify_text_task-field_dr_task_weight'] = array(
+    'bundle' => 'verify_text_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => FALSE,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 12,
     ),
   );
 
@@ -1390,6 +1667,52 @@ function drulenium_feature_field_default_field_instances() {
     ),
   );
 
+  // Exported field_instance:
+  // 'drulenium_test_task-wait_task-field_dr_task_weight'.
+  $field_instances['drulenium_test_task-wait_task-field_dr_task_weight'] = array(
+    'bundle' => 'wait_task',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 0,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_integer',
+        'weight' => 5,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_test_task',
+    'field_name' => 'field_dr_task_weight',
+    'label' => 'Weight',
+    'required' => FALSE,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 12,
+    ),
+  );
+
   // Translatables
   // Included for use with string extractors like potx.
   t('Log');
@@ -1397,6 +1720,7 @@ function drulenium_feature_field_default_field_instances() {
   t('Settings');
   t('Status');
   t('Test release');
+  t('Weight');
 
   return $field_instances;
 }
