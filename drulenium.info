@@ -2,6 +2,9 @@ name = "Drulenium"
 description = "Provides environment to create selenium test cases"
 dependencies[] = "ctools"
 dependencies[] = "entity"
+dependencies[] = "eck"
+dependencies[] = "drulenium_feature"
+dependencies[] = "drulenium_visual_regression"
 
 package = "Testing"
 core =7.x

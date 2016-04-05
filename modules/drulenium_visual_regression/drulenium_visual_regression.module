@@ -75,11 +75,13 @@ function drulenium_visual_regression_libraries_info() {
  * Implements hook_menu().
  */
 function drulenium_visual_regression_menu() {
-  $items['admin/structure/drulenium/vr'] = array(
+  $items['drulenium/vr'] = array(
     'type' => MENU_LOCAL_TASK,
+    'weight' => 999,
     'title' => 'Visual Regression',
     'description' => 'Configuration for Visual Regression Testing.',
     'page callback' => 'drulenium_visual_regression_releases',
+    'page arguments' => array(2),
     'access callback' => 'user_access',
     'access arguments' => array('run_visual_tests'),
   );
@@ -158,8 +160,17 @@ function drulenium_visual_regression_menu() {
     'access arguments' => array(2, 3, 4),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/structure/drulenium/settings/vr'] = array(
-      'type' => MENU_LOCAL_TASK,
+  $items['drulenium/settings'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1000,
+    'title' => 'Settings',
+    'description' => 'Settings for Drulenium functionality.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drulenium_visual_regression_admin_settings_form'),
+    'access arguments' => array('administer_drulenium_vr'),
+  );
+  $items['drulenium/settings/vr'] = array(
+      'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => 0,
       'title' => 'Visual regression settings',
       'description' => 'Settings for Visual regression functionality.',
@@ -167,7 +178,7 @@ function drulenium_visual_regression_menu() {
       'page arguments' => array('drulenium_visual_regression_admin_settings_form'),
       'access arguments' => array('administer_drulenium_vr'),
   );
-  $items['admin/structure/drulenium/settings/cleanup'] = array(
+  $items['drulenium/settings/cleanup'] = array(
       'type' => MENU_LOCAL_TASK,
       'weight' => 2,
       'title' => 'Cleanup',
@@ -177,7 +188,7 @@ function drulenium_visual_regression_menu() {
       'access arguments' => array('administer_drulenium_vr'),
       'file' => 'drulenium_visual_regression.admin.inc',
   );
-  $items['admin/structure/drulenium/settings/github'] = array(
+  $items['drulenium/settings/github'] = array(
       'type' => MENU_LOCAL_TASK,
       'weight' => 8,
       'title' => 'GitHub',
@@ -187,7 +198,7 @@ function drulenium_visual_regression_menu() {
       'access arguments' => array('administer_drulenium_vr'),
       'file' => 'drulenium_visual_regression.admin.inc',
   );
-  $items['admin/structure/drulenium/settings/saucelabs'] = array(
+  $items['drulenium/settings/saucelabs'] = array(
       'type' => MENU_LOCAL_TASK,
       'weight' => 6,
       'title' => 'Sauce Labs',
@@ -197,7 +208,7 @@ function drulenium_visual_regression_menu() {
       'access arguments' => array('administer_drulenium_vr'),
       'file' => 'drulenium_visual_regression.admin.inc',
   );
-  $items['admin/structure/drulenium/settings/browserstack'] = array(
+  $items['drulenium/settings/browserstack'] = array(
       'type' => MENU_LOCAL_TASK,
       'weight' => 5,
       'title' => 'BrowserStack',
@@ -207,7 +218,7 @@ function drulenium_visual_regression_menu() {
       'access arguments' => array('administer_drulenium_vr'),
       'file' => 'drulenium_visual_regression.admin.inc',
   );
-  $items['admin/structure/drulenium/settings/local'] = array(
+  $items['drulenium/settings/local'] = array(
       'type' => MENU_LOCAL_TASK,
       'weight' => 4,
       'title' => 'Local Server',
@@ -1501,19 +1512,23 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   return $output;
 }
 
-function drulenium_visual_regression_releases() {
+function drulenium_visual_regression_releases($preset_numeric_id = '') {
   drupal_set_title("Drulenium: Automated frontend testing");
-  $build_form = drupal_get_form('drulenium_visual_regression_create_release_form');
+  $build_form = drupal_get_form('drulenium_visual_regression_create_release_form', $release_id = NULL, $preset_numeric_id);
   $output = drupal_render($build_form);
   $compare_form = drupal_get_form('drulenium_visual_regression_compare_releases_form');
   $output .= drupal_render($compare_form);
   return $output;
 }
 
-function drulenium_visual_regression_create_release_form($form, &$form_state, $release_id = NULL) {
+function drulenium_visual_regression_create_release_form($form, &$form_state, $release_id = NULL, $preset_numeric_id = '') {
   $preset_cid = '';
-  if(isset($_GET["cid"])) {
-    $preset_cid = $_GET["cid"];
+  if(!empty($preset_numeric_id)) {
+    $preset_cid = db_select('drulenium_preset', 'p')
+      ->fields('p', array('name'))
+      ->condition('p.oid', $preset_numeric_id)
+      ->execute()
+      ->fetchfield();
   }
   $form = array();
   $form['drulenium_vr_config'] = array(
@@ -2342,9 +2357,17 @@ function drulenium_visual_regression_get_preset_config($preset_cid) {
 }
 
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
+  $preset_numeric_id = '';
+  if(arg(0) == 'drulenium' && arg(1) == 'vr'){
+    $preset_numeric_id = arg(2);
+  }
   $preset_cid = '';
-  if(isset($_GET["cid"])) {
-    $preset_cid = $_GET["cid"];
+  if(!empty($preset_numeric_id)) {
+    $preset_cid = db_select('drulenium_preset', 'p')
+      ->fields('p', array('name'))
+      ->condition('p.oid', $preset_numeric_id)
+      ->execute()
+      ->fetchfield();
   }
 
   $pages_array = array();

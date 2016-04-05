@@ -69,10 +69,10 @@ function drulenium_entity_info() {
         'label' => 'Drulenium release',
         // 'admin' key is used by the Field UI to provide field and
         // display UI pages.
-        'admin' => array(
+        /*'admin' => array(
           'path' => 'admin/structure/drulenium/results/manage',
           'access arguments' => array('administer drulenium entities'),
-        ),
+        ),*/
       ),
     ),
     // View modes allow entities to be displayed differently based on context.
@@ -471,7 +471,7 @@ function drulenium_default_drulenium_preset() {
 function drulenium_menu() {
   $items = array();
 
-  $items['admin/structure/drulenium'] = array(
+  /*$items['admin/structure/drulenium'] = array(
     'title' => 'Drulenium',
     'description' => 'Settings for Drulenium plugins.',
     'page callback' => 'drupal_get_form',
@@ -486,7 +486,7 @@ function drulenium_menu() {
   );
 
   $items['admin/structure/drulenium/settings'] = array(
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'type' => MENU_LOCAL_TASK,
     'title' => 'Settings',
     'description' => 'Settings for Drulenium plugins.',
     'page callback' => 'drupal_get_form',
@@ -498,35 +498,21 @@ function drulenium_menu() {
     'access arguments' => array(
       'create_test_cases'
     )
-  );
-
-  $items['admin/structure/drulenium/presets/run'] = array(
+  );*/
+  $items['drulenium'] = array(
     'title' => 'Run tests',
-    'page callback' => 'drulenium_tests_table_list',
+    'page callback' => 'drulenium_default_menu_callback',
     'access arguments' => array(
       'run_test_cases'
     ),
-    'type' => MENU_LOCAL_TASK
-  );
-
-  // This provides a place for Field API to hang its own
-  // interface and has to be the same as what was defined
-  // in basic_entity_info() above.
-  $items['admin/structure/drulenium/results'] = array(
-    'title' => 'Results',
-    'weight' => 100,
-    'type' => MENU_LOCAL_TASK,
-    'page callback' => 'drulenium_list_entities',
-    'access arguments' => array('administer drulenium entities'),
-  );
-
-  // List of all drulenium entities.
-  $items['admin/structure/drulenium/results/list'] = array(
-    'title' => 'List',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
   return $items;
+}
+
+function drulenium_default_menu_callback() {
+  // Redirect to Tests page
+  drupal_goto('drulenium/tests');
 }
 
 function drulenium_tests_table_list() {

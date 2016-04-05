@@ -9,23 +9,26 @@
 $plugin = array(
   'schema' => 'drulenium_preset',
   'menu' => array(
-    'menu prefix' => 'admin/structure/drulenium',
-    'menu item' => 'presets',
+    'menu prefix' => 'drulenium',
+    'menu item' => 'tests',
     'menu title' => 'Tests',
-    'menu description' => 'Add, edit or delete presets.',
+    'menu description' => 'Run, Add, edit or delete tests.',
   ),
-  'title' => t('Drupal presets'),
+  'title' => t('Drulenium'),
 
-  'title singular' => t('preset'),
-  'title plural' => t('presets'),
-  'title singular proper' => t('Preset'),
-  'title plural proper' => t('Presets'),
+  'title singular' => t('test'),
+  'title plural' => t('tests'),
+  'title singular proper' => t('Test'),
+  'title plural proper' => t('Tests'),
 
   'handler' => array(
     'class' => 'drulenium_presets_ui',
     'parent' => 'ctools_export_ui',
   ),
 );
+
+$plugin['menu']['items']['edit']['path'] = '%ctools_export_ui/edit';
+$plugin['menu']['items']['edit']['page arguments'] = array('drulenium_presets_ui', 'edit', 2);
 
 /**
  * submit handler
@@ -53,7 +56,6 @@ function drulenium_presets_ui_form_submit(&$form, &$form_state)
  * The preset add/edit form
  */
 function drulenium_presets_ui_form(&$form, &$form_state) {
-
   ctools_include('dependent');
   $export = $form_state['item'];
 
@@ -254,13 +256,13 @@ function _drulenium_presets_ui_create_block_form($export) {
     '#default_value' => isset($export->settings['pages']['term']['custom']) ? $export->settings['pages']['term']['custom'] : array(),
   );
 
-  $user_types = user_roles(FALSE);
+  /*$user_types = user_roles(FALSE);
   $form['test_as_roles'] = array(
     '#type' => 'radios',
     '#title' => t('Test as specific user roles'),
     '#options' => $user_types,
     '#description' => t('Test as users that belong to the above user role.'),
     '#default_value' => isset($export->settings['test_as_roles']) ? $export->settings['test_as_roles'] : 1,
-  );
+  );*/
   return $form;
 }
