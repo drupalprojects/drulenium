@@ -1316,7 +1316,7 @@ function drulenium_visual_regression_create_initial_comparision_report_in_db($ol
         $diff_wrapper->field_dr_diff_base_task = $base_task_id;
         $diff_wrapper->field_dr_diff_cmp_task = $cmp_task_items_id;
         $diff_wrapper->title = $base_task_title;
-        $diff_wrapper->started = REQUEST_TIME;
+        $diff_wrapper->created = REQUEST_TIME;
         $diff_wrapper->save();
       }
     }
