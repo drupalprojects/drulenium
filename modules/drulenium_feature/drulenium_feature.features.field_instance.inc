@@ -1713,14 +1713,228 @@ function drulenium_feature_field_default_field_instances() {
     ),
   );
 
+  // Exported field_instance:
+  // 'drulenium_visual_diff-drulenium_visual_diff-field_diff_file_gif'.
+  $field_instances['drulenium_visual_diff-drulenium_visual_diff-field_diff_file_gif'] = array(
+    'bundle' => 'drulenium_visual_diff',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 4,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_visual_diff',
+    'field_name' => 'field_diff_file_gif',
+    'label' => 'GIF image',
+    'required' => 0,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'text',
+      'settings' => array(
+        'size' => 60,
+      ),
+      'type' => 'text_textfield',
+      'weight' => 5,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_visual_diff-drulenium_visual_diff-field_diff_file_highlight'.
+  $field_instances['drulenium_visual_diff-drulenium_visual_diff-field_diff_file_highlight'] = array(
+    'bundle' => 'drulenium_visual_diff',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 3,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_visual_diff',
+    'field_name' => 'field_diff_file_highlight',
+    'label' => 'Highlighted image',
+    'required' => 0,
+    'settings' => array(
+      'text_processing' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'text',
+      'settings' => array(
+        'size' => 60,
+      ),
+      'type' => 'text_textfield',
+      'weight' => 4,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_visual_diff-drulenium_visual_diff-field_dr_diff_base_task'.
+  $field_instances['drulenium_visual_diff-drulenium_visual_diff-field_dr_diff_base_task'] = array(
+    'bundle' => 'drulenium_visual_diff',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'entityreference',
+        'settings' => array(
+          'link' => FALSE,
+        ),
+        'type' => 'entityreference_label',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_visual_diff',
+    'field_name' => 'field_dr_diff_base_task',
+    'label' => 'base_task',
+    'required' => 1,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => 1,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_visual_diff-drulenium_visual_diff-field_dr_diff_cmp_task'.
+  $field_instances['drulenium_visual_diff-drulenium_visual_diff-field_dr_diff_cmp_task'] = array(
+    'bundle' => 'drulenium_visual_diff',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'entityreference',
+        'settings' => array(
+          'link' => FALSE,
+        ),
+        'type' => 'entityreference_label',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_visual_diff',
+    'field_name' => 'field_dr_diff_cmp_task',
+    'label' => 'cmp_task',
+    'required' => 1,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => 2,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'drulenium_visual_diff-drulenium_visual_diff-field_dr_diff_percentage'.
+  $field_instances['drulenium_visual_diff-drulenium_visual_diff-field_dr_diff_percentage'] = array(
+    'bundle' => 'drulenium_visual_diff',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'number',
+        'settings' => array(
+          'decimal_separator' => '.',
+          'prefix_suffix' => TRUE,
+          'scale' => 2,
+          'thousand_separator' => '',
+        ),
+        'type' => 'number_decimal',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'drulenium_visual_diff',
+    'field_name' => 'field_dr_diff_percentage',
+    'label' => 'Diff Percentage',
+    'required' => 0,
+    'settings' => array(
+      'max' => '',
+      'min' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'number',
+      'settings' => array(),
+      'type' => 'number',
+      'weight' => 3,
+    ),
+  );
+
   // Translatables
   // Included for use with string extractors like potx.
+  t('Diff Percentage');
+  t('GIF image');
+  t('Highlighted image');
   t('Log');
   t('Output');
   t('Settings');
   t('Status');
   t('Test release');
   t('Weight');
+  t('base_task');
+  t('cmp_task');
 
   return $field_instances;
 }

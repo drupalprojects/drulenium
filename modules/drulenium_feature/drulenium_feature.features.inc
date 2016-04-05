@@ -65,6 +65,13 @@ function drulenium_feature_eck_bundle_info() {
       'label' => 'Wait Task',
       'config' => array(),
     ),
+    'drulenium_visual_diff_drulenium_visual_diff' => array(
+      'machine_name' => 'drulenium_visual_diff_drulenium_visual_diff',
+      'entity_type' => 'drulenium_visual_diff',
+      'name' => 'drulenium_visual_diff',
+      'label' => 'Drulenium visual diff',
+      'config' => array(),
+    ),
   );
   return $items;
 }
@@ -77,6 +84,27 @@ function drulenium_feature_eck_entity_type_info() {
     'drulenium_test_task' => array(
       'name' => 'drulenium_test_task',
       'label' => 'Drulenium Test Task',
+      'properties' => array(
+        'title' => array(
+          'label' => 'Title',
+          'type' => 'text',
+          'behavior' => 'title',
+        ),
+        'created' => array(
+          'label' => 'Created',
+          'type' => 'integer',
+          'behavior' => 'created',
+        ),
+        'changed' => array(
+          'label' => 'Changed',
+          'type' => 'integer',
+          'behavior' => 'changed',
+        ),
+      ),
+    ),
+    'drulenium_visual_diff' => array(
+      'name' => 'drulenium_visual_diff',
+      'label' => 'Drulenium visual diff',
       'properties' => array(
         'title' => array(
           'label' => 'Title',
