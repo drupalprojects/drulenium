@@ -1,7 +1,7 @@
 name = Drulenium feature
 description = Entities & views for Drulenium module
 core = 7.x
-package = Drulenium
+package = Testing
 dependencies[] = eck
 dependencies[] = entityreference
 dependencies[] = features

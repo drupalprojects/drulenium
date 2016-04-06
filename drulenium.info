@@ -1,12 +1,14 @@
-name = "Drulenium"
-description = "Provides environment to create selenium test cases"
-dependencies[] = "ctools"
-dependencies[] = "entity"
-dependencies[] = "eck"
-dependencies[] = "drulenium_feature"
-dependencies[] = "drulenium_visual_regression"
+name = Drulenium
+description = Provides environment to create selenium test cases
+# For Blockly
+dependencies[] = libraries
+dependencies[] = ctools
+dependencies[] = entity
+dependencies[] = eck
+dependencies[] = drulenium_feature
+dependencies[] = drulenium_visual_regression
 
-package = "Testing"
+package = Testing
 core =7.x
 
 configure = admin/structure/drulenium

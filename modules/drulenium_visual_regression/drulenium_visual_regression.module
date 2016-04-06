@@ -436,6 +436,54 @@ function drulenium_visual_regression_compare_process_local($old_re_id, $new_re_i
   batch_process("drulenium/vr/compare/$old_re_id/$new_re_id");
 }
 
+function drulenium_visual_regression_update_result_in_drulenium_db_batch_op($old_re_id, $new_re_id, $secure_id, $progress, $limit, &$context) {
+  /*
+   * Get diff entities with diff percent greater than zero.
+   */
+  $query = db_select('eck_drulenium_visual_diff', 'diff');
+  $query-> leftJoin('field_data_field_dr_diff_base_task', 'base_tsk', 'diff.id = base_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_cmp_task', 'cmp_tsk', 'diff.id = cmp_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'base_rel', 'base_tsk.field_dr_diff_base_task_target_id = base_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'cmp_rel', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_percentage', 'diff_percent', 'diff.id = diff_percent.entity_id');
+  $query-> leftJoin('field_data_field_diff_file_gif', 'gif', 'diff.id = gif.entity_id');
+  $query-> leftJoin('field_data_field_diff_file_highlight', 'diff_file', 'diff.id = diff_file.entity_id');
+  $query->fields('diff', array('id'));
+  $query->fields('diff_percent', array('field_dr_diff_percentage_value'));
+  $query->fields('diff_file', array('field_diff_file_highlight_value'));
+  $query->fields('gif', array('field_diff_file_gif_value'));
+  $query->condition('base_rel.field_dr_task_release_target_id', $old_re_id);
+  $query->condition('cmp_rel.field_dr_task_release_target_id', $new_re_id);
+  $query->condition('diff_percent.field_dr_diff_percentage_value', 0, '>');
+  $query->range($progress, $limit);
+  $result = $query->execute();
+  while ($res = $result->fetchAssoc()) {
+    dsm($res);
+    $diff_entity_id = $res['id'];
+    $diff_percent = $res['field_dr_diff_percentage_value'];
+    $diff_file = $res['field_diff_file_highlight_value'];
+    $gif_file = $res['field_diff_file_gif_value'];
+    /*
+     * TODO: Use imagemagick to reduce file size with lower resolution before uploading.
+     */
+    // Get file paths from file URL's
+    $diff_file_path = substr($diff_file, strlen($GLOBALS['base_url'])+1);
+    //$diff_file_path = drupal_realpath(substr($diff_file, strlen($GLOBALS['base_url'])+1));
+    $diff_file_data = file_get_contents($diff_file_path);
+    $gif_file_path = substr($gif_file, strlen($GLOBALS['base_url'])+1);
+    $gif_file_data = file_get_contents($gif_file_path);
+    $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
+      'drulenium.api_update_result' => array($secure_id, $diff_percent, $diff_file_data, $gif_file_data),
+    ));
+    drupal_set_message($result);
+  }
+
+  // Update progress for message.
+  $progress = $progress + $limit;
+  // update message during each run so you know where you are in the process
+  $context['message'] = 'Now processing Upload process: ' . $progress;
+}
+
 // this is what runs multiple times per batch
 // progress and limit are updated during each run
 function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $progress, $limit, &$context) {
@@ -615,6 +663,23 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
 function drulenium_visual_regression_compare_batch_finished($success, $results, $operations) {
   if ($success) {
     drupal_set_message('Comparision process is completed.');
+  }
+  else {
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array(
+      '%error_operation' => $error_operation[0],
+      '@arguments' => print_r($error_operation[1], TRUE)
+    ));
+    drupal_set_message($message, 'error');
+  }
+}
+
+/**
+ * Batch 'finished' callback used by Compare batch.
+ */
+function drulenium_visual_regression_update_result_in_drulenium_db_batch_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message('Upload process is completed.');
   }
   else {
     $error_operation = reset($operations);
@@ -1511,6 +1576,7 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
 }
 
 function drulenium_visual_regression_releases($preset_numeric_id = '') {
+  //drulenium_visual_regression_update_result_in_drulenium_db(6, 7);
   drupal_set_title("Drulenium: Automated frontend testing");
   $build_form = drupal_get_form('drulenium_visual_regression_create_release_form', $release_id = NULL, $preset_numeric_id);
   $output = drupal_render($build_form);
@@ -2436,29 +2502,63 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
 }
 
-function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id){
-  $query = db_select('drulenium_vr_results', 're');
-  $query->join('drulenium_vr_runs', 'b_ru', 're.run_base_id = b_ru.rid');
-  $query->join('drulenium_vr_runs', 'cmp_ru', 're.run_cmp_id = cmp_ru.rid');
-  $query->fields('re');
-  $query->fields('b_ru');
-  $query->addField('re', 'rid', 'result_id');
-  $query->addField('cmp_ru', 'snapshot', 'cmp_snapshot');
-  $query->condition('re.release_base_id', $old_re_id);
-  $query->condition('re.release_cmp_id', $new_re_id);
-  $query->condition('re.diff_percent', 0, '>');
-  $result = $query->execute();
+function drulenium_visual_regression_get_secure_id($re_id)
+{
+  $result = db_select('drulenium', 're')
+    ->fields('re', array('secure_id'))
+    ->condition('re.drulenium_id', $re_id)
+    ->execute();
+  $release = $result->fetchAssoc();
+  $secure_id = $release['secure_id'];
+  return $secure_id;
+}
 
-  $params = array();
-  while($cmp_result = $result->fetchAssoc()) {
-    $params[] = $cmp_result;
+function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id){
+  // Get secure id's of both releases
+  $old_re_secure_id = drulenium_visual_regression_get_secure_id($old_re_id);
+  $new_re_secure_id = drulenium_visual_regression_get_secure_id($new_re_id);
+  $secure_id = "{$old_re_secure_id}--{$new_re_secure_id}";
+  $email = variable_get('drulenium_vr_release_notify_email', '');
+  // Create remote request record.
+  $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
+    'drulenium.api_create_result' => array($secure_id, $email),
+  ));
+  drupal_set_message($result);
+  /*
+   * Get Max count of all diff entities with diff percent greater than zero.
+   */
+  $query = db_select('eck_drulenium_visual_diff', 'diff');
+  $query-> leftJoin('field_data_field_dr_diff_base_task', 'base_tsk', 'diff.id = base_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_cmp_task', 'cmp_tsk', 'diff.id = cmp_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'base_rel', 'base_tsk.field_dr_diff_base_task_target_id = base_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'cmp_rel', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_percentage', 'diff_percent', 'diff.id = diff_percent.entity_id');
+  $query->fields('diff', array('id'));
+  $query->condition('base_rel.field_dr_task_release_target_id', $old_re_id);
+  $query->condition('cmp_rel.field_dr_task_release_target_id', $new_re_id);
+  $query->condition('diff_percent.field_dr_diff_percentage_value', 0, '>');
+  $result = $query->execute();
+  $query->addExpression('COUNT(id)', 'run_count');
+  $result = $query->execute();
+  $row = $result->fetchAssoc();
+  $max = $row['run_count'];
+
+  // Process the queue using Batch API.
+  $batch = array(
+    'file' => drupal_get_path('module', 'drulenium_visual_regression') . '/drulenium_visual_regression.module',
+    'operations' => array(),
+    'finished' => 'drulenium_visual_regression_update_result_in_drulenium_db_batch_finished',
+    'title' => t('Performing %operation on the selected items...', array('%operation' => "Upload to Drulenium.org")),
+  );
+  $progress = 0; // where to start
+  $limit = 1; // how many to process for each run
+
+  while ($progress <= $max) {
+    $batch['operations'][] = array('drulenium_visual_regression_update_result_in_drulenium_db_batch_op', array($old_re_id, $new_re_id, $secure_id, $progress, $limit));
+    $progress = $progress + $limit;
   }
-  if(!empty($params)){
-    $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
-        'drulenium.api_update_result' => array($params),
-    ));
-    drupal_set_message($result);
-  }
+
+  batch_set($batch);
 }
 
 function drulenium_visual_regression_create_release_in_drulenium_db($release_id, $secureid, $vr_base_url, $pages_array, $test_user_name, $test_user_pass){

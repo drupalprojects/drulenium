@@ -245,6 +245,7 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
   drush_backend_batch_process();
   if (variable_get('drulenium_vr_release_upload_to_Drulenium_org', 0) == 1) {
     drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
+    drush_backend_batch_process();
   }
   global $base_url;
   drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$old_re_id/$new_re_id", 'success');
