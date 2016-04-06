@@ -49,9 +49,68 @@ function drulenium_visual_regression_drush_command() {
   $items['vr-download-webdriver'] = array(
     'callback'    => 'drush_drulenium_visual_regression_download_webdriver',
     'description' => dt('This command used to download selenium php webdriver.'),
-    'aliases'     => array('vrdl'),
+    'aliases'     => array('vr-dl-se'),
+  );
+  $items['vr-download-blockly'] = array(
+    'callback'    => 'drush_drulenium_visual_regression_download_blockly',
+    'description' => dt('This command used to download blockly javascript library.'),
+    'aliases'     => array('vr-dl-bl'),
   );
   return $items;
+}
+
+/**
+ * Helper function downloads blockly javascript library.
+ */
+function drush_drulenium_visual_regression_download_blockly() {
+
+  // Get the path from the argument, if site, or use the default.
+  $drush_context = drush_get_context('DRUSH_DRUPAL_ROOT');
+
+  // Can we use Libraries API?
+  if (module_exists('libraries') && function_exists('libraries_get_path')) {
+    $libraries_dir = libraries_get_path('blockly');
+  }
+
+  // Load the path.
+  $path = $libraries_dir ? $drush_context . '/' . $libraries_dir : $drush_context . '/sites/all/libraries/blockly';
+
+  drush_log(dt('Download destination path: "@path"', array('@path' => $path)), 'notice');
+
+  // Set the directory to the download location.
+  $olddir = getcwd();
+
+  $download_path = str_replace('/blockly', '', $path);
+
+  chdir($download_path);
+
+  $download_uri = 'https://github.com/google/blockly/zipball/master';
+
+  // Download the zip archive.
+  if ($filepath = drush_download_file($download_uri, $download_path . '/google-blockly-9d4baa9.zip')) {
+    $filename = basename($filepath);
+    $dirname = basename($filepath, '.zip');
+
+    // Decompress the zip archive.
+    drush_tarball_extract($filename);
+
+    // Change the directory name to "select2" if needed.
+    if ($dirname != 'blockly') {
+      drush_move_dir($dirname, 'blockly', TRUE);
+      $dirname = 'blockly';
+    }
+  }
+
+  if (is_dir($dirname)) {
+    drush_log(dt('Blockly library has been installed in @path', array('@path' => $path)), 'success');
+  }
+  else {
+    drush_log(dt('Drush was unable to install the Blockly library to @path', array('@path' => $path)), 'error');
+  }
+
+  // Set working directory back to the previous working directory.
+  chdir($olddir);
+
 }
 
 /**

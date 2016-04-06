@@ -15,6 +15,7 @@ $plugin = array(
     'menu description' => 'Run, Add, edit or delete tests.',
   ),
   'title' => t('Drulenium'),
+  'access' => 'administer_tests',
 
   'title singular' => t('test'),
   'title plural' => t('tests'),

@@ -354,6 +354,10 @@ function drulenium_permission() {
       'title' => t('Create test cases'),
       'description' => t('add or remove test cases'),
     ),
+    'administer_tests' => array(
+      'title' => t('Administer tests'),
+      'description' => t('Run, Add or Delete tests'),
+    ),
     'administer_drulenium_settings' => array(
       'title' => t('Administer Drulenium Settings'),
       'description' => t('Administer settings'),
