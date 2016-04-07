@@ -296,19 +296,19 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
 
   if ($old_re_id == null || $new_re_id == null) {
     // Get the last two releases.
-    $result = db_select('drulenium_vr_releases', 'vr_re')
-      ->fields('vr_re', array('rid'))
-      ->orderBy('rid', 'DESC')
+    $result = db_select('drulenium', 'vr_re')
+      ->fields('vr_re', array('drulenium_id'))
+      ->orderBy('drulenium_id', 'DESC')
       ->range(0, 2)
       ->execute();
   }
   if ($new_re_id == null) {
     $row1 = $result->fetchAssoc();
-    $new_re_id = $row1['rid'];
+    $new_re_id = $row1['drulenium_id'];
   }
   if ($old_re_id == null) {
     $row2 = $result->fetchAssoc();
-    $old_re_id = $row2['rid'];
+    $old_re_id = $row2['drulenium_id'];
   }
   _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
   drush_backend_batch_process();
@@ -322,6 +322,22 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
  * Optionally one per category if the preset_category is used.
  */
 function drush_drulenium_visual_regression_upload($old_re_id = null, $new_re_id = null) {
+  if ($old_re_id == null || $new_re_id == null) {
+    // Get the last two releases.
+    $result = db_select('drulenium', 'vr_re')
+      ->fields('vr_re', array('drulenium_id'))
+      ->orderBy('drulenium_id', 'DESC')
+      ->range(0, 2)
+      ->execute();
+  }
+  if ($new_re_id == null) {
+    $row1 = $result->fetchAssoc();
+    $new_re_id = $row1['drulenium_id'];
+  }
+  if ($old_re_id == null) {
+    $row2 = $result->fetchAssoc();
+    $old_re_id = $row2['drulenium_id'];
+  }
   drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
   drush_backend_batch_process();
 }
@@ -340,16 +356,16 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
     }
     if ($category == $preset_category) {
       // Get last two releases of this preset.
-      $result = db_select('drulenium_vr_releases', 'vr_re')
-        ->fields('vr_re', array('rid'))
-        ->condition('vr_re.preset_cid', $preset_cid)
-        ->orderBy('rid', 'DESC')
+      $result = db_select('drulenium', 'vr_re')
+        ->fields('vr_re', array('drulenium_id'))
+        ->condition('vr_re.test_id', $preset_cid)
+        ->orderBy('drulenium_id', 'DESC')
         ->range(0, 2)
         ->execute();
       $row1 = $result->fetchAssoc();
-      $new_re_id = $row1['rid'];
+      $new_re_id = $row1['drulenium_id'];
       $row2 = $result->fetchAssoc();
-      $old_re_id = $row2['rid'];
+      $old_re_id = $row2['drulenium_id'];
       _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
     }
   }
