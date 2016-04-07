@@ -448,7 +448,7 @@ function drulenium_visual_regression_update_result_in_drulenium_db_batch_op($old
   $query-> leftJoin('field_data_field_dr_diff_percentage', 'diff_percent', 'diff.id = diff_percent.entity_id');
   $query-> leftJoin('field_data_field_diff_file_gif', 'gif', 'diff.id = gif.entity_id');
   $query-> leftJoin('field_data_field_diff_file_highlight', 'diff_file', 'diff.id = diff_file.entity_id');
-  $query->fields('diff', array('id'));
+  $query->fields('diff', array('id', 'title'));
   $query->fields('diff_percent', array('field_dr_diff_percentage_value'));
   $query->fields('diff_file', array('field_diff_file_highlight_value'));
   $query->fields('gif', array('field_diff_file_gif_value'));
@@ -459,6 +459,7 @@ function drulenium_visual_regression_update_result_in_drulenium_db_batch_op($old
   $result = $query->execute();
   while ($res = $result->fetchAssoc()) {
     $diff_entity_id = $res['id'];
+    $diff_entity_title = $res['title'];
     $diff_percent = $res['field_dr_diff_percentage_value'];
     $diff_file = $res['field_diff_file_highlight_value'];
     $gif_file = $res['field_diff_file_gif_value'];
@@ -480,7 +481,7 @@ function drulenium_visual_regression_update_result_in_drulenium_db_batch_op($old
     $gif_file_url = isset($gif_file_url_array[0]) ? $gif_file_url_array[0] : '';
 
     $rpc_result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
-      'drulenium.api_update_result' => array($secure_id, $diff_percent, $diff_file_url, $gif_file_url),
+      'drulenium.api_update_result' => array($secure_id, $diff_entity_title, $diff_percent, $diff_file_url, $gif_file_url),
     ));
     drupal_set_message($rpc_result);
   }
