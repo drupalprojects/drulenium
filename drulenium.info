@@ -11,7 +11,7 @@ dependencies[] = drulenium_visual_regression
 package = Testing
 core =7.x
 
-configure = admin/structure/drulenium
+configure = drulenium/tests
 
 files[] = plugins/views/drulenium_handler_field.inc
 files[] = plugins/export_ui/drulenium_presets_ui.inc

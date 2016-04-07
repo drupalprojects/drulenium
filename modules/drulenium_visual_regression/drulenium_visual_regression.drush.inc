@@ -46,6 +46,16 @@ function drulenium_visual_regression_drush_command() {
     ),
     'aliases' => array('vrd'),
   );
+  $items['vr-diff-upload'] = array(
+    'callback' => 'drush_drulenium_visual_regression_upload',
+    'description' => 'Generate comparision report for 2 releases.',
+    'drupal dependencies' => array('drulenium_visual_regression'),
+    'arguments' => array(
+      'from' => 'Release ID of the first set of screenshots.',
+      'to' => 'Release ID of the second set of screenshots.',
+    ),
+    'aliases' => array('vrdup'),
+  );
   $items['vr-download-webdriver'] = array(
     'callback'    => 'drush_drulenium_visual_regression_download_webdriver',
     'description' => dt('This command used to download selenium php webdriver.'),
@@ -239,7 +249,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   if(!$drulenium_server){
     drush_backend_batch_process();
   }
-  $url = $base_url . '/admin/structure/drulenium/vr/release/' . $re_id;
+  $url = $base_url . '/drulenium/vr/release/' . $re_id;
   drush_log(t('Took snapshots of @vrpages pages, view on @url', array('@vrpages' => count($drulenium_vr_path_custom), '@url' => $url)), 'success');
 }
 
@@ -302,12 +312,18 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
   }
   _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
   drush_backend_batch_process();
-  if (variable_get('drulenium_vr_release_upload_to_Drulenium_org', 0) == 1) {
-    drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
-    drush_backend_batch_process();
-  }
   global $base_url;
-  drush_log("View results on $base_url/admin/structure/drulenium/vr/compare/$old_re_id/$new_re_id", 'success');
+  drush_log("View results on $base_url/drulenium/vr/compare/$old_re_id/$new_re_id", 'success');
+}
+
+/**
+ * Command callback. Generate comparision report of releases..
+ *
+ * Optionally one per category if the preset_category is used.
+ */
+function drush_drulenium_visual_regression_upload($old_re_id = null, $new_re_id = null) {
+  drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
+  drush_backend_batch_process();
 }
 
 /**
