@@ -2210,7 +2210,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
   $pages_array = array_unique($pages_array);
 }
 
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array()) {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array(), $og_group_ref_nid = '') {
   if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
@@ -2238,6 +2238,10 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   $release_entity->settings = drupal_json_encode($settings_array);
   drulenium_save($release_entity);
   $release_id = $release_entity->drulenium_id;
+  if (!empty($og_group_ref_nid)) {
+    $values = array('entity_type' => 'drulenium', 'entity' => $release_id);
+    og_group('node', $og_group_ref_nid, $values);
+  }
 
   /*$fields = array(
       'name' => $release_name,

@@ -21,6 +21,7 @@ function drulenium_visual_regression_drush_command() {
       'preset_cid' => 'Test Preset cid to base the test on.', // drush vrc --preset_cid=anonymous_permissions_test_case
       'preset_category' => 'Test Preset category of all tests to run.',
       'pages' => 'List of pages to use on the base_url',
+      'og_group_ref' => 'If Organic group node id is specified, this release entity will be part of the group.',
     ),
     'aliases' => array('vrc'),
   );
@@ -186,6 +187,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   // Option
   $preset_cid = drush_get_option('preset_cid', ''); // Default to empty string
   $preset_category = drush_get_option('preset_category', '');
+  $og_group_ref = drush_get_option('og_group_ref', '');
 
   if(empty($preset_cid)) {
     $drulenium_vr_path_custom = variable_get("drulenium_vr_path_custom");
@@ -228,7 +230,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
         $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
         $drulenium_vr_path_custom = $config_array['specific_pages'];
         $pages_array = array();
-        $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid);
+        $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid, $settings_array = array(), $og_group_ref);
         if($drulenium_server){
           drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);
         }else{
@@ -238,7 +240,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
     }
   }
   else {
-    $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom);
+    $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid, $settings_array = array(), $og_group_ref);
 
     if($drulenium_server){
       drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);

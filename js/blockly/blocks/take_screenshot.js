@@ -40,11 +40,14 @@ Blockly.Blocks['take_screenshot'] = {
         .appendField(new Blockly.FieldDropdown([["ID", "id"], ["Name", "name"], ["CSS", "css"], ["XPath", "xpath"]]), "locator_type");
     this.appendDummyInput()
         .appendField("Element Locator")
-        .appendField(new Blockly.FieldTextInput("#change-me"), "locator");
+        .appendField(new Blockly.FieldTextInput(""), "locator");
+    this.appendDummyInput()
+        .appendField("Width")
+        .appendField(new Blockly.FieldTextInput("0"), "width");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(210);
-    this.setTooltip('Choose "Include" to take the snapshot of only the specified HTML element. Choose "Exclude" to take snapshot of the whole page except the specified HTML elements. Multiple selectors can be coma separated for exclusion.');
+    this.setTooltip('Choose "Include" to take the snapshot of only the specified HTML element. Choose "Exclude" to take snapshot of the whole page except the specified HTML elements. Multiple selectors can be coma separated for exclusion. You cal also override automatically calculated element dimensions');
     this.setHelpUrl('http://www.example.com/');
   }
 };
