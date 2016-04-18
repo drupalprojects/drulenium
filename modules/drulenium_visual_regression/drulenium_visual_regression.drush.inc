@@ -380,10 +380,12 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
 function _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id) {
 
   // Wipe the current comparison's to trigger a refresh.
-  $or = db_or()->condition('release_base_id', $old_re_id)->condition('release_cmp_id', $new_re_id);
+  // TODO: Delete entitites
+  // entity_delete_multiple($entity_type, array $ids)
+  /*$or = db_or()->condition('release_base_id', $old_re_id)->condition('release_cmp_id', $new_re_id);
   $num_pages = db_delete('drulenium_vr_results')
     ->condition($or)
-    ->execute();
+    ->execute();*/
 
   drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
 
@@ -399,13 +401,17 @@ function _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id) {
 
   // Get unprocessed runs of specified compare
   // where snapshot is empty.
-  $query = db_select('drulenium_vr_results', 'vr_re');
-  $query
-    ->fields('vr_re')
-    ->condition('vr_re.release_base_id', $old_re_id)
-    ->condition('vr_re.release_cmp_id', $new_re_id)
-    ->isNull('vr_re.diff_percent');
-  $query->addExpression('COUNT(rid)', 'run_count');
+  $query = db_select('eck_drulenium_visual_diff', 'diff');
+  $query-> leftJoin('field_data_field_dr_diff_base_task', 'base_tsk', 'diff.id = base_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_cmp_task', 'cmp_tsk', 'diff.id = cmp_tsk.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'base_rel', 'base_tsk.field_dr_diff_base_task_target_id = base_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_task_release', 'cmp_rel', 'cmp_tsk.field_dr_diff_cmp_task_target_id = cmp_rel.entity_id');
+  $query-> leftJoin('field_data_field_dr_diff_percentage', 'diff_percent', 'diff.id = diff_percent.entity_id');
+  $query->fields('diff', array('id'));
+  $query->condition('base_rel.field_dr_task_release_target_id', $old_re_id);
+  $query->condition('cmp_rel.field_dr_task_release_target_id', $new_re_id);
+  $query->isNull('diff_percent.field_dr_diff_percentage_value');
+  $query->addExpression('COUNT(id)', 'run_count');
   $result = $query->execute();
   $row = $result->fetchAssoc();
   $max = $row['run_count'];
