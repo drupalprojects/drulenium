@@ -937,10 +937,14 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     // Logging in as specified user
     if (!empty($test_user_name) && !empty($test_user_pass)) {
       $driver->get($release_result['base_url'] . "user/login");
-      $driver->findElement(WebDriverBy::id("edit-name"))
-        ->sendKeys($test_user_name);
-      $driver->findElement(WebDriverBy::id("edit-pass"))
-        ->sendKeys($test_user_pass);
+      $user_element = $driver->findElement(WebDriverBy::id("edit-name"));
+      $user_element->clear();
+      $user_element->sendKeys($test_user_name);
+
+      $password_element = $driver->findElement(WebDriverBy::id("edit-pass"));
+      $password_element->clear();
+      $password_element->sendKeys($test_user_pass);
+
       $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
       $userSubmitElement->click();
     }
@@ -2210,7 +2214,7 @@ function drulenium_visual_regression_merge_pages_array(&$pages_array, $specific_
   $pages_array = array_unique($pages_array);
 }
 
-function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array(), $og_group_ref_nid = '') {
+function drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, &$pages_array, $vr_user_name = '', $vr_user_pass = '', $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = "", $preset_cid = "", $settings_array = array(), $og_group_ref_nid = '', $project_notes = '', $is_base_release = 0) {
   if (empty($vr_base_url)) {
     global $base_url;
     $vr_base_url = $base_url . "/?q=";
@@ -2222,6 +2226,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
     drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
     return "";
   }*/
+  $plugins_array = $settings_array["plugins_list"];
   $settings_array["user_name"] = $vr_user_name;
   $settings_array["user_pass"] = $vr_user_pass;
 
@@ -2235,6 +2240,8 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
     ->fetchfield();
   $release_entity->test_id = $preset_numeric_id;
   $release_entity->base_url = $vr_base_url;
+  $release_entity->description = $project_notes;
+  $release_entity->base_release = $is_base_release;
   $release_entity->settings = drupal_json_encode($settings_array);
   drulenium_save($release_entity);
   $release_id = $release_entity->drulenium_id;
@@ -2279,12 +2286,15 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
       drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'goto_task', $release_id, $task_title = "Go to {$page}", $task_settings = $plugin_arr, $task_weight);
       $task_weight++;
       // Create snapshot_task if there's no pre defined preset
-      if (empty($preset_cid)) {
+      if (empty($preset_cid) && empty($plugins_array)) {
         drulenium_visual_regression_update_create_task_entity($entity_bundle_type = 'snapshot_task', $release_id, $task_title = "Snapshot of {$page}", $task_settings = array(), $task_weight);
         $task_weight++;
       }else{
-        $preset_obj = drulenium_preset_load($preset_cid);
-        foreach ($preset_obj->settings['plugins'] as $type_and_num => $plugin_arr) {
+        if (!empty($preset_cid)) {
+          $preset_obj = drulenium_preset_load($preset_cid);
+          $plugins_array = $preset_obj->settings['plugins'];
+        }
+        foreach ($plugins_array as $type_and_num => $plugin_arr) {
           $plugin_type = $plugin_arr["type"];
           $task_title = drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr);
           switch ($plugin_type) {

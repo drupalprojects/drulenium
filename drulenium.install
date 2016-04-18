@@ -21,11 +21,24 @@ function drulenium_schema() {
         'not null' => TRUE,
       ),
       'title' => array(
-        'description' => 'The bundle label/name',
+        'description' => 'The release label/name',
         'type' => 'varchar',
         'length' => 555,
         'not null' => TRUE,
         'default' => '',
+      ),
+      'description' => array(
+          'description' => 'release notes.',
+          'type' => 'varchar',
+          'length' => 1555,
+          'default' => '',
+          'not null' => TRUE,
+      ),
+      'base_release' => array(
+          'description' => 'Boolean indicating whether the release is a base release.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
       ),
       'secure_id' => array(
         'description' => 'Secure ID.',
@@ -249,4 +262,24 @@ function drulenium_update_7000() {
   );
 
   db_create_table('drulenium', $schema['drulenium']);
+}
+
+/**
+ * Add newcols description & base_release to {drulenium} table.
+ */
+
+function drulenium_update_7001() {
+  db_add_field('drulenium', 'description', array(
+          'description' => 'release notes.',
+          'type' => 'varchar',
+          'length' => 1555,
+          'default' => '',
+          'not null' => TRUE,
+  ));
+  db_add_field('drulenium', 'base_release', array(
+          'description' => 'Boolean indicating whether the release is a base release.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+  ));
 }
