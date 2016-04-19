@@ -490,6 +490,7 @@ function drulenium_visual_regression_update_result_in_drulenium_db_batch_op($old
   $progress = $progress + $limit;
   // update message during each run so you know where you are in the process
   $context['message'] = 'Now processing Upload process: ' . $progress;
+  $context['results']['secure_id'] = $secure_id;
 }
 
 // this is what runs multiple times per batch
@@ -688,6 +689,12 @@ function drulenium_visual_regression_compare_batch_finished($success, $results, 
 function drulenium_visual_regression_update_result_in_drulenium_db_batch_finished($success, $results, $operations) {
   if ($success) {
     drupal_set_message('Upload process is completed.');
+    // Notify upon completion of upload
+    $secure_id = $results['secure_id'];
+    $email = variable_get('drulenium_vr_release_notify_email', '');
+    $rpc_result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
+        'drulenium.api_notify_result_request_completion' => array($secure_id, $email),
+    ));
   }
   else {
     $error_operation = reset($operations);
