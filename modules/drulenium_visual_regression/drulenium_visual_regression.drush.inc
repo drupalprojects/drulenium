@@ -25,6 +25,16 @@ function drulenium_visual_regression_drush_command() {
     ),
     'aliases' => array('vrc'),
   );
+  $items['vr-test-import'] = array(
+      'callback' => 'drush_drulenium_visual_regression_test_import',
+      'description' => 'Import test case.',
+      'drupal dependencies' => array('drulenium_visual_regression'),
+      'arguments' => array(
+          'test_url' => 'Test URL of the test case.',
+          'category' => 'Category of the test.',
+      ),
+      'aliases' => array('vr-t-i'),
+  );
   $items['vr-update'] = array(
     'callback' => 'drush_drulenium_visual_regression_update',
     'description' => 'Generate new snapshots for a release.',
@@ -68,6 +78,23 @@ function drulenium_visual_regression_drush_command() {
     'aliases'     => array('vr-dl-bl'),
   );
   return $items;
+}
+
+/**
+ * Command callback. Import test.
+ */
+function drush_drulenium_visual_regression_test_import($test_url, $category = "") {
+  $import_code = file_get_contents($test_url);
+  module_load_include('inc', 'ctools', 'includes/export');
+  $item = ctools_export_crud_import('drulenium_preset', $import_code);
+  ctools_export_crud_save('drulenium_preset', $item);
+  $cid = $item->name;
+  if(!empty($category)){
+    // Override category
+    $item->category = $category;
+    ctools_export_crud_save('drulenium_preset', $item);
+  }
+  drush_log(t('imported').$cid, 'success');
 }
 
 /**
