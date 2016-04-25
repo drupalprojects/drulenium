@@ -391,10 +391,15 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
       $category = 'Miscellaneous';
     }
     if ($category == $preset_category) {
+      $preset_numeric_id = db_select('drulenium_preset', 'p')
+        ->fields('p', array('oid'))
+        ->condition('p.name', $preset_cid)
+        ->execute()
+        ->fetchfield();
       // Get last two releases of this preset.
       $result = db_select('drulenium', 'vr_re')
         ->fields('vr_re', array('drulenium_id'))
-        ->condition('vr_re.test_id', $preset_cid)
+        ->condition('vr_re.test_id', $preset_numeric_id)
         ->orderBy('drulenium_id', 'DESC')
         ->range(0, 2)
         ->execute();
@@ -403,6 +408,8 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
       $row2 = $result->fetchAssoc();
       $old_re_id = $row2['drulenium_id'];
       _drush_drulenium_visual_regression_diff($old_re_id, $new_re_id);
+      global $base_url;
+      drush_log("View results on $base_url/drulenium/vr/compare/$old_re_id/$new_re_id", 'success');
     }
   }
   drush_backend_batch_process();
@@ -421,10 +428,15 @@ function _drush_drulenium_visual_regression_diff_upload_categories($preset_categ
       $category = 'Miscellaneous';
     }
     if ($category == $preset_category) {
+      $preset_numeric_id = db_select('drulenium_preset', 'p')
+        ->fields('p', array('oid'))
+        ->condition('p.name', $preset_cid)
+        ->execute()
+        ->fetchfield();
       // Get last two releases of this preset.
       $result = db_select('drulenium', 'vr_re')
       ->fields('vr_re', array('drulenium_id'))
-      ->condition('vr_re.test_id', $preset_cid)
+      ->condition('vr_re.test_id', $preset_numeric_id)
       ->orderBy('drulenium_id', 'DESC')
       ->range(0, 2)
       ->execute();
