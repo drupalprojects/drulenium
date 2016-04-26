@@ -2536,7 +2536,7 @@ function drulenium_visual_regression_get_secure_id($re_id)
   return $secure_id;
 }
 
-function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id){
+function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id, $project_id = ''){
   // Get secure id's of both releases
   $old_re_secure_id = drulenium_visual_regression_get_secure_id($old_re_id);
   $new_re_secure_id = drulenium_visual_regression_get_secure_id($new_re_id);
@@ -2544,7 +2544,7 @@ function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $
   $email = variable_get('drulenium_vr_release_notify_email', '');
   // Create remote request record.
   $rpc_result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
-    'drulenium.api_create_result_request' => array($secure_id, $email),
+    'drulenium.api_create_result_request' => array($secure_id, $email, $project_id),
   ));
   drupal_set_message($rpc_result);
   /*

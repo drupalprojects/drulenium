@@ -66,7 +66,8 @@ function drulenium_visual_regression_drush_command() {
       'to' => 'Release ID of the second set of screenshots.',
     ),
     'options' => array(
-        'preset_category' => 'Test Preset category of all tests to upload the diff.',
+      'preset_category' => 'Test Preset category of all tests to upload the diff.',
+      'project_id' => 'Upload the diff results under this project.',
     ),
     'aliases' => array('vrdup'),
   );
@@ -355,8 +356,9 @@ function drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = 
  */
 function drush_drulenium_visual_regression_upload($old_re_id = null, $new_re_id = null) {
   $preset_category = drush_get_option('preset_category', '');
+  $project_id = drush_get_option('project_id', '');
   if (!empty($preset_category)) {
-    return _drush_drulenium_visual_regression_diff_upload_categories($preset_category);
+    return _drush_drulenium_visual_regression_diff_upload_categories($preset_category, $project_id);
   }
   if ($old_re_id == null || $new_re_id == null) {
     // Get the last two releases.
@@ -374,7 +376,7 @@ function drush_drulenium_visual_regression_upload($old_re_id = null, $new_re_id 
     $row2 = $result->fetchAssoc();
     $old_re_id = $row2['drulenium_id'];
   }
-  drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
+  drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id, $project_id);
   drush_backend_batch_process();
 }
 
@@ -420,7 +422,7 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
  *
  * @param string $preset_category
  */
-function _drush_drulenium_visual_regression_diff_upload_categories($preset_category) {
+function _drush_drulenium_visual_regression_diff_upload_categories($preset_category, $project_id = '') {
   $presets = drulenium_preset_load();
   foreach ($presets as $preset_cid => $value) {
     $category = $value->category;
@@ -444,7 +446,7 @@ function _drush_drulenium_visual_regression_diff_upload_categories($preset_categ
       $new_re_id = $row1['drulenium_id'];
       $row2 = $result->fetchAssoc();
       $old_re_id = $row2['drulenium_id'];
-      drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id);
+      drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id, $project_id);
     }
   }
   drush_backend_batch_process();
