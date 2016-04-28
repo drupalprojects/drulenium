@@ -425,6 +425,8 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
  */
 function _drush_drulenium_visual_regression_diff_upload_categories($preset_category, $project_id = '') {
   $presets = drulenium_preset_load();
+  // Generate $build_id
+  $build_id = drupal_hash_base64(drupal_random_bytes(55));
   foreach ($presets as $preset_cid => $value) {
     $category = $value->category;
     if (empty($category)) {
@@ -447,7 +449,7 @@ function _drush_drulenium_visual_regression_diff_upload_categories($preset_categ
       $new_re_id = $row1['drulenium_id'];
       $row2 = $result->fetchAssoc();
       $old_re_id = $row2['drulenium_id'];
-      drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id, $project_id);
+      drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $new_re_id, $project_id, $build_id);
     }
   }
   drush_backend_batch_process();
