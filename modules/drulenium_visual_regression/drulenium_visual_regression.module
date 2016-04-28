@@ -2542,9 +2542,13 @@ function drulenium_visual_regression_update_result_in_drulenium_db($old_re_id, $
   $new_re_secure_id = drulenium_visual_regression_get_secure_id($new_re_id);
   $secure_id = "{$old_re_secure_id}--{$new_re_secure_id}";
   $email = variable_get('drulenium_vr_release_notify_email', '');
+  $release_name = db_select('drulenium', 'vr_re')
+    ->fields('vr_re', array('title'))
+    ->condition('vr_re.drulenium_id', $new_re_id)
+    ->execute()->fetchfield();
   // Create remote request record.
   $rpc_result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
-    'drulenium.api_create_result_request' => array($secure_id, $email, $project_id),
+    'drulenium.api_create_result_request' => array($secure_id, $email, $project_id, $release_name),
   ));
   drupal_set_message($rpc_result);
   /*

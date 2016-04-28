@@ -261,6 +261,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
         $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
         $drulenium_vr_path_custom = $config_array['specific_pages'];
         $pages_array = array();
+        $secureid = drupal_hash_base64(drupal_random_bytes(55));
         $re_id = drulenium_visual_regression_create_release_in_db($secureid, $release_name, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass, $specific_node_types = array(), $specific_menu_types = array(), $specific_term_types = array(), $specific_pages = $drulenium_vr_path_custom, $preset_cid, $settings_array = array(), $og_group_ref);
         if($drulenium_server){
           drulenium_visual_regression_create_release_in_drulenium_db($re_id, $secureid, $vr_base_url, $pages_array, $drulenium_vr_user_name, $drulenium_vr_user_pass);
