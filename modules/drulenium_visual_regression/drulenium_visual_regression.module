@@ -2229,7 +2229,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
     drupal_set_message("No pages found in your configuration. Please reconfigure & resubmit with atleast one valid page.", 'error');
     return "";
   }*/
-  $plugins_array = $settings_array["plugins_list"];
+  $plugins_array = (isset($settings_array["plugins_list"]) ? $settings_array["plugins_list"] : array());
   $settings_array["user_name"] = $vr_user_name;
   $settings_array["user_pass"] = $vr_user_pass;
 
@@ -2297,9 +2297,11 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
           $preset_obj = drulenium_preset_load($preset_cid);
           $plugins_array = $preset_obj->settings['plugins'];
         }
+        $ctr = 0;
         foreach ($plugins_array as $type_and_num => $plugin_arr) {
+          $task_title = drulenium_visual_regression_get_all_plugins_text($plugins_array, $ctr);
+          $ctr++;
           $plugin_type = $plugin_arr["type"];
-          $task_title = drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr);
           switch ($plugin_type) {
             case PLUGIN_FILL_TEXTBOX:
               drulenium_visual_regression_update_create_task_entity('fill_textbox_task', $release_id, $task_title, $plugin_arr, $task_weight);
@@ -2317,7 +2319,7 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
               drulenium_visual_regression_update_create_task_entity('verify_text_task', $release_id, $task_title, $plugin_arr, $task_weight);
               break;
             case PLUGIN_TAKE_SCREENSHOT:
-              drulenium_visual_regression_update_create_task_entity('snapshot_task', $release_id, $task_title, $plugin_arr, $task_weight);
+              drulenium_visual_regression_update_create_task_entity('snapshot_task', $release_id, "$task_title -> Page: $page", $plugin_arr, $task_weight);
               break;
           }
           $task_weight++;
@@ -2350,6 +2352,36 @@ function drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr) 
       break;
   }
   return $output;
+}
+
+function drulenium_visual_regression_get_all_plugins_text($plugins_arr, $key) {
+  $plugin_arr_slice = array_slice($plugins_arr, $key, 1);
+  $plugin_arr = reset($plugin_arr_slice);
+  //$plugin_arr = $plugins_arr[$key];
+  $plugin_type = $plugin_arr["type"];
+  $task_title = drulenium_visual_regression_get_plugin_text($plugin_type, $plugin_arr);
+  if($plugin_type == PLUGIN_TAKE_SCREENSHOT){
+    // Get previous plugin text
+    if(($key-1) >= 0){
+      // array_slice accepts negative numbers a offset to pull last elements in the array, so not using array_slice() in if condition
+      $prev_plugin_arr_slice = array_slice($plugins_arr, $key-1, 1);
+      $prev_plugin_arr = reset($prev_plugin_arr_slice);
+      $prev_plugin_type = $prev_plugin_arr["type"];
+      // Check if it's a wait plugin
+      if($prev_plugin_type == PLUGIN_WAIT){
+        // If wait plugin, get text of the plugin before wait if exists
+        if(($key-2) >= 0){
+          $prev_plugin_arr_slice = array_slice($plugins_arr, $key-2, 1);
+          $prev_plugin_arr = reset($prev_plugin_arr_slice);
+          $prev_plugin_type = $prev_plugin_arr["type"];
+          $task_title .= " after " . drulenium_visual_regression_get_plugin_text($prev_plugin_type, $prev_plugin_arr);
+        }
+      }else{
+        $task_title .= " after " . drulenium_visual_regression_get_plugin_text($prev_plugin_type, $prev_plugin_arr);
+      }
+    }
+  }
+  return $task_title;
 }
 
 function drulenium_visual_regression_screenshot_plugin_to_text($plugin_arr) {
