@@ -1,0 +1,6 @@
+name = Drulenium Hosted
+description = Support for taking screenshots remotely at Drulenium.org.
+dependencies[] = drulenium
+core = 7.x
+
+package = Testing

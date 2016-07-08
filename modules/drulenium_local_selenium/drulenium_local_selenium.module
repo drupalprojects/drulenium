@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function drulenium_local_selenium_menu() {
+  $items['drulenium/settings/local'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+    'title' => 'Local Server',
+    'description' => 'Settings for Local Server Integration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drulenium_local_selenium_settings_form'),
+    'access arguments' => array('administer_drulenium_settings'),
+    'file' => 'drulenium_local_selenium.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_drulenium_screenshot_service_provider_info().
+ */
+function drulenium_local_selenium_drulenium_screenshot_service_provider_info() {
+  $info = array(
+      'drulenium_local_selenium' => t('Local server'),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_drulenium_screenshot_service_validation().
+ */
+function drulenium_local_selenium_drulenium_screenshot_service_validation() {
+  // If local, check Selenium
+  if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
+    $host = drulenium_local_selenium_drulenium_local_selenium_host();
+    $capabilities = drulenium_local_selenium_drulenium_local_browser_capabilities();
+    try {
+      $driver = RemoteWebDriver::create($host, $capabilities, 5000);
+      // Close the Firefox.
+      $driver->quit();
+    }
+    catch (Exception $e) {
+      form_set_error('drulenium_vr_config_server_opt', 'Configure local Selenium config accordingly at /drulenium/settings/local and run the selenium server.');
+    }
+  }else{
+    form_set_error('drulenium_vr_config_server_opt', 'Install selenium_webdriver library accordingly');
+  }
+}
+
+/**
+ * Implements hook_drulenium_local_selenium_host().
+ */
+function drulenium_local_selenium_drulenium_local_selenium_host() {
+  $host = variable_get('drulenium_vr_release_selenium_host', "http://localhost:4444/wd/hub"); // this is the default
+  return $host;
+}
+
+/**
+ * Implements hook_drulenium_local_browser_capabilities().
+ */
+function drulenium_local_selenium_drulenium_local_browser_capabilities() {
+  $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
+  $capabilities = DesiredCapabilities::$browser();
+  return $capabilities;
+}
+
+// EOF

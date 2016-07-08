@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function drulenium_hosting_client_menu() {
+  $items['drulenium/settings/hosted'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+    'title' => 'Hosted Server',
+    'description' => 'Settings for Hosted Server Integration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drulenium_hosting_client_settings_form'),
+    'access arguments' => array('administer_drulenium_settings'),
+    'file' => 'drulenium_hosting_client.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_drulenium_screenshot_service_provider_info().
+ */
+function drulenium_hosting_client_drulenium_screenshot_service_provider_info() {
+  $info = array(
+    'drulenium_hosting_client' => t('Remote Drulenium server'),
+  );
+  return $info;
+}
+
+function drulenium_hosting_client_test_export($export_code, $test_case_title) {
+  $api_secret = variable_get('drulenium_vr_api_secret', '');
+  $project_uuid = variable_get('drulenium_vr_project_uuid', '');
+  $data = array(
+      'api_secret' => $api_secret,
+      'project_uuid' => $project_uuid,
+      'test-case' => array(
+          'title' => $test_case_title, 
+          'export-code' => $export_code
+      ),
+  );
+  $url = 'http://drulenium.org/api/v1/test-cases/create';
+  $response = drupal_http_request($url, array(
+      'method' => 'POST',
+      'data' => json_encode($data),
+      'max_redirects' => 0,
+      'headers' => array('Content-Type' => 'application/json', 'Accept' => 'application/json')
+      )
+    );
+
+  return json_decode($response->data);
+}
+
+/**
+ * Export local tests to remote Drulenium server.
+ */
+function drulenium_hosting_client_project_export($preset_category = "") {
+  $presets = drulenium_preset_load();
+  $first_time = TRUE;
+  foreach ($presets as $preset_cid => $preset_obj) {
+    $category = $preset_obj->category;
+    if(empty($category))  $category = 'Miscellaneous';
+    if($category == $preset_category){
+      $export_code = ctools_export_crud_export('drulenium_preset', $preset_obj, $indent = '');
+      drulenium_hosting_client_test_export($export_code, $preset_cid);
+    }
+  }
+  drupal_set_message("Exported!");
+}
+
+// EOF

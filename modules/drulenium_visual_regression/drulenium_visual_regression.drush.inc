@@ -25,6 +25,22 @@ function drulenium_visual_regression_drush_command() {
     ),
     'aliases' => array('vrc'),
   );
+  $items['vr-one-step'] = array(
+      'callback' => 'drush_drulenium_visual_regression_one_step',
+      'description' => 'Create baseline & test releases, generate snapshots & compare the two releases.',
+      'drupal dependencies' => array('drulenium_visual_regression'),
+      'arguments' => array(
+          'release_name' => 'Name of the release to create.',
+          'release_message' => 'Description of the release like commit message.',
+      ),
+      'options' => array(
+          'preset_cid' => 'Test Preset cid to base the test on.', // drush vrc --preset_cid=anonymous_permissions_test_case
+          'preset_category' => 'Test Preset category of all tests to run.',
+          'pages' => 'List of pages to use on the base_url',
+          'og_group_ref' => 'If Organic group node id is specified, this release entity will be part of the group.',
+      ),
+      'aliases' => array('vr1'),
+  );
   $items['vr-test-import'] = array(
       'callback' => 'drush_drulenium_visual_regression_test_import',
       'description' => 'Import test case.',
@@ -82,6 +98,15 @@ function drulenium_visual_regression_drush_command() {
     'aliases'     => array('vr-dl-bl'),
   );
   return $items;
+}
+
+/**
+ * Command callback. Create a release & generate snapshots.
+ */
+function drush_drulenium_visual_regression_one_step($release_name = "", $release_message = "") {
+  //will call selected module implementing hook_drulenium_one_step_process
+  $screenshot_server_module = variable_get('drulenium_vr_config_server_opt', 'drulenium_hosting_client');
+  $return_array = module_invoke($screenshot_server_module, 'drulenium_one_step_process', $release_name, $release_message);
 }
 
 /**
@@ -248,7 +273,7 @@ function drush_drulenium_visual_regression_create($vr_base_url = "", $release_na
   drush_log(t('Starting snapshot process of @url', array('@url' => $vr_base_url)), 'ok');
 
   $drulenium_server = FALSE;
-  if (variable_get('drulenium_vr_config_server_opt', 'drulenium') == "drulenium") {
+  if (variable_get('drulenium_vr_config_server_opt', 'drulenium_hosting_client') == "drulenium_hosting_client") {
     $drulenium_server = TRUE;
   }
 
