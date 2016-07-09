@@ -27,6 +27,16 @@ function drulenium_hosting_client_drulenium_screenshot_service_provider_info() {
   return $info;
 }
 
+/**
+ * Implements hook_drulenium_one_step_process().
+ */
+function drulenium_hosting_client_drulenium_one_step_process($release_name, $release_message) {
+  drush_drulenium_visual_regression_create($vr_base_url, $release_name);
+  drush_drulenium_visual_regression_create($vr_test_url, $release_name);
+  drush_drulenium_visual_regression_diff($old_re_id = null, $new_re_id = null);
+  return '';
+}
+
 function drulenium_hosting_client_test_export($export_code, $test_case_title) {
   $api_secret = variable_get('drulenium_vr_api_secret', '');
   $project_uuid = variable_get('drulenium_vr_project_uuid', '');

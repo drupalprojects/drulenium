@@ -151,10 +151,10 @@ function drush_drulenium_visual_regression_download_blockly() {
 
   chdir($download_path);
 
-  $download_uri = 'https://github.com/google/blockly/zipball/master';
+  $download_uri = 'https://github.com/google/blockly/archive/master.zip';
 
   // Download the zip archive.
-  if ($filepath = drush_download_file($download_uri, $download_path . '/google-blockly-9d4baa9.zip')) {
+  if ($filepath = drush_download_file($download_uri, $download_path . '/blockly-master.zip')) {
     $filename = basename($filepath);
     $dirname = basename($filepath, '.zip');
 
