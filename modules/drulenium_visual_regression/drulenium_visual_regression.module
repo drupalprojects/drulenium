@@ -656,6 +656,7 @@ function drulenium_visual_regression_update_result_in_drulenium_db_batch_finishe
     $rpc_result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
         'drulenium.api_notify_result_request_completion' => array($secure_id, $email, $api_secret),
     ));
+    drupal_set_message($rpc_result);
   }
   else {
     $error_operation = reset($operations);
@@ -1699,53 +1700,57 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
         '#description' => t('Maximum number of random pages to test for each of these type(s)'),
         '#default_value' => variable_get('drulenium_vr_node_custom_limit', DRULENIUM_NODE_LIMIT),
     );
-    
-    // Per-menu pages.
-    $form['drulenium_vr_config']['pages']['menu'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Menus'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#group' => 'pages',
-        '#weight' => 1,
-    );
-    $menu_types = menu_get_menus();
-    $form['drulenium_vr_config']['pages']['menu']['drulenium_vr_menu_custom'] = array(
-        '#type' => 'checkboxes',
-        '#title' => t('Test for specific menu pages'),
-        '#options' => $menu_types,
-        '#description' => t('Test on menu pages of the given menu type(s).'),
-        '#default_value' => variable_get('drulenium_vr_menu_custom', array()),
-    );
 
-    // Per-term-type testing.
-    $form['drulenium_vr_config']['pages']['term'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Taxonomy'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#group' => 'pages',
-        '#weight' => 20,
-    );
-    $vocabs = array();
-    $result = db_query('SELECT vid, name FROM {taxonomy_vocabulary}');
-    foreach ($result as $row) {
-      $vocabs[$row->vid] = $row->name;
+    if (module_exists('menu')) {
+      // Per-menu pages.
+      $form['drulenium_vr_config']['pages']['menu'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Menus'),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+          '#group' => 'pages',
+          '#weight' => 1,
+      );
+      $menu_types = menu_get_menus();
+      $form['drulenium_vr_config']['pages']['menu']['drulenium_vr_menu_custom'] = array(
+          '#type' => 'checkboxes',
+          '#title' => t('Test for specific menu pages'),
+          '#options' => $menu_types,
+          '#description' => t('Test on menu pages of the given menu type(s).'),
+          '#default_value' => variable_get('drulenium_vr_menu_custom', array()),
+      );
     }
-    $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom'] = array(
-        '#type' => 'checkboxes',
-        '#title' => t('Test for specific Taxonomy Vocabularies'),
-        '#options' => $vocabs,
-        '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
-        '#default_value' => variable_get('drulenium_vr_term_custom', array()),
-    );
-    $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom_limit'] = array(
-        '#type' => 'textfield',
-        '#size' => 10,
-        '#title' => t('Limit'),
-        '#description' => t('Maximum number of random pages to test for each of these type(s)'),
-        '#default_value' => variable_get('drulenium_vr_term_custom_limit', DRULENIUM_NODE_LIMIT),
-    );
+
+    if (module_exists('taxonomy')) {
+      // Per-term-type testing.
+      $form['drulenium_vr_config']['pages']['term'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Taxonomy'),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+          '#group' => 'pages',
+          '#weight' => 20,
+      );
+      $vocabs = array();
+      $result = db_query('SELECT vid, name FROM {taxonomy_vocabulary}');
+      foreach ($result as $row) {
+        $vocabs[$row->vid] = $row->name;
+      }
+      $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom'] = array(
+          '#type' => 'checkboxes',
+          '#title' => t('Test for specific Taxonomy Vocabularies'),
+          '#options' => $vocabs,
+          '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
+          '#default_value' => variable_get('drulenium_vr_term_custom', array()),
+      );
+      $form['drulenium_vr_config']['pages']['term']['drulenium_vr_term_custom_limit'] = array(
+          '#type' => 'textfield',
+          '#size' => 10,
+          '#title' => t('Limit'),
+          '#description' => t('Maximum number of random pages to test for each of these type(s)'),
+          '#default_value' => variable_get('drulenium_vr_term_custom_limit', DRULENIUM_NODE_LIMIT),
+      );
+    }
   }
   $form['drulenium_vr_config']['drulenium_vr_config_user'] = array(
     '#type' => 'fieldset',

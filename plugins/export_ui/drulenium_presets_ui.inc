@@ -234,28 +234,30 @@ function _drulenium_presets_ui_create_block_form($export) {
     '#default_value' => isset($export->settings['pages']['node']['custom']) ? $export->settings['pages']['node']['custom'] : array(),
   );
 
-  // Per-term-type testing.
-  $form['pages']['term'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Taxonomy'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#group' => 'pages',
-    '#weight' => 20,
-  );
-  $node_types = array();
-  $result = db_query(
-    'SELECT vid, name FROM {taxonomy_vocabulary}');
-  foreach ($result as $row) {
-    $node_types[$row->vid] = $row->name;
+  if (module_exists('taxonomy')) {
+    // Per-term-type testing.
+    $form['pages']['term'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Taxonomy'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#group' => 'pages',
+      '#weight' => 20,
+    );
+    $node_types = array();
+    $result = db_query(
+      'SELECT vid, name FROM {taxonomy_vocabulary}');
+    foreach ($result as $row) {
+      $node_types[$row->vid] = $row->name;
+    }
+    $form['pages']['term']['custom'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Test for specific Taxonomy Vocabularies'),
+      '#options' => $node_types,
+      '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
+      '#default_value' => isset($export->settings['pages']['term']['custom']) ? $export->settings['pages']['term']['custom'] : array(),
+    );
   }
-  $form['pages']['term']['custom'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Test for specific Taxonomy Vocabularies'),
-    '#options' => $node_types,
-    '#description' => t('Test on taxonomy term pages of the given Vocabulary type(s)'),
-    '#default_value' => isset($export->settings['pages']['term']['custom']) ? $export->settings['pages']['term']['custom'] : array(),
-  );
 
   /*$user_types = user_roles(FALSE);
   $form['test_as_roles'] = array(
