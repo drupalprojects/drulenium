@@ -574,8 +574,10 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       exec("$image_magick_path/convert -version", $out, $image_magick_code);
       // $image_magick_code = 0 if OK, nonzero if error.
       if ($diff_percent > 0 && $image_magick_code == 0) {
+        $myGIFdir = file_default_scheme() . '://drulenium/gif';
+        file_prepare_directory($myGIFdir, FILE_CREATE_DIRECTORY);
         // Generate animated GIF.
-        $unique_id = "drulenium/gif_" . microtime(TRUE) . ".gif";
+        $unique_id = "drulenium/gif/" . microtime(TRUE) . ".gif";
         $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
         $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
         //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
@@ -588,8 +590,10 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       }
       //$diff_percent = sprintf("%.3f",($output/(400*300))*100);
       if ($diff_percent > 0 && $image_magick_code == 0) {
+        $myDIFFdir = file_default_scheme() . '://drulenium/diff';
+        file_prepare_directory($myDIFFdir, FILE_CREATE_DIRECTORY);
         // Generate highlighted image.
-        $unique_id = "drulenium/highlight_" . microtime(TRUE) . ".png";
+        $unique_id = "drulenium/diff/" . microtime(TRUE) . ".png";
         $highlighted_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
         $highlighted_link = file_create_url(file_default_scheme() . '://') . $unique_id;
         //dsm("$image_magick_path/compare $image1 $image2 -compose src $highlighted_path");
@@ -870,7 +874,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
   if (($library = libraries_load("selenium_webdriver")) && !empty($library['loaded'])) {
     // Getting username, password & base url from release.
     $release_result = db_select('drulenium', 're')
-      ->fields('re', array('base_url', 'settings'))
+      ->fields('re', array('base_url', 'settings', 'title'))
       ->condition('drulenium_id', $re_id, '=')
       ->execute()
       ->fetchAssoc();
@@ -933,7 +937,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     }
 
     foreach ($tasks_items as $task_entity) {
-      drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $test_base_url);
+      drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $test_base_url, $release_result['title']);
     }
     // Close the Firefox.
     $driver->quit();
@@ -962,7 +966,7 @@ function drulenium_visual_regression_query_dr_pending_tasks_alter(QueryAlterable
   $query->isNull('o.field_dr_task_status_value');
 }
 
-function drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $test_base_url) {
+function drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $test_base_url, $release_title = "") {
   $output = "";
   $task_entity_wrapper = entity_metadata_wrapper('drulenium_test_task', $task_entity);
   $plugin_type = $task_entity->type;
@@ -988,7 +992,7 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $t
       $output .= drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr);
       break;
     case TASK_TAKE_SCREENSHOT:
-      $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr);
+      $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr, $release_title);
       break;
   }
   return $output;
@@ -1108,7 +1112,7 @@ function drulenium_visual_regression_selenium_task_click_button_do($driver, $plu
   $element->click();
 }
 
-function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr) {
+function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr, $release_title = "") {
   $element_locator_type = $plugin_arr['description']['locator_type'];
   $element_locator = $plugin_arr['description']['locator'];
   $snapshot_mode = $plugin_arr['description']['snapshot_mode'];
@@ -1122,7 +1126,7 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
     $exclude_element = TRUE;
   }
   try{
-    $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_locator, $exclude_element, $width, $height, $offset_width, $offset_height, $element_locator_type);
+    $full_screenshot = _drulenium_visual_regression_TakeScreenshot($driver, $element_locator, $exclude_element, $width, $height, $offset_width, $offset_height, $element_locator_type, $release_title);
     $task_entity_wrapper->field_dr_task_output = $full_screenshot;
     $task_entity_wrapper->field_dr_task_status = 1;
   }catch(Exception $e) {
@@ -1139,11 +1143,13 @@ function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $
   db_insert('drulenium_vr_runs')->fields($fields)->execute();*/
 }
 
-function _drulenium_visual_regression_TakeScreenshot($driver, $element_locator = '', $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0, $element_locator_type = "css") {
+function _drulenium_visual_regression_TakeScreenshot($driver, $element_locator = '', $exclude_element = FALSE, $element_width = 0, $element_height = 0, $offset_width = 0, $offset_height = 0, $element_locator_type = "css", $release_title = "") {
+  $machine_readable = strtolower($release_title);
+  $machine_readable = preg_replace('@[^a-z0-9_]+@','_',$machine_readable);
   // Change the Path to your own settings.
-  $mydir = file_default_scheme() . '://drulenium';
+  $mydir = file_default_scheme() . '://drulenium/screenshots/'.$machine_readable;
   file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
-  $unique_id = "drulenium/" . microtime(TRUE) . ".png";
+  $unique_id = "drulenium/screenshots/{$machine_readable}/" . microtime(TRUE) . ".png";
   $screenshot = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
   $relative_file_path = file_create_url(file_default_scheme() . '://').$unique_id;
 
