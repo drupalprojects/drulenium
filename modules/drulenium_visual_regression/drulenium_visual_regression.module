@@ -434,9 +434,13 @@ function drulenium_visual_regression_update_result_in_drulenium_db_batch_op($old
 
     //will call all modules implementing hook_drulenium_upload_file
     $diff_file_url_array = module_invoke_all("drulenium_upload_difference_file", $diff_file_path_abs);
+    // Remove invalid or empty values
+    $diff_file_url_array = array_filter($diff_file_url_array);
     //Get the first result
     $diff_file_url = isset($diff_file_url_array[0]) ? $diff_file_url_array[0] : '';
     $gif_file_url_array = module_invoke_all("drulenium_upload_difference_file", $gif_file_path_abs);
+    // Remove invalid or empty values
+    $gif_file_url_array = array_filter($gif_file_url_array);
     //Get the first result
     $gif_file_url = isset($gif_file_url_array[0]) ? $gif_file_url_array[0] : '';
 
