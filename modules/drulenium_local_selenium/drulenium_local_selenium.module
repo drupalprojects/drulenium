@@ -62,6 +62,16 @@ function drulenium_local_selenium_drulenium_local_selenium_host() {
 function drulenium_local_selenium_drulenium_local_browser_capabilities() {
   $browser = variable_get('drulenium_vr_release_selenium_browser', 'firefox');
   $capabilities = DesiredCapabilities::$browser();
+  if($browser == 'chrome'){
+    // https://github.com/facebook/php-webdriver/wiki/ChromeOptions
+    $options = new ChromeOptions();
+    $options->addArguments(array(
+        '--start-maximized',
+    ));
+    $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
+  }elseif($browser == 'firefox'){
+    // https://github.com/facebook/php-webdriver/wiki/FirefoxProfile
+  }
   return $capabilities;
 }
 

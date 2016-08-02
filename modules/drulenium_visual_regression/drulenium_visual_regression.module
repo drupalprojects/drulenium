@@ -923,7 +923,13 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     $host = module_invoke($screenshot_server_module, 'drulenium_local_selenium_host');
 
     $driver = RemoteWebDriver::create($host, $capabilities, 5000);
-    $driver->manage()->window()->maximize();
+    $browser_width = variable_get('drulenium_vr_release_selenium_browser_width', "");
+    $browser_height = variable_get('drulenium_vr_release_selenium_browser_height', "");
+    if(!empty($browser_width) && !empty($browser_height)){
+      $driver->manage()->window()->setSize(new WebDriverDimension(intval($browser_width), intval($browser_height)));
+    }else{
+      $driver->manage()->window()->maximize();
+    }
 
     // Logging in as specified user
     if (!empty($test_user_name) && !empty($test_user_pass)) {

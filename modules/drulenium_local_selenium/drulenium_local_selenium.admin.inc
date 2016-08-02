@@ -27,6 +27,18 @@ function drulenium_local_selenium_settings_form($form, &$form_state) {
       '#default_value' => variable_get('drulenium_vr_release_selenium_browser', 'firefox'),
       '#description' => t('Pick a browser to test with.'),
   );
+  $form['drulenium_vr_release_selenium_browser_width'] = array(
+      '#title' => t('Browser Width'),
+      '#type' => 'textfield',
+      '#description' => t('Enter Integer values. Leave it blank to maximize the window'),
+      '#default_value' => variable_get('drulenium_vr_release_selenium_browser_width', ""),
+  );
+  $form['drulenium_vr_release_selenium_browser_height'] = array(
+      '#title' => t('Browser Height'),
+      '#type' => 'textfield',
+      '#description' => t('Enter Integer values. Leave it blank to maximize the window'),
+      '#default_value' => variable_get('drulenium_vr_release_selenium_browser_height', ""),
+  );
   $form['drulenium_vr_release_imagemagick_path'] = array(
       '#title' => t('Path to the Image Magick binary'),
       '#type' => 'textfield',
