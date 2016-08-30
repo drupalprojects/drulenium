@@ -1622,24 +1622,24 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   return $output;
 }
 
-function drulenium_visual_regression_releases($preset_numeric_id = '') {
+function drulenium_visual_regression_releases($preset_cid = '') {
   drupal_set_title("Drulenium: Automated frontend testing");
-  $build_form = drupal_get_form('drulenium_visual_regression_create_release_form', $release_id = NULL, $preset_numeric_id);
+  $build_form = drupal_get_form('drulenium_visual_regression_create_release_form', $release_id = NULL, $preset_cid);
   $output = drupal_render($build_form);
   $compare_form = drupal_get_form('drulenium_visual_regression_compare_releases_form');
   $output .= drupal_render($compare_form);
   return $output;
 }
 
-function drulenium_visual_regression_create_release_form($form, &$form_state, $release_id = NULL, $preset_numeric_id = '') {
-  $preset_cid = '';
+function drulenium_visual_regression_create_release_form($form, &$form_state, $release_id = NULL, $preset_cid = '') {
+  /*$preset_cid = '';
   if(!empty($preset_numeric_id)) {
     $preset_cid = db_select('drulenium_preset', 'p')
       ->fields('p', array('name'))
       ->condition('p.oid', $preset_numeric_id)
       ->execute()
       ->fetchfield();
-  }
+  }*/
   $form = array();
   $form['drulenium_vr_config'] = array(
     '#type' => 'fieldset',
@@ -2412,18 +2412,18 @@ function drulenium_visual_regression_get_preset_config($preset_cid) {
 }
 
 function drulenium_visual_regression_create_release_form_submit($form, &$form_state) {
-  $preset_numeric_id = '';
-  if(arg(0) == 'drulenium' && arg(1) == 'vr'){
-    $preset_numeric_id = arg(2);
-  }
   $preset_cid = '';
+  if(arg(0) == 'drulenium' && arg(1) == 'vr'){
+    $preset_cid = arg(2);
+  }
+  /*$preset_cid = '';
   if(!empty($preset_numeric_id)) {
     $preset_cid = db_select('drulenium_preset', 'p')
       ->fields('p', array('name'))
       ->condition('p.oid', $preset_numeric_id)
       ->execute()
       ->fetchfield();
-  }
+  }*/
 
   $pages_array = array();
 

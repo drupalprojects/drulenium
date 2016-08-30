@@ -41,9 +41,10 @@ class drulenium_presets_ui extends ctools_export_ui {
     /*
      * Adding operation to run the test.
      */
+    // If item is not in database and only in code, oid doesn't exist
     $allowed_operations['run'] = array(
       'title' => 'Run',
-      'href' => 'drulenium/vr/'.$item->oid,
+      'href' => 'drulenium/vr/'.$item->{$this->plugin['export']['key']},
     );
     foreach ($operations as $op => $info) {
       if (!empty($info)) {
