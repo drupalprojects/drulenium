@@ -1872,15 +1872,8 @@ function drulenium_visual_regression_create_release_form_validate($form, &$form_
     form_set_error('drulenium_vr_release_user_pass', t("If the username exists, Password can't be empty. Remove username if you want to test as Anonymous user."));
   }
 
-  if (variable_get('drulenium_vr_config_server_opt', 'drulenium_hosting_client') == "drulenium_hosting_client") {
-    // Check if base url is reachable.
-    $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
-        'drulenium.api_validate_release' => array($form_state['values']['drulenium_vr_release_base_url']),
-    ));
-    if ($result != 1) {
-      form_set_error('drulenium_vr_release_base_url', $result);
-    }
-  }
+  $screenshot_server_module = variable_get('drulenium_vr_config_server_opt', 'drulenium_hosting_client');
+  module_invoke($screenshot_server_module, 'drulenium_release_form_validation', $form_state);
 }
 
 function drulenium_visual_regression_admin_settings_form($form, &$form_state) {

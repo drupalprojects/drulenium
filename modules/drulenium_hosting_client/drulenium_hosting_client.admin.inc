@@ -1,12 +1,20 @@
 <?php
 
 function drulenium_hosting_client_settings_form($form, &$form_state) {
- $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config'] = array(
+  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Remote Drulenium Server'),
-    '#description' => t('Configuration for Remote Drulenium server.'),
+    '#title' => t('Remote Drulenium.org Cloud Server'),
+    '#description' => t('Configuration for Remote Drulenium.org Cloud server.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+  );
+
+  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_api_secret'] = array(
+    '#title' => t('API Secret'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#description' => t('API Secret key of your account in drulenium.org. Register for free & get your API key at <a href="http://drulenium.org/user/register">http://drulenium.org/user/register</a>'),
+    '#default_value' => variable_get('drulenium_vr_api_secret', ''),
   );
 
   $site_email = variable_get('site_mail', '');
@@ -16,12 +24,7 @@ function drulenium_hosting_client_settings_form($form, &$form_state) {
     '#description' => t('Email to Notify on completion.'),
     '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
   );
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_api_secret'] = array(
-      '#title' => t('API Secret'),
-      '#type' => 'textfield',
-      '#description' => t('API Secret key of your account in drulenium.org'),
-      '#default_value' => variable_get('drulenium_vr_api_secret', ''),
-  );
+
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_project_uuid'] = array(
       '#title' => t('Project UUID'),
       '#type' => 'textfield',

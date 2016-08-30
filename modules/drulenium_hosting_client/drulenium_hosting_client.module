@@ -7,7 +7,7 @@ function drulenium_hosting_client_menu() {
   $items['drulenium/settings/hosted'] = array(
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
-    'title' => 'Hosted Server',
+    'title' => 'Drulenium.org Cloud',
     'description' => 'Settings for Hosted Server Integration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('drulenium_hosting_client_settings_form'),
@@ -22,9 +22,39 @@ function drulenium_hosting_client_menu() {
  */
 function drulenium_hosting_client_drulenium_screenshot_service_provider_info() {
   $info = array(
-    'drulenium_hosting_client' => t('Remote Drulenium server'),
+    'drulenium_hosting_client' => t('Drulenium.org Cloud Service'),
   );
   return $info;
+}
+
+/**
+ * Implements hook_drulenium_release_form_validation().
+ */
+function drulenium_hosting_client_drulenium_release_form_validation($form_state) {
+  // Check API key
+  $drulenium_vr_api_secret = variable_get('drulenium_vr_api_secret', '');
+  if (empty($drulenium_vr_api_secret)) {
+    form_set_error('drulenium_vr_release_base_url', 'You need API key from Drulenium.org for the use of cloud service to take screenshot(s). Set your API key at <a href="/drulenium/settings/hosted">/drulenium/settings/hosted</a>');
+  }
+
+  // Check if base url is reachable.
+  $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
+      'drulenium.api_validate_release' => array($form_state['values']['drulenium_vr_release_base_url']),
+  ));
+  if ($result != 1) {
+    form_set_error('drulenium_vr_release_base_url', $result);
+  }
+}
+
+/**
+ * Implements hook_drulenium_screenshot_service_validation().
+ */
+function drulenium_hosting_client_drulenium_screenshot_service_validation() {
+  // Check API key
+  $drulenium_vr_api_secret = variable_get('drulenium_vr_api_secret', '');
+  if (empty($drulenium_vr_api_secret)) {
+    form_set_error('drulenium_vr_release_base_url', 'You need API key from Drulenium.org for the use of cloud service to take screenshot(s). Set your API key at <a href="/drulenium/settings/hosted">/drulenium/settings/hosted</a>');
+  }
 }
 
 /**
