@@ -1,0 +1,23 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the drulenium_hosting_client module.
+ */
+
+function drulenium_hosting_client_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    // Check API key
+    $drulenium_vr_api_secret = variable_get('drulenium_vr_api_secret', '');
+    if (empty($drulenium_vr_api_secret)) {
+      $requirements['drulenium_hosting_client'] = array(
+          'title' => t('Drulenium.org Cloud Server'),
+          'value' => t('API Key missing'),
+          'severity' => REQUIREMENT_ERROR,
+          'description' => t('The API key for Drulenium.org Cloud service is missing. You need API key from Drulenium.org for the use of cloud service to take screenshot(s). Set your API key at <a href="@url">@url</a>.', array('@url' => '/drulenium/settings/hosted')),
+      );
+    }
+  }
+  return $requirements;
+}

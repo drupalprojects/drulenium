@@ -171,6 +171,15 @@ function drulenium_schema() {
 }
 
 /**
+ * Implement hook_enable()
+ */
+function drulenium_enable() {
+  // If local server or remote server module is not enabled, enable remote server
+  module_enable(array('drulenium_hosting_client'));
+  drupal_set_message($message = t('Drulenium.org Cloud Server integration module is successfully enabled.'), $type = 'status');
+}
+
+/**
  * Add new table {drulenium}.
  */
 function drulenium_update_7000() {

@@ -1,4 +1,4 @@
-name = Drulenium Hosted
+name = Drulenium.org Cloud Server
 description = Support for taking screenshots remotely at Drulenium.org.
 dependencies[] = drulenium
 core = 7.x
