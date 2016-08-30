@@ -28,6 +28,16 @@ function drulenium_local_selenium_drulenium_screenshot_service_provider_info() {
 }
 
 /**
+ * Implements hook_drulenium_image_service_provider_info().
+ */
+function drulenium_local_selenium_drulenium_image_service_provider_info() {
+  $info = array(
+      'drulenium_local_selenium' => t('Local ImageMagick server'),
+  );
+  return $info;
+}
+
+/**
  * Implements hook_drulenium_screenshot_service_validation().
  */
 function drulenium_local_selenium_drulenium_screenshot_service_validation() {

@@ -28,6 +28,16 @@ function drulenium_hosting_client_drulenium_screenshot_service_provider_info() {
 }
 
 /**
+ * Implements hook_drulenium_image_service_provider_info().
+ */
+function drulenium_hosting_client_drulenium_image_service_provider_info() {
+  $info = array(
+      'drulenium_hosting_client' => t('Drulenium.org Cloud Service'),
+  );
+  return $info;
+}
+
+/**
  * Implements hook_drulenium_release_form_validation().
  */
 function drulenium_hosting_client_drulenium_release_form_validation($form_state) {
