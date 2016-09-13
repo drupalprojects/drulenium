@@ -1017,7 +1017,8 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $password_element->clear();
       $password_element->sendKeys($test_user_pass);
 
-      $userSubmitElement = $driver->findElement(WebDriverBy::id('edit-submit'));
+      $submit_elemet_id = variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit")
+      $userSubmitElement = $driver->findElement(WebDriverBy::id($submit_elemet_id));
       $userSubmitElement->click();
     }
 
@@ -1861,6 +1862,12 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     '#type' => 'password',
     '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
     '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_submit_element_id'] = array(
+    '#title' => t('ID of the submit button'),
+    '#type' => 'textfield',
+    '#description' => t('Leave blank if not sure. Usually "edit-submit"'),
+    '#default_value' => variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit"),
   );
 
   if (!empty($release_id)) {
