@@ -583,7 +583,15 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
         // Generate animated GIF.
         $unique_id = "drulenium/gif/" . microtime(TRUE) . ".gif";
         $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
-        $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
+        //will call all modules implementing hook_drulenium_file_alter
+        $gif_file_url_array = module_invoke_all("drulenium_file_alter", $highlighted_path);
+        // Remove invalid or empty values
+        $gif_file_url_array = array_filter($gif_file_url_array);
+        //Get the first result
+        $gif_link = isset($gif_file_url_array[0]) ? $gif_file_url_array[0] : '';
+        if(empty($gif_link)){
+          $gif_link = file_create_url(file_default_scheme() . '://') . $unique_id;
+        }
         //dsm("$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path");
         $command = "$image_magick_path/convert -delay 50 $image1 $image2 -loop 0 $gif_path 2>&1";
         $exec_error = exec($command);
@@ -599,7 +607,15 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
         // Generate highlighted image.
         $unique_id = "drulenium/diff/" . microtime(TRUE) . ".png";
         $highlighted_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
-        $highlighted_link = file_create_url(file_default_scheme() . '://') . $unique_id;
+        //will call all modules implementing hook_drulenium_file_alter
+        $diff_file_url_array = module_invoke_all("drulenium_file_alter", $highlighted_path);
+        // Remove invalid or empty values
+        $diff_file_url_array = array_filter($diff_file_url_array);
+        //Get the first result
+        $highlighted_link = isset($diff_file_url_array[0]) ? $diff_file_url_array[0] : '';
+        if(empty($highlighted_link)){
+          $highlighted_link = file_create_url(file_default_scheme() . '://') . $unique_id;
+        }
         //dsm("$image_magick_path/compare $image1 $image2 -compose src $highlighted_path");
         $command = "$image_magick_path/compare $image1 $image2 $highlighted_path 2>&1";
         $exec_error = exec($command);
@@ -627,11 +643,47 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
       array(':res_id' => $res['rid'], ':diff_percent' => $diff_percent, ':diff_highlight' => $highlighted_link, ':diff_gif' => $gif_link));
 */
 
+    // Store some results for post-processing in the 'finished' callback.
+    $context['results'][] = array(
+        'title' => $diff_entity->title,
+        'percentage' => $diff_percent,
+        'diff_file' => $highlighted_link,
+        'gif_file' => $gif_link,
+    );
   }
   // Update progress for message.
   $progress = $progress + $limit;
   // update message during each run so you know where you are in the process
   $context['message'] = 'Now processing compare: ' . $progress;
+}
+
+function drulenium_visual_regression_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'mail-on-compare-batch-finished':
+      $headers = array(
+        t('Page'),
+        t('Percentage'),
+        t('Diff'),
+        t('GIF'),
+      );
+      $rows = array();
+      foreach ($params['results'] as $diff){
+        if($diff['percentage'] > 0){
+          $rows[] = array(
+              $diff['title'],
+              $diff['percentage'],
+              $diff['diff_file'],
+              $diff['gif_file'],
+          );
+        }
+      }
+      $table_markup = theme('table', array('header' => $headers, 'rows' => $rows));
+      // Set headers etc
+      $message['subject'] = t('Visual report');
+      $message['body'][] = t('Visual test report: '.$table_markup, array(
+      ));
+      break;
+  }
 }
 
 /**
@@ -640,6 +692,29 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
 function drulenium_visual_regression_compare_batch_finished($success, $results, $operations) {
   if ($success) {
     drupal_set_message('Comparision process is completed.');
+    // If notifications settings are turned ON, Email the complete report
+    $to = variable_get('drulenium_vr_release_notify_email', '');
+    if(!empty($to)){
+      $notify_options = variable_get('drulenium_vr_config_notify_options', array());
+      if(isset($notify_options['diff']) && ($notify_options['diff'] == 'diff')){
+        $key = 'mail-on-compare-batch-finished';
+        $from = variable_get('site_mail', 'no-reply@example.com');
+        $params = array(
+            'results' => $results,
+        );
+
+        $language = language_default();
+        $module = 'drulenium_visual_regression';
+        $send = TRUE;
+        $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
+        if ($result['result'] == TRUE) {
+          drupal_set_message(t('Your message has been sent to '.$to));
+        }
+        else {
+          drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
+        }
+      }
+    }
   }
   else {
     $error_operation = reset($operations);
@@ -1583,11 +1658,11 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
   $output .= '<div class="update checked">';
   $github_username = variable_get('github_username', '');
 
-  if ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'local')) {
+  if ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'drulenium_local_selenium')) {
     $output .= ' <span class="process-locally">(' . l(t('Process locally'), "drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
   } elseif ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'github') && !empty($github_username)) {
     $output .= ' <span class="process-locally">(' . l(t('Process via GitHub'), "drulenium/vr/compare/process-local/$old_re_id/$new_re_id") . ')</span>';
-  } elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'drulenium') {
+  } elseif(variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'drulenium_hosting_client') {
     $last = variable_get("drulenium_vr_last_check_{$old_re_id}_{$new_re_id}");
     $output .= $last ? t('Last checked: @time ago', array('@time' => format_interval(REQUEST_TIME - $last))) : t('Last checked: never');
     $output .= ' <span class="check-manually">(' . l(t('Check manually'), 'drulenium/vr/compare/status/'.$base_release_secure_id.'/'.$cmp_release_secure_id) . ')</span>';
@@ -1602,11 +1677,11 @@ function drulenium_visual_regression_releases_compare_admin($old_re_id, $new_re_
     drulenium_visual_regression_create_initial_comparision_report_in_db($old_re_id, $new_re_id);
     //If local, go to drupal_goto("drulenium/vr/compare/process-local/$old_release/$new_release");
     //If remote, make RPC call to Drulenium.
-    if ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'local')
+    if ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'drulenium_local_selenium')
       || ((variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'github') && !empty($github_username))) {
       drupal_goto("drulenium/vr/compare/process-local/$old_re_id/$new_re_id");
     }
-    elseif (variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'drulenium') {
+    elseif (variable_get('drulenium_vr_config_image_server_opt', 'drulenium_hosting_client') == 'drulenium_hosting_client') {
       //If local table is empty, make a rpc call to create entries
       $result = xmlrpc('http://drulenium.org/xmlrpc.php', array(
         'drulenium.api_create_compare_request' => array($base_release_secure_id, $cmp_release_secure_id),
@@ -1945,6 +2020,31 @@ function drulenium_visual_regression_admin_settings_form($form, &$form_state) {
       '#type' => 'textfield',
       '#description' => t('Suffix of the test site Domain URL. example: <code>.example.com</code> If your test sites are like http://dev.example.com, http://featureA.example.com, http://featureB.example.com'),
       '#default_value' => variable_get('drulenium_vr_test_site_suffix', ""),
+  );
+
+  $form['drulenium_vr_config']['drulenium_vr_config_notifications'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Notifications'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+  );
+  // TODO: coma seperated multiple emails
+  $site_email = variable_get('site_mail', '');
+  $form['drulenium_vr_config']['drulenium_vr_config_notifications']['drulenium_vr_release_notify_email'] = array(
+      '#title' => t('Email'),
+      '#type' => 'textfield',
+      '#description' => t('Email to Notify on completion.'),
+      '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
+  );
+  $notify_options = array(
+   //   'release' => "Notify with snapshot report",
+      'diff' => "Notify with comparision report", // drulenium_visual_regression_compare_batch_finished
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_notifications']['drulenium_vr_config_notify_options'] = array(
+      '#type' => 'checkboxes',
+      '#title' => '',
+      '#options' => $notify_options,
+      '#default_value' => variable_get('drulenium_vr_config_notify_options', array()),
   );
 
   $form = system_settings_form($form);

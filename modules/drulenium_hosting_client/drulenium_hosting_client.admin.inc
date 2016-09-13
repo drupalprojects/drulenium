@@ -17,14 +17,6 @@ function drulenium_hosting_client_settings_form($form, &$form_state) {
     '#default_value' => variable_get('drulenium_vr_api_secret', ''),
   );
 
-  $site_email = variable_get('site_mail', '');
-  $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_release_notify_email'] = array(
-    '#title' => t('Email'),
-    '#type' => 'textfield',
-    '#description' => t('Email to Notify on completion.'),
-    '#default_value' => variable_get('drulenium_vr_release_notify_email', $site_email),
-  );
-
   $form['drulenium_vr_config']['drulenium_vr_config_server']['drulenium_vr_remote_drulenium_config']['drulenium_vr_project_uuid'] = array(
       '#title' => t('Project UUID'),
       '#type' => 'textfield',
