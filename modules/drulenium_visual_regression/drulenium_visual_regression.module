@@ -1009,16 +1009,18 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
     // Logging in as specified user
     if (!empty($test_user_name) && !empty($test_user_pass)) {
       $driver->get($release_result['base_url'] . "user/login");
-      $user_element = $driver->findElement(WebDriverBy::id("edit-name"));
+      $username_element_id = variable_get('drulenium_vr_release_user_name_element_id', "edit-name");
+      $user_element = $driver->findElement(WebDriverBy::id($username_element_id));
       $user_element->clear();
       $user_element->sendKeys($test_user_name);
 
-      $password_element = $driver->findElement(WebDriverBy::id("edit-pass"));
+      $password_element_id = variable_get('drulenium_vr_release_user_password_element_id', "edit-pass");
+      $password_element = $driver->findElement(WebDriverBy::id($password_element_id));
       $password_element->clear();
       $password_element->sendKeys($test_user_pass);
 
-      $submit_elemet_id = variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit");
-      $userSubmitElement = $driver->findElement(WebDriverBy::id($submit_elemet_id));
+      $submit_element_id = variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit");
+      $userSubmitElement = $driver->findElement(WebDriverBy::id($submit_element_id));
       $userSubmitElement->click();
     }
 
@@ -1863,8 +1865,26 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
     '#description' => t("Passwords are stored in plain text. Don't use real accounts. Use temporary test accounts. Delete these test accounts after the test."),
     '#default_value' => variable_get('drulenium_vr_release_user_pass', ""),
   );
-  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_release_user_submit_element_id'] = array(
-    '#title' => t('ID of the submit button'),
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced User Configuration'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced']['drulenium_vr_release_user_name_element_id'] = array(
+      '#title' => t('ID of the Username button'),
+      '#type' => 'textfield',
+      '#description' => t('Leave blank if not sure. Usually "edit-name"'),
+      '#default_value' => variable_get('drulenium_vr_release_user_name_element_id', "edit-name"),
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced']['drulenium_vr_release_user_password_element_id'] = array(
+      '#title' => t('ID of the Password button'),
+      '#type' => 'textfield',
+      '#description' => t('Leave blank if not sure. Usually "edit-pass"'),
+      '#default_value' => variable_get('drulenium_vr_release_user_password_element_id', "edit-pass"),
+  );
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced']['drulenium_vr_release_user_submit_element_id'] = array(
+    '#title' => t('ID of the Submit button'),
     '#type' => 'textfield',
     '#description' => t('Leave blank if not sure. Usually "edit-submit"'),
     '#default_value' => variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit"),
