@@ -1014,7 +1014,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $user_element->clear();
       $user_element->sendKeys($test_user_name);
 
-      $password_element_id = variable_get('drulenium_vr_release_user_password_element_id', "edit-pass");
+      $password_element_id = variable_get('drulenium_vr_release_user_login_password_element_id', "edit-pass");
       $password_element = $driver->findElement(WebDriverBy::id($password_element_id));
       $password_element->clear();
       $password_element->sendKeys($test_user_pass);
@@ -1877,11 +1877,11 @@ function drulenium_visual_regression_create_release_form($form, &$form_state, $r
       '#description' => t('Leave blank if not sure. Usually "edit-name"'),
       '#default_value' => variable_get('drulenium_vr_release_user_login_name_element_id', "edit-name"),
   );
-  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced']['drulenium_vr_release_user_password_element_id'] = array(
+  $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced']['drulenium_vr_release_user_login_password_element_id'] = array(
       '#title' => t('ID of the Password button'),
       '#type' => 'textfield',
       '#description' => t('Leave blank if not sure. Usually "edit-pass"'),
-      '#default_value' => variable_get('drulenium_vr_release_user_password_element_id', "edit-pass"),
+      '#default_value' => variable_get('drulenium_vr_release_user_login_password_element_id', "edit-pass"),
   );
   $form['drulenium_vr_config']['drulenium_vr_config_user']['drulenium_vr_config_user_advanced']['drulenium_vr_release_user_submit_element_id'] = array(
     '#title' => t('ID of the Submit button'),
@@ -2579,8 +2579,8 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
     variable_set('drulenium_vr_release_user_pass', $test_user_pass);
     $user_name_element_id = $form_state['values']['drulenium_vr_release_user_login_name_element_id'];
     variable_set('drulenium_vr_release_user_login_name_element_id', $user_name_element_id);
-    $user_password_element_id = $form_state['values']['drulenium_vr_release_user_password_element_id'];
-    variable_set('drulenium_vr_release_user_password_element_id', $user_password_element_id);
+    $user_password_element_id = $form_state['values']['drulenium_vr_release_user_login_password_element_id'];
+    variable_set('drulenium_vr_release_user_login_password_element_id', $user_password_element_id);
     $user_submit_element_id = $form_state['values']['drulenium_vr_release_user_submit_element_id'];
     variable_set('drulenium_vr_release_user_submit_element_id', $user_submit_element_id);
   } else {
