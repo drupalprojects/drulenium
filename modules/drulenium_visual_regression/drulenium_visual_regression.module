@@ -2577,6 +2577,12 @@ function drulenium_visual_regression_create_release_form_submit($form, &$form_st
 
     variable_set('drulenium_vr_release_user_name', $test_user_name);
     variable_set('drulenium_vr_release_user_pass', $test_user_pass);
+    $user_name_element_id = $form_state['values']['drulenium_vr_release_user_name_element_id'];
+    variable_set('drulenium_vr_release_user_name_element_id', $user_name_element_id);
+    $user_password_element_id = $form_state['values']['drulenium_vr_release_user_password_element_id'];
+    variable_set('drulenium_vr_release_user_password_element_id', $user_password_element_id);
+    $user_submit_element_id = $form_state['values']['drulenium_vr_release_user_submit_element_id'];
+    variable_set('drulenium_vr_release_user_submit_element_id', $user_submit_element_id);
   } else {
     //Get pages from $preset_cid
     $config_array = drulenium_visual_regression_get_preset_config($preset_cid);
