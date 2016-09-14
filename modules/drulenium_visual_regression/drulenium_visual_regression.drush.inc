@@ -419,15 +419,15 @@ function _drush_drulenium_visual_regression_loop_categories($preset_category) {
       $category = 'Miscellaneous';
     }
     if ($category == $preset_category) {
-      $preset_numeric_id = db_select('drulenium_preset', 'p')
+      /*$preset_numeric_id = db_select('drulenium_preset', 'p')
         ->fields('p', array('oid'))
         ->condition('p.name', $preset_cid)
         ->execute()
-        ->fetchfield();
+        ->fetchfield();*/
       // Get last two releases of this preset.
       $result = db_select('drulenium', 'vr_re')
         ->fields('vr_re', array('drulenium_id'))
-        ->condition('vr_re.test_id', $preset_numeric_id)
+        ->condition('vr_re.test_id', $preset_cid)
         ->orderBy('drulenium_id', 'DESC')
         ->range(0, 2)
         ->execute();
@@ -458,15 +458,15 @@ function _drush_drulenium_visual_regression_diff_upload_categories($preset_categ
       $category = 'Miscellaneous';
     }
     if ($category == $preset_category) {
-      $preset_numeric_id = db_select('drulenium_preset', 'p')
+      /*$preset_numeric_id = db_select('drulenium_preset', 'p')
         ->fields('p', array('oid'))
         ->condition('p.name', $preset_cid)
         ->execute()
-        ->fetchfield();
+        ->fetchfield();*/
       // Get last two releases of this preset.
       $result = db_select('drulenium', 'vr_re')
       ->fields('vr_re', array('drulenium_id'))
-      ->condition('vr_re.test_id', $preset_numeric_id)
+      ->condition('vr_re.test_id', $preset_cid)
       ->orderBy('drulenium_id', 'DESC')
       ->range(0, 2)
       ->execute();

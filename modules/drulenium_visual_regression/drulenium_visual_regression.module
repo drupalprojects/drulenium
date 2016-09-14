@@ -2303,12 +2303,12 @@ function drulenium_visual_regression_create_release_in_db($secureid, $release_na
   $release_entity = entity_get_controller('drulenium')->create();
   $release_entity->title = $release_name;
   $release_entity->secure_id = $secureid;
-  $preset_numeric_id = db_select('drulenium_preset', 'p')
+  /*$preset_numeric_id = db_select('drulenium_preset', 'p')
     ->fields('p', array('oid'))
     ->condition('p.name', $preset_cid)
     ->execute()
-    ->fetchfield();
-  $release_entity->test_id = $preset_numeric_id;
+    ->fetchfield();*/
+  $release_entity->test_id = $preset_cid;
   $release_entity->base_url = $vr_base_url;
   $release_entity->description = $project_notes;
   $release_entity->base_release = $is_base_release;

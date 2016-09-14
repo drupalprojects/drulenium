@@ -56,10 +56,10 @@ function drulenium_schema() {
       ),
       'test_id' => array(
         'description' => 'The ID of the test.',
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 255,
         'not null' => FALSE,
-        'default' => NULL,
+        'default' => '',
       ),
       // If we allow multiple bundles, then the schema must handle that;
       // We'll put it in the 'bundle_type' field to avoid confusion with the
@@ -291,4 +291,19 @@ function drulenium_update_7001() {
           'not null' => TRUE,
           'default' => 0,
   ));
+}
+
+/**
+ * Convert the test_id column from INT to VARCHAR
+ * preset_numeric_id to preset_cid
+ */
+function drulenium_update_7002() {
+  $new_field = array(
+    'description' => 'The ID of the test.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'default' => '',
+  );
+  db_change_field('drulenium', 'test_id', 'test_id', $new_field);
 }
