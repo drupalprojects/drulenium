@@ -1017,7 +1017,7 @@ function drulenium_visual_regression_release_batch_op($test_base_url, $re_id, $p
       $password_element->clear();
       $password_element->sendKeys($test_user_pass);
 
-      $submit_elemet_id = variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit")
+      $submit_elemet_id = variable_get('drulenium_vr_release_user_submit_element_id', "edit-submit");
       $userSubmitElement = $driver->findElement(WebDriverBy::id($submit_elemet_id));
       $userSubmitElement->click();
     }
