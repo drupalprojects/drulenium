@@ -584,7 +584,7 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
         $unique_id = "drulenium/gif/" . microtime(TRUE) . ".gif";
         $gif_path = drupal_realpath(file_default_scheme() . '://') . "/" . $unique_id;
         //will call all modules implementing hook_drulenium_file_alter
-        $gif_file_url_array = module_invoke_all("drulenium_file_alter", $highlighted_path);
+        $gif_file_url_array = module_invoke_all("drulenium_file_alter", $gif_path);
         // Remove invalid or empty values
         $gif_file_url_array = array_filter($gif_file_url_array);
         //Get the first result
@@ -657,14 +657,20 @@ function drulenium_visual_regression_compare_batch_op($old_re_id, $new_re_id, $p
   $context['message'] = 'Now processing compare: ' . $progress;
 }
 
+function drulenium_visual_regression_mail_alter(&$message) {
+  if (!isset($message['body']) || empty($message['body'])) {
+    $message['send'] = FALSE;
+  }
+}
+
 function drulenium_visual_regression_mail($key, &$message, $params) {
   switch ($key) {
     case 'mail-on-compare-batch-finished':
       $headers = array(
         t('Page'),
         t('Percentage'),
-        t('Diff'),
         t('GIF'),
+        t('Diff'),
       );
       $rows = array();
       foreach ($params['results'] as $diff){
@@ -672,16 +678,19 @@ function drulenium_visual_regression_mail($key, &$message, $params) {
           $rows[] = array(
               $diff['title'],
               $diff['percentage'],
-              $diff['diff_file'],
               $diff['gif_file'],
+              $diff['diff_file'],
           );
         }
       }
-      $table_markup = theme('table', array('header' => $headers, 'rows' => $rows));
-      // Set headers etc
-      $message['subject'] = t('Visual report');
-      $message['body'][] = t('Visual test report: '.$table_markup, array(
-      ));
+      $number_of_diffs = count($rows);
+      if($number_of_diffs > 0){
+        $table_markup = theme('table', array('header' => $headers, 'rows' => $rows));
+        // Set headers etc
+        $message['subject'] = t('Visual testing report');
+        $message['body'][] = t('Drulenium found @number_of_diffs difference(s) in your release.
+        ', array('@number_of_diffs' => $number_of_diffs)) . $table_markup;
+      }
       break;
   }
 }
