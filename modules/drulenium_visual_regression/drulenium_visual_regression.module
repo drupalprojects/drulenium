@@ -720,7 +720,8 @@ function drulenium_visual_regression_compare_batch_finished($success, $results, 
           drupal_set_message(t('Your message has been sent to '.$to));
         }
         else {
-          drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
+          // If message body is empty, $message['send'] = FALSE;, we don't wan't to throw error. Warning is sufficient.
+          drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'warning');
         }
       }
     }
