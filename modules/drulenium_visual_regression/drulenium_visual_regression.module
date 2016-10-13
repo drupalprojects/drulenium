@@ -855,7 +855,6 @@ function drulenium_visual_regression_compare_status($base_release_secure_id, $cm
 function drulenium_visual_regression_release_process_local($re_id) {
 
   drulenium_visual_regression_release_setup_batch($re_id);
-
   // Start processing, pass the page to return to after completing.
   batch_process("drulenium/vr/release/" . $re_id);
 }
@@ -1075,19 +1074,19 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $t
       $output .= drulenium_visual_regression_selenium_task_goto_url_do($driver, $task_entity_wrapper, $plugin_arr, $test_base_url);
       break;
     case TASK_FILL_TEXTBOX:
-      $output .= drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr);
+      $output .= drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $task_entity_wrapper, $plugin_arr);
       break;
     case TASK_CLICK_BUTTON:
-      $output .= drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr);
+      $output .= drulenium_visual_regression_selenium_task_click_button_do($driver, $task_entity_wrapper, $plugin_arr);
       break;
     case TASK_HOVER_OVER:
-      $output .= drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr);
+      $output .= drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $task_entity_wrapper, $plugin_arr);
       break;
     case TASK_WAIT:
-      $output .= drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr);
+      $output .= drulenium_visual_regression_selenium_task_wait_do($driver, $task_entity_wrapper, $plugin_arr);
       break;
     case TASK_VERIFY_TEXT:
-      $output .= drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr);
+      $output .= drulenium_visual_regression_selenium_task_verify_text_do($driver, $task_entity_wrapper, $plugin_arr);
       break;
     case TASK_TAKE_SCREENSHOT:
       $output .= drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr, $release_title);
@@ -1096,7 +1095,7 @@ function drulenium_visual_regression_selenium_tasks_do($driver, $task_entity, $t
   return $output;
 }
 
-function drulenium_visual_regression_selenium_task_verify_text_do($driver, $plugin_arr, $saucelabs = FALSE, $result_entity = NULL) {
+function drulenium_visual_regression_selenium_task_verify_text_do($driver, $task_wrapper, $plugin_arr, $saucelabs = FALSE, $result_entity = NULL) {
   $element_locator_type = $plugin_arr['description']['locator_type'];
   $element_locator = $plugin_arr['description']['locator'];
   $value = $plugin_arr['description']['text'];
@@ -1104,14 +1103,21 @@ function drulenium_visual_regression_selenium_task_verify_text_do($driver, $plug
     $output = '';
     return $output;
   }
-  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
-  $page_element_text = $element->getText();
-  if (strpos($page_element_text, $value) !== false) {
-    // Text present
-  }else{
-    // Test failed.
-    $result_entity->status = 0;
+  try{
+    $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+    $page_element_text = $element->getText();
+    if (strpos($page_element_text, $value) !== false) {
+      // Text present
+      $task_wrapper->field_dr_task_status = 1;
+    }else{
+      // Test failed.
+      $task_wrapper->field_dr_task_status = 0;
+    }
+  }catch(Exception $e) {
+    $task_wrapper->field_dr_task_status = 0;
   }
+  $task_wrapper->changed = REQUEST_TIME;
+  $task_wrapper->save();
 }
 
 function drulenium_visual_regression_selenium_task_goto_url_do($driver, $task_wrapper, $plugin_arr, $test_base_url) {
@@ -1126,7 +1132,7 @@ function drulenium_visual_regression_selenium_task_goto_url_do($driver, $task_wr
   $task_wrapper->save();
 }
 
-function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plugin_arr, $saucelabs = FALSE) {
+function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $task_wrapper, $plugin_arr, $saucelabs = FALSE) {
   $element_locator_type = $plugin_arr['description']['locator_type'];
   $element_locator = $plugin_arr['description']['locator'];
   $value = $plugin_arr['description']['text'];
@@ -1136,14 +1142,22 @@ function drulenium_visual_regression_selenium_task_fill_textbox_do($driver, $plu
     ';
     return $output;
   }
-  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
-  $element->sendKeys($value);
+  try{
+    $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+    $element->sendKeys($value);
+    $task_wrapper->field_dr_task_status = 1;
+  }catch(Exception $e) {
+    $task_wrapper->field_dr_task_status = 0;
+  }
+  $task_wrapper->changed = REQUEST_TIME;
+  $task_wrapper->save();
 }
 
-function drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr, $saucelabs = FALSE) {
+function drulenium_visual_regression_selenium_task_wait_do($driver, $task_wrapper, $plugin_arr, $saucelabs = FALSE) {
   // https://github.com/facebook/php-webdriver/wiki/HowTo-Wait
   // http://facebook.github.io/php-webdriver/classes/WebDriverExpectedCondition.html#method_visibilityOfElementLocated
-  $element_css_locator = $plugin_arr['description']['locator'];
+  $element_locator_type = $plugin_arr['description']['locator_type'];
+  $element_locator = $plugin_arr['description']['locator'];
   $time_seconds = $plugin_arr['description']['seconds'];
   if ($saucelabs) {
     $output = '';
@@ -1151,10 +1165,18 @@ function drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr,
   }
   // wait for at most 10s for the specified Element to be present on the DOM of a page and visible.
   // sleep for 500ms and retries if it the title is not correct.
-  if (!empty($element_css_locator)) {
-    $driver->wait($time_seconds, 500)->until(
-      WebDriverExpectedCondition::visibilityOfElementLocated(WebDriverBy::cssSelector($element_css_locator))
-    );
+  if (!empty($element_locator)) {
+    try{
+      $element = drulenium_visual_regression_selenium_find_locator($element_locator, $element_locator_type);
+      $driver->wait($time_seconds, 500)->until(
+        WebDriverExpectedCondition::visibilityOfElementLocated($element)
+      );
+      $task_wrapper->field_dr_task_status = 1;
+    }catch(Exception $e) {
+      $task_wrapper->field_dr_task_status = 0;
+    }
+    $task_wrapper->changed = REQUEST_TIME;
+    $task_wrapper->save();
   }else{
     //Look for a non-existing element, timeout after specified time. Error will be thrown & caught as element doesn't exist.
     try{
@@ -1163,10 +1185,13 @@ function drulenium_visual_regression_selenium_task_wait_do($driver, $plugin_arr,
       );
     }catch(Exception $e) {
     }
+    $task_wrapper->field_dr_task_status = 1;
+    $task_wrapper->changed = REQUEST_TIME;
+    $task_wrapper->save();
   }
 }
 
-function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plugin_arr, $saucelabs = FALSE) {
+function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $task_wrapper, $plugin_arr, $saucelabs = FALSE) {
   // https://github.com/facebook/php-webdriver/wiki/Example-command-reference
   $element_locator_type = $plugin_arr['description']['locator_type'];
   $element_locator = $plugin_arr['description']['locator'];
@@ -1174,8 +1199,34 @@ function drulenium_visual_regression_selenium_task_mouse_hover_do($driver, $plug
     $output = '';
     return $output;
   }
-  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
-  $driver->getMouse()->mouseMove( $element->getCoordinates() );
+  try{
+    $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+    $driver->getMouse()->mouseMove( $element->getCoordinates() );
+    $task_wrapper->field_dr_task_status = 1;
+  }catch(Exception $e) {
+    $task_wrapper->field_dr_task_status = 0;
+  }
+  $task_wrapper->changed = REQUEST_TIME;
+  $task_wrapper->save();
+}
+
+function drulenium_visual_regression_selenium_find_locator($element_locator, $element_locator_type = "css") {
+  $element = null;
+  switch ($element_locator_type) {
+    case 'id':
+      $element = WebDriverBy::id($element_locator);
+      break;
+    case 'name':
+      $element = WebDriverBy::name($element_locator);
+      break;
+    case 'css':
+      $element = WebDriverBy::cssSelector($element_locator);
+      break;
+    case 'xpath':
+      $element = WebDriverBy::xpath($element_locator);
+      break;
+  }
+  return $element;
 }
 
 function drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type = "css") {
@@ -1197,7 +1248,7 @@ function drulenium_visual_regression_selenium_find_element($driver, $element_loc
   return $element;
 }
 
-function drulenium_visual_regression_selenium_task_click_button_do($driver, $plugin_arr, $saucelabs = FALSE) {
+function drulenium_visual_regression_selenium_task_click_button_do($driver, $task_wrapper, $plugin_arr, $saucelabs = FALSE) {
   $element_locator_type = $plugin_arr['description']['locator_type'];
   $element_locator = $plugin_arr['description']['locator'];
   if($saucelabs) {
@@ -1206,8 +1257,15 @@ function drulenium_visual_regression_selenium_task_click_button_do($driver, $plu
     ';
     return $output;
   }
-  $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
-  $element->click();
+  try{
+    $element = drulenium_visual_regression_selenium_find_element($driver, $element_locator, $element_locator_type);
+    $element->click();
+    $task_wrapper->field_dr_task_status = 1;
+  }catch(Exception $e) {
+    $task_wrapper->field_dr_task_status = 0;
+  }
+  $task_wrapper->changed = REQUEST_TIME;
+  $task_wrapper->save();
 }
 
 function drulenium_visual_regression_selenium_task_take_screenshot_do($driver, $task_entity_wrapper, $plugin_arr, $release_title = "") {
